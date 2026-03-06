@@ -70,6 +70,8 @@
     },
     "scripts": {
         "build-dependencies-visualizer": "vite-bundle-visualizer",
+        "typecheck": "tsc --noEmit",
+        "check": "yarn typecheck && yarn lint",
         "check-code": "yarn lint && yarn test",
         "generate-docs": "typedoc --entryPointStrategy expand ./src",
         "lint": "eslint src",

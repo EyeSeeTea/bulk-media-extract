@@ -1,0 +1,44 @@
+.landing-page {
+    margin: 16px;
+    display: grid;
+    gap: 16px;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #d5dbe0;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+.field-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.field-label select {
+    min-height: 36px;
+    border: 1px solid #a0adba;
+    border-radius: 4px;
+    padding: 0 8px;
+    background: #fff;
+}
+
+.actions-row {
+    margin-top: 8px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.preview-table th,
+.preview-table td {
+    border: 1px solid #d5dbe0;
+    padding: 8px;
+    text-align: left;
+}

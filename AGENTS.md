@@ -87,6 +87,8 @@ yarn start          # Dev server at http://localhost:8081
 yarn build          # Outputs DHIS2 zip to build/
 
 # Tests
+yarn typecheck      # TypeScript type checking (no emit)
+yarn lint           # Run lint
 yarn test           # Vitest test suite
 yarn prettify       # Code format using prettier
 yarn localize       # Update i18n .po files from i18n.t() calls
