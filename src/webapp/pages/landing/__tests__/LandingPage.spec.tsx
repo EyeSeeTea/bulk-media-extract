@@ -7,6 +7,10 @@ describe("LandingPage", () => {
     it("renders file-capable program flow and gates preview by org unit", async () => {
         const page = getReactComponent(<LandingPage />);
 
+        expect(page.getByLabelText("program-picker")).toBeInTheDocument();
+        expect(page.getByLabelText("program-details")).toBeInTheDocument();
+        expect(page.getByLabelText("org-unit-preview")).toBeInTheDocument();
+
         const programSelect = await page.findByTestId("program-select");
         expect(programSelect).toBeInTheDocument();
 
