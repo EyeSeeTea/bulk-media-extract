@@ -3,11 +3,28 @@ import { ProgramEventPreview } from "$/domain/entities/FileExportProgram";
 import { describe, expect, it, vi } from "vitest";
 import { EventPreview } from "$/webapp/pages/landing/components/EventPreview";
 
+vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
+    OrgUnitTreePicker: (props: {
+        programOrgUnits: Array<{ id: string; name: string; path?: string }>;
+        disabled?: boolean;
+        onChange: (id: string) => void;
+    }) => (
+        <button
+            type="button"
+            data-testid="org-unit-tree-picker"
+            disabled={Boolean(props.disabled)}
+            onClick={() => props.onChange(props.programOrgUnits[0]?.id ?? "")}
+        >
+            Mock org unit tree
+        </button>
+    ),
+}));
+
 describe("EventPreview", () => {
-    it("disables org unit selection when no program is selected", () => {
+    it("does not render org unit tree when no program is selected", () => {
         const view = render(
             <EventPreview
-                orgUnitsState={{ status: "success", data: [{ id: "ou-a", name: "Org Unit A" }] }}
+                programOrgUnits={[{ id: "ou-a", name: "Org Unit A", path: "/root/ou-a" }]}
                 selectedProgramId=""
                 selectedOrgUnitId=""
                 onSelectOrgUnit={vi.fn()}
@@ -16,7 +33,26 @@ describe("EventPreview", () => {
             />
         );
 
-        expect(view.getByTestId("org-unit-select")).toHaveAttribute("disabled");
+        expect(view.queryByTestId("org-unit-tree-picker")).not.toBeInTheDocument();
+        expect(view.getByText("Select a program to load organisation units.")).toBeInTheDocument();
+    });
+
+    it("selects org unit via tree picker", () => {
+        const onSelectOrgUnit = vi.fn();
+
+        const view = render(
+            <EventPreview
+                programOrgUnits={[{ id: "ou-a", name: "Org Unit A", path: "/root/ou-a" }]}
+                selectedProgramId="prog-a"
+                selectedOrgUnitId=""
+                onSelectOrgUnit={onSelectOrgUnit}
+                previewState={{ status: "idle" }}
+                onRetryPreview={vi.fn()}
+            />
+        );
+
+        fireEvent.click(view.getByTestId("org-unit-tree-picker"));
+        expect(onSelectOrgUnit).toHaveBeenCalledWith("ou-a");
     });
 
     it("renders event rows and retries on error", () => {
@@ -24,7 +60,7 @@ describe("EventPreview", () => {
 
         const view = render(
             <EventPreview
-                orgUnitsState={{ status: "success", data: [{ id: "ou-a", name: "Org Unit A" }] }}
+                programOrgUnits={[{ id: "ou-a", name: "Org Unit A", path: "/root/ou-a" }]}
                 selectedProgramId="prog-a"
                 selectedOrgUnitId="ou-a"
                 onSelectOrgUnit={vi.fn()}
@@ -40,7 +76,7 @@ describe("EventPreview", () => {
 
         const utils = render(
             <EventPreview
-                orgUnitsState={{ status: "success", data: [{ id: "ou-a", name: "Org Unit A" }] }}
+                programOrgUnits={[{ id: "ou-a", name: "Org Unit A", path: "/root/ou-a" }]}
                 selectedProgramId="prog-a"
                 selectedOrgUnitId="ou-a"
                 onSelectOrgUnit={vi.fn()}

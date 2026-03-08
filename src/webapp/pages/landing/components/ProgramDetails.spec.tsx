@@ -22,6 +22,7 @@ describe("ProgramDetails", () => {
                 id: "prog-a",
                 name: "Program A",
                 programType: "WITH_REGISTRATION",
+                organisationUnits: [],
             }),
             properties: [
                 ProgramFileProperty.create({

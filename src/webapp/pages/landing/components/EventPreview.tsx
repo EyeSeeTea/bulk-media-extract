@@ -2,11 +2,12 @@ import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
 import { ProgramEventPreview } from "$/domain/entities/FileExportProgram";
 import { NamedRef } from "$/domain/entities/Ref";
+import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import i18n from "$/utils/i18n";
 
 type Props = {
-    orgUnitsState: AsyncData<NamedRef[]>;
+    programOrgUnits: NamedRef[];
     selectedProgramId: string;
     selectedOrgUnitId: string;
     onSelectOrgUnit: (orgUnitId: string) => void;
@@ -19,7 +20,7 @@ type Props = {
  */
 export const EventPreview: React.FC<Props> = React.memo(
     ({
-        orgUnitsState,
+        programOrgUnits,
         selectedProgramId,
         selectedOrgUnitId,
         onSelectOrgUnit,
@@ -30,30 +31,26 @@ export const EventPreview: React.FC<Props> = React.memo(
             <section className="panel" aria-label="org-unit-preview">
                 <h3>{i18n.t("Event preview")}</h3>
 
-                {orgUnitsState.status === "loading" && <CircularLoader small />}
-                {orgUnitsState.status === "error" && (
-                    <NoticeBox error title={i18n.t("Could not load organisation units")}>
-                        {orgUnitsState.error}
-                    </NoticeBox>
-                )}
-                {orgUnitsState.status === "success" && (
-                    <label className="field-label">
-                        {i18n.t("Select organisation unit")}
-                        <select
-                            data-testid="org-unit-select"
-                            value={selectedOrgUnitId}
-                            onChange={event => onSelectOrgUnit(event.target.value)}
-                            disabled={!selectedProgramId}
-                        >
-                            <option value="">{i18n.t("Choose an organisation unit")}</option>
-                            {orgUnitsState.data.map(orgUnit => (
-                                <option key={orgUnit.id} value={orgUnit.id}>
-                                    {orgUnit.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                )}
+                <label className="field-label">
+                    {i18n.t("Select organisation unit")}
+                    {!selectedProgramId ? (
+                        <NoticeBox title={i18n.t("Program required")}>
+                            {i18n.t("Select a program to load organisation units.")}
+                        </NoticeBox>
+                    ) : programOrgUnits.length === 0 ? (
+                        <NoticeBox title={i18n.t("No organisation units available")}>
+                            {i18n.t(
+                                "The selected program has no organisation units available for selection."
+                            )}
+                        </NoticeBox>
+                    ) : (
+                        <OrgUnitTreePicker
+                            programOrgUnits={programOrgUnits}
+                            selected={selectedOrgUnitId}
+                            onChange={onSelectOrgUnit}
+                        />
+                    )}
+                </label>
 
                 {!selectedProgramId || !selectedOrgUnitId ? (
                     <NoticeBox title={i18n.t("Preview requirements")}>

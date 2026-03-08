@@ -11,6 +11,9 @@ describe("ProgramD2Repository", () => {
                         id: "program-a",
                         displayName: "Program A",
                         programType: "WITH_REGISTRATION",
+                        organisationUnits: [
+                            { id: "ou-a", displayName: "Org Unit A", path: "/root/ou-a" },
+                        ],
                         programStages: [
                             {
                                 id: "stage-a",
@@ -32,6 +35,9 @@ describe("ProgramD2Repository", () => {
                         id: "program-b",
                         displayName: "Program B",
                         programType: "WITH_REGISTRATION",
+                        organisationUnits: [
+                            { id: "ou-b", displayName: "Org Unit B", path: "/root/ou-b" },
+                        ],
                         programStages: [],
                         programTrackedEntityAttributes: [
                             {
@@ -47,6 +53,9 @@ describe("ProgramD2Repository", () => {
                         id: "program-c",
                         displayName: "Program C",
                         programType: "WITHOUT_REGISTRATION",
+                        organisationUnits: [
+                            { id: "ou-c", displayName: "Org Unit C", path: "/root/ou-c" },
+                        ],
                         programStages: [],
                         programTrackedEntityAttributes: [
                             {
@@ -77,6 +86,9 @@ describe("ProgramD2Repository", () => {
                         id: "program-a",
                         displayName: "Program A",
                         programType: "WITH_REGISTRATION",
+                        organisationUnits: [
+                            { id: "ou-a", displayName: "Org Unit A", path: "/root/ou-a" },
+                        ],
                         programStages: [
                             {
                                 id: "stage-a",
@@ -111,6 +123,9 @@ describe("ProgramD2Repository", () => {
         const details = await repository.getProgramFileProperties("program-a").toPromise();
 
         expect(details.program.programType).toBe("WITH_REGISTRATION");
+        expect(details.program.organisationUnits).toEqual([
+            { id: "ou-a", name: "Org Unit A", path: "/root/ou-a" },
+        ]);
         expect(details.properties).toHaveLength(2);
         expect(details.properties[0]?.sourceType).toBe("dataElement");
         expect(details.properties[1]?.sourceType).toBe("trackedEntityAttribute");
@@ -132,7 +147,9 @@ describe("ProgramD2Repository", () => {
 
         const repository = new ProgramD2Repository(api);
 
-        const events = await repository.getProgramEventsPreview("program-a", "ou-1", 20).toPromise();
+        const events = await repository
+            .getProgramEventsPreview("program-a", "ou-1", 20)
+            .toPromise();
 
         expect(events).toHaveLength(1);
         expect(events[0]?.fileValues["de-a"]).toBe("file-1");
@@ -155,7 +172,9 @@ function buildApi(responses: Record<string, unknown>, forcedError?: Error): D2Ap
                         throw forcedError;
                     }
 
-                    const key = Object.keys(responses).find(responsePath => path.startsWith(responsePath));
+                    const key = Object.keys(responses).find(responsePath =>
+                        path.startsWith(responsePath)
+                    );
                     if (!key) {
                         return {} as T;
                     }

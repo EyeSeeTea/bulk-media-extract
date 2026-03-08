@@ -21,6 +21,7 @@ describe("GetProgramFilePropertiesUseCase", () => {
                                 id: "program-1",
                                 name: "Program 1",
                                 programType: "WITH_REGISTRATION",
+                                organisationUnits: [],
                             }),
                             properties: [
                                 new ProgramFileProperty({
@@ -51,6 +52,7 @@ describe("GetProgramFilePropertiesUseCase", () => {
                                 id: "program-2",
                                 name: "Program 2",
                                 programType: "WITHOUT_REGISTRATION",
+                                organisationUnits: [],
                             }),
                             properties: [],
                         })
@@ -78,7 +80,17 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
     return {
         getFileCapablePrograms: () => Future.success([]),
         getProgramFileProperties: (_programId: string) =>
-            Future.success(new ProgramFileProperties({ program: new FileCapableProgram({ id: "", name: "", programType: "UNKNOWN" }), properties: [] })),
+            Future.success(
+                new ProgramFileProperties({
+                    program: new FileCapableProgram({
+                        id: "",
+                        name: "",
+                        programType: "UNKNOWN",
+                        organisationUnits: [],
+                    }),
+                    properties: [],
+                })
+            ),
         getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>
             Future.success<Error, ProgramEventPreview[]>([]),
         getOrganisationUnits: () => Future.success<Error, NamedRef[]>([]),

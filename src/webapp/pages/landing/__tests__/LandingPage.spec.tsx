@@ -1,7 +1,24 @@
 import { fireEvent } from "@testing-library/react";
 import { getReactComponent } from "$/utils/tests";
 import { LandingPage } from "$/webapp/pages/landing/LandingPage";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
+    OrgUnitTreePicker: (props: {
+        programOrgUnits: Array<{ id: string; name: string; path?: string }>;
+        disabled?: boolean;
+        onChange: (id: string) => void;
+    }) => (
+        <button
+            type="button"
+            data-testid="org-unit-tree-picker"
+            disabled={Boolean(props.disabled)}
+            onClick={() => props.onChange(props.programOrgUnits[0]?.id ?? "")}
+        >
+            Mock org unit tree
+        </button>
+    ),
+}));
 
 describe("LandingPage", () => {
     it("renders file-capable program flow and gates preview by org unit", async () => {
@@ -14,18 +31,17 @@ describe("LandingPage", () => {
         const programSelect = await page.findByTestId("program-select");
         expect(programSelect).toBeInTheDocument();
 
-        const orgUnitSelect = await page.findByTestId("org-unit-select");
-        expect(orgUnitSelect).toHaveAttribute("disabled");
+        expect(page.queryByTestId("org-unit-tree-picker")).not.toBeInTheDocument();
 
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
 
         expect(await page.findByText(/Program type/)).toBeInTheDocument();
         expect(await page.findByText("WITH_REGISTRATION")).toBeInTheDocument();
 
-        const orgUnitSelectEnabled = await page.findByTestId("org-unit-select");
-        expect(orgUnitSelectEnabled).not.toHaveAttribute("disabled");
+        const orgUnitTreeEnabled = await page.findByTestId("org-unit-tree-picker");
+        expect(orgUnitTreeEnabled).toBeInTheDocument();
 
-        fireEvent.change(orgUnitSelectEnabled, { target: { value: "ou-a" } });
+        fireEvent.click(orgUnitTreeEnabled);
 
         expect(await page.findByText("evt-1")).toBeInTheDocument();
         expect(await page.findByText(/de-file: file-123/)).toBeInTheDocument();

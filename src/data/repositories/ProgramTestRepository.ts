@@ -13,11 +13,13 @@ const PROGRAM_A = new FileCapableProgram({
     id: "prog-a",
     name: "Antenatal Visit",
     programType: "WITH_REGISTRATION",
+    organisationUnits: [{ id: "ou-a", name: "Central Clinic", path: "/root/ou-a" }],
 });
 const PROGRAM_B = new FileCapableProgram({
     id: "prog-b",
     name: "Community Outreach",
     programType: "WITHOUT_REGISTRATION",
+    organisationUnits: [{ id: "ou-b", name: "North District", path: "/root/ou-b" }],
 });
 const PROGRAMS = [PROGRAM_A, PROGRAM_B];
 
@@ -78,8 +80,8 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
 };
 
 const ORG_UNITS: NamedRef[] = [
-    { id: "ou-a", name: "Central Clinic" },
-    { id: "ou-b", name: "North District" },
+    { id: "ou-a", name: "Central Clinic", path: "/root/ou-a" },
+    { id: "ou-b", name: "North District", path: "/root/ou-b" },
 ];
 
 export class ProgramTestRepository implements ProgramRepository {
@@ -95,7 +97,11 @@ export class ProgramTestRepository implements ProgramRepository {
         return Future.success(details);
     }
 
-    public getProgramEventsPreview(programId: string, orgUnitId: string, pageSize: number): FutureData<ProgramEventPreview[]> {
+    public getProgramEventsPreview(
+        programId: string,
+        orgUnitId: string,
+        pageSize: number
+    ): FutureData<ProgramEventPreview[]> {
         const key = `${programId}:${orgUnitId}`;
         const rows = PREVIEW_BY_KEY[key] ?? [];
         return Future.success(rows.slice(0, pageSize));

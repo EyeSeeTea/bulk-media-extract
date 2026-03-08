@@ -50,7 +50,9 @@ describe("GetProgramEventsPreviewUseCase", () => {
             }),
         });
 
-        await expect(useCase.execute("program-1", "ou-1").toPromise()).rejects.toThrow("preview-error");
+        await expect(useCase.execute("program-1", "ou-1").toPromise()).rejects.toThrow(
+            "preview-error"
+        );
     });
 });
 
@@ -58,7 +60,17 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
     return {
         getFileCapablePrograms: () => Future.success([]),
         getProgramFileProperties: (_programId: string) =>
-            Future.success(new ProgramFileProperties({ program: new FileCapableProgram({ id: "", name: "", programType: "UNKNOWN" }), properties: [] })),
+            Future.success(
+                new ProgramFileProperties({
+                    program: new FileCapableProgram({
+                        id: "",
+                        name: "",
+                        programType: "UNKNOWN",
+                        organisationUnits: [],
+                    }),
+                    properties: [],
+                })
+            ),
         getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>
             Future.success<Error, ProgramEventPreview[]>([]),
         getOrganisationUnits: () => Future.success<Error, NamedRef[]>([]),

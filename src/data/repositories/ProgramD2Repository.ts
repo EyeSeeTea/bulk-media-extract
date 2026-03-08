@@ -35,7 +35,11 @@ export class ProgramD2Repository implements ProgramRepository {
         });
     }
 
-    public getProgramEventsPreview(programId: string, orgUnitId: string, pageSize: number): FutureData<ProgramEventPreview[]> {
+    public getProgramEventsPreview(
+        programId: string,
+        orgUnitId: string,
+        pageSize: number
+    ): FutureData<ProgramEventPreview[]> {
         const query = toQueryString({
             program: programId,
             orgUnit: orgUnitId,
@@ -48,13 +52,16 @@ export class ProgramD2Repository implements ProgramRepository {
 
         return this.get<D2EventsResponse>(`/events?${query}`).map(response => {
             return (response.events ?? []).map(event => {
-                const fileValues = (event.dataValues ?? []).reduce<Record<string, string>>((acc, dataValue) => {
-                    const value = dataValue.value ?? "";
-                    if (value) {
-                        acc[dataValue.dataElement] = value;
-                    }
-                    return acc;
-                }, {});
+                const fileValues = (event.dataValues ?? []).reduce<Record<string, string>>(
+                    (acc, dataValue) => {
+                        const value = dataValue.value ?? "";
+                        if (value) {
+                            acc[dataValue.dataElement] = value;
+                        }
+                        return acc;
+                    },
+                    {}
+                );
 
                 return new ProgramEventPreview({
                     id: event.event,
@@ -68,7 +75,7 @@ export class ProgramD2Repository implements ProgramRepository {
 
     public getOrganisationUnits(): FutureData<NamedRef[]> {
         const query = toQueryString({
-            fields: "id,displayName",
+            fields: "id,displayName,path",
             pageSize: "200",
             page: "1",
             totalPages: "false",
@@ -79,6 +86,7 @@ export class ProgramD2Repository implements ProgramRepository {
             return (response.organisationUnits ?? []).map(orgUnit => ({
                 id: orgUnit.id,
                 name: orgUnit.displayName,
+                path: orgUnit.path,
             }));
         });
     }
@@ -90,6 +98,7 @@ export class ProgramD2Repository implements ProgramRepository {
                 "id",
                 "displayName",
                 "programType",
+                "organisationUnits[id,displayName,path]",
                 "programTrackedEntityAttributes[trackedEntityAttribute[id,displayName,valueType]]",
                 "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType]]]",
             ].join(","),
@@ -99,26 +108,30 @@ export class ProgramD2Repository implements ProgramRepository {
             filter,
         });
 
-        return this.get<D2ProgramsResponse>(`/programs?${query}`).map(response => response.programs ?? []);
+        return this.get<D2ProgramsResponse>(`/programs?${query}`).map(
+            response => response.programs ?? []
+        );
     }
 
     private buildProgramFileProperties(program: D2Program): ProgramFileProperties {
-        const eventProperties: ProgramFileProperty[] = (program.programStages ?? []).flatMap(stage => {
-            return (stage.programStageDataElements ?? [])
-                .map(psde => psde.dataElement)
-                .filter(isDefined)
-                .filter(dataElement => FILE_VALUE_TYPES.has(dataElement.valueType))
-                .map(dataElement => {
-                    return new ProgramFileProperty({
-                        id: dataElement.id,
-                        name: dataElement.displayName,
-                        valueType: dataElement.valueType,
-                        sourceType: "dataElement",
-                        sourceContainerId: stage.id,
-                        sourceContainerName: stage.displayName,
+        const eventProperties: ProgramFileProperty[] = (program.programStages ?? []).flatMap(
+            stage => {
+                return (stage.programStageDataElements ?? [])
+                    .map(psde => psde.dataElement)
+                    .filter(isDefined)
+                    .filter(dataElement => FILE_VALUE_TYPES.has(dataElement.valueType))
+                    .map(dataElement => {
+                        return new ProgramFileProperty({
+                            id: dataElement.id,
+                            name: dataElement.displayName,
+                            valueType: dataElement.valueType,
+                            sourceType: "dataElement",
+                            sourceContainerId: stage.id,
+                            sourceContainerName: stage.displayName,
+                        });
                     });
-                });
-        });
+            }
+        );
 
         const teiProperties: ProgramFileProperty[] = (program.programTrackedEntityAttributes ?? [])
             .map(entry => entry.trackedEntityAttribute)
@@ -140,6 +153,11 @@ export class ProgramD2Repository implements ProgramRepository {
                 id: program.id,
                 name: program.displayName,
                 programType: normalizeProgramType(program.programType),
+                organisationUnits: (program.organisationUnits ?? []).map(orgUnit => ({
+                    id: orgUnit.id,
+                    name: orgUnit.displayName,
+                    path: orgUnit.path,
+                })),
             }),
             properties,
         });
@@ -181,6 +199,11 @@ type D2Program = {
     id: string;
     displayName: string;
     programType?: string;
+    organisationUnits?: Array<{
+        id: string;
+        displayName: string;
+        path?: string;
+    }>;
     programStages?: Array<{
         id: string;
         displayName: string;
@@ -218,5 +241,6 @@ type D2OrgUnitsResponse = {
     organisationUnits?: Array<{
         id: string;
         displayName: string;
+        path?: string;
     }>;
 };

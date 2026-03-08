@@ -3,7 +3,6 @@ import { EventPreview } from "$/webapp/pages/landing/components/EventPreview";
 import { ProgramDetails } from "$/webapp/pages/landing/components/ProgramDetails";
 import { ProgramPicker } from "$/webapp/pages/landing/components/ProgramPicker";
 import { useFileCapablePrograms } from "$/webapp/pages/landing/hooks/useFileCapablePrograms";
-import { useOrganisationUnits } from "$/webapp/pages/landing/hooks/useOrganisationUnits";
 import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
 import { useProgramFileProperties } from "$/webapp/pages/landing/hooks/useProgramFileProperties";
 import i18n from "$/utils/i18n";
@@ -14,12 +13,22 @@ export const LandingPage: React.FC = React.memo(() => {
     const [selectedOrgUnitId, setSelectedOrgUnitId] = React.useState("");
 
     const { state: programsState, reload: reloadPrograms } = useFileCapablePrograms();
-    const { state: orgUnitsState } = useOrganisationUnits();
     const { state: programDetailsState } = useProgramFileProperties(selectedProgramId);
     const { state: previewState, reload: reloadPreview } = useProgramEventsPreview(
         selectedProgramId,
         selectedOrgUnitId
     );
+
+    const programOrgUnits = React.useMemo(() => {
+        if (programsState.status !== "success") {
+            return [];
+        }
+
+        return (
+            programsState.data.find(program => program.id === selectedProgramId)
+                ?.organisationUnits ?? []
+        );
+    }, [programsState, selectedProgramId]);
 
     return (
         <div className="landing-page">
@@ -27,7 +36,10 @@ export const LandingPage: React.FC = React.memo(() => {
             <ProgramPicker
                 programsState={programsState}
                 selectedProgramId={selectedProgramId}
-                onSelectProgram={setSelectedProgramId}
+                onSelectProgram={programId => {
+                    setSelectedProgramId(programId);
+                    setSelectedOrgUnitId("");
+                }}
                 onReloadPrograms={() => {
                     void reloadPrograms();
                 }}
@@ -37,7 +49,7 @@ export const LandingPage: React.FC = React.memo(() => {
                 programDetailsState={programDetailsState}
             />
             <EventPreview
-                orgUnitsState={orgUnitsState}
+                programOrgUnits={programOrgUnits}
                 selectedProgramId={selectedProgramId}
                 selectedOrgUnitId={selectedOrgUnitId}
                 onSelectOrgUnit={setSelectedOrgUnitId}

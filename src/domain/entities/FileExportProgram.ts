@@ -1,5 +1,5 @@
 import { Struct } from "$/domain/entities/generic/Struct";
-import { Id } from "$/domain/entities/Ref";
+import { Id, NamedRef } from "$/domain/entities/Ref";
 
 export type ProgramType = "WITH_REGISTRATION" | "WITHOUT_REGISTRATION" | "UNKNOWN";
 
@@ -7,6 +7,7 @@ export type FileCapableProgramAttrs = {
     id: Id;
     name: string;
     programType: ProgramType;
+    organisationUnits: NamedRef[];
 };
 
 export type FilePropertySourceType = "dataElement" | "trackedEntityAttribute";

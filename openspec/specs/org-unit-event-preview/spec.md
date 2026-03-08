@@ -4,11 +4,19 @@
 TBD - created by archiving change add-file-aware-program-picker-preview. Update Purpose after archive.
 ## Requirements
 ### Requirement: Event preview requires program and org unit context
-The system SHALL enable event preview only after both a program and an organisation unit are selected.
+The system SHALL enable org unit selection only for org units that are registered against the currently selected program. Selection uses the `OrganisationUnitTree` component from `@dhis2/ui` instead of a flat select element.
 
 #### Scenario: Preview blocked until required selections exist
 - **WHEN** either program or organisation unit is missing
 - **THEN** the preview area remains disabled and explains required selections
+
+#### Scenario: Org unit tree shows only program org units
+- **WHEN** a program is selected
+- **THEN** the org unit picker renders `OrganisationUnitTree` with only the program's registered org units as selectable roots
+
+#### Scenario: Selecting an org unit from the tree triggers preview
+- **WHEN** the user selects an org unit from the tree
+- **THEN** `onSelectOrgUnit` is called with the selected org unit id and event preview is triggered
 
 ### Requirement: Preview returns limited sample events
 The system MUST fetch and display a bounded sample of events for the selected program and organisation unit.
