@@ -1,7 +1,7 @@
 import React from "react";
 import { HashRouter, Route, Switch } from "react-router-dom";
 import { ExamplePage } from "./example/ExamplePage";
-import { LandingPage } from "./landing/LandingPage";
+import { WizardPage } from "./wizard/WizardPage";
 
 export function Router() {
     return (
@@ -11,9 +11,10 @@ export function Router() {
                     path="/for/:name?"
                     render={({ match }) => <ExamplePage name={match.params.name ?? "Stranger"} />}
                 />
+                <Route path="/wizard" render={() => <WizardPage />} />
 
                 {/* Default route */}
-                <Route render={() => <LandingPage />} />
+                <Route render={() => <WizardPage />} />
             </Switch>
         </HashRouter>
     );
