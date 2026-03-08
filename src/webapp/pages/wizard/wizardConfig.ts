@@ -45,7 +45,7 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
 ];
 
 const TEMPLATE_TOKEN =
-    /\{(?:orgUnitName|enrollmentDate|attribute:[A-Za-z0-9_-]+|dataElement:[A-Za-z0-9_-]+)\}/g;
+    /\{(?:orgUnitName|orgUnitId|enrollmentDate|attribute:[A-Za-z0-9_-]+|dataElement:[A-Za-z0-9_-]+)\}/g;
 
 function isDateRangeOrdered(dateFrom: string, dateTo: string): boolean {
     if (!dateFrom || !dateTo) {

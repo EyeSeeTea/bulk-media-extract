@@ -67,6 +67,7 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
                         organisationUnits: [],
                     }),
                     properties: [],
+                    propertyGroups: [],
                 })
             ),
         getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>

@@ -10,7 +10,7 @@ export type FileCapableProgramAttrs = {
     organisationUnits: NamedRef[];
 };
 
-export type FilePropertySourceType = "dataElement" | "trackedEntityAttribute";
+export type FilePropertySourceType = "dataElement" | "trackedEntityAttribute" | "metadata";
 
 export type ProgramFilePropertyAttrs = {
     id: Id;
@@ -21,9 +21,17 @@ export type ProgramFilePropertyAttrs = {
     sourceContainerName?: string;
 };
 
+export type ProgramFilePropertyGroupAttrs = {
+    id: string;
+    name: string;
+    sourceType: FilePropertySourceType;
+    properties: ProgramFileProperty[];
+};
+
 export type ProgramFilePropertiesAttrs = {
     program: FileCapableProgram;
     properties: ProgramFileProperty[];
+    propertyGroups: ProgramFilePropertyGroup[];
 };
 
 export type ProgramEventPreviewAttrs = {
@@ -31,12 +39,16 @@ export type ProgramEventPreviewAttrs = {
     eventDate: string | null;
     orgUnitId: Id;
     orgUnitName?: string;
+    dataValues: Record<string, string>;
     fileValues: Record<string, string>;
+    resolvedTemplate?: string;
 };
 
 export class FileCapableProgram extends Struct<FileCapableProgramAttrs>() {}
 
 export class ProgramFileProperty extends Struct<ProgramFilePropertyAttrs>() {}
+
+export class ProgramFilePropertyGroup extends Struct<ProgramFilePropertyGroupAttrs>() {}
 
 export class ProgramFileProperties extends Struct<ProgramFilePropertiesAttrs>() {}
 

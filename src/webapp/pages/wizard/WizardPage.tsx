@@ -1,6 +1,10 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import {
+    ProgramEventPreview,
+    ProgramFileProperties,
+    ProgramFileProperty,
+} from "$/domain/entities/FileExportProgram";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { useFileCapablePrograms } from "$/webapp/pages/landing/hooks/useFileCapablePrograms";
@@ -14,6 +18,11 @@ import {
     getStepValidationError,
     WIZARD_STEPS,
 } from "$/webapp/pages/wizard/wizardConfig";
+import {
+    getPropertyTemplateToken,
+    insertAtCursor,
+    resolveTemplateForEvent,
+} from "$/webapp/pages/wizard/templateBuilder";
 import "./WizardPage.css";
 
 type ProgramOption = {
@@ -21,6 +30,13 @@ type ProgramOption = {
     name: string;
     organisationUnits: Array<{ id: string; name: string; path?: string }>;
 };
+
+type PreviewRow = {
+    event: ProgramEventPreview;
+    resolvedTemplate: string;
+};
+
+const FILE_VALUE_TYPES = new Set(["FILE_RESOURCE", "IMAGE"]);
 
 export const WizardPage: React.FC = React.memo(() => {
     return (
@@ -74,13 +90,30 @@ const WizardContent: React.FC = () => {
     }, [selectedProgram, setScope, state.selectedOrgUnitId]);
 
     const previewEnabled = currentStepId === "preview";
+    const isTemplateValid = !state.templateError;
+    const canPreviewFromTemplateStep = Boolean(
+        currentStepId === "template" &&
+            state.selectedProgramId &&
+            state.selectedOrgUnitId &&
+            isTemplateValid
+    );
     const { state: previewState, reload: reloadPreview } = useProgramEventsPreview(
         state.selectedProgramId,
         state.selectedOrgUnitId,
         {
-            enabled: previewEnabled,
+            enabled: previewEnabled || canPreviewFromTemplateStep,
         }
     );
+
+    React.useEffect(() => {
+        if (!canPreviewFromTemplateStep) {
+            return;
+        }
+        if (previewState.status !== "idle") {
+            return;
+        }
+        void reloadPreview();
+    }, [canPreviewFromTemplateStep, previewState.status, reloadPreview]);
 
     const filteredPreview = React.useMemo(() => {
         if (previewState.status !== "success") {
@@ -104,6 +137,41 @@ const WizardContent: React.FC = () => {
             return true;
         });
     }, [previewState, state.dateFrom, state.dateTo]);
+
+    const previewRows = React.useMemo<PreviewRow[]>(() => {
+        if (!isTemplateValid) {
+            return [];
+        }
+
+        return filteredPreview.slice(0, 10).map(event => ({
+            event,
+            resolvedTemplate: resolveTemplateForEvent(state.template, event),
+        }));
+    }, [filteredPreview, isTemplateValid, state.template]);
+
+    const templateInputRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+    const onInsertTemplateToken = React.useCallback(
+        (token: string) => {
+            const input = templateInputRef.current;
+            const result = insertAtCursor(
+                state.template,
+                token,
+                input?.selectionStart,
+                input?.selectionEnd
+            );
+            setTemplate(result.value);
+
+            window.setTimeout(() => {
+                if (!templateInputRef.current) {
+                    return;
+                }
+                templateInputRef.current.focus();
+                templateInputRef.current.setSelectionRange(result.caret, result.caret);
+            }, 0);
+        },
+        [setTemplate, state.template]
+    );
 
     const onRunExecution = React.useCallback(async () => {
         setExecution({ status: "running", progress: 0 });
@@ -167,12 +235,16 @@ const WizardContent: React.FC = () => {
                 return (
                     <TemplateStep
                         selectedProgram={selectedProgram}
+                        programDetailsState={programDetailsState}
                         selectedOrgUnitId={state.selectedOrgUnitId}
                         orgUnitSelectionMode={state.orgUnitSelectionMode}
                         dateFrom={state.dateFrom}
                         dateTo={state.dateTo}
                         value={state.template}
                         templateError={state.templateError}
+                        templateInputRef={templateInputRef}
+                        quickPreviewState={previewState}
+                        quickPreviewRows={previewRows}
                         onSelectOrgUnit={selectedOrgUnitId => setScope({ selectedOrgUnitId })}
                         onSelectionModeChange={orgUnitSelectionMode =>
                             setScope({ orgUnitSelectionMode })
@@ -180,6 +252,10 @@ const WizardContent: React.FC = () => {
                         onDateFromChange={dateFrom => setScope({ dateFrom })}
                         onDateToChange={dateTo => setScope({ dateTo })}
                         onTemplateChange={setTemplate}
+                        onInsertTemplateToken={onInsertTemplateToken}
+                        onRetryPreview={() => {
+                            void reloadPreview();
+                        }}
                     />
                 );
             case "storage":
@@ -208,6 +284,7 @@ const WizardContent: React.FC = () => {
                         dateTo={state.dateTo}
                         previewState={previewState}
                         filteredPreview={filteredPreview}
+                        previewRows={previewRows}
                         onRetry={() => {
                             void reloadPreview();
                         }}
@@ -306,7 +383,10 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
             return [];
         }
 
-        return programDetailsState.data.properties.filter(property => property.sourceType === "dataElement");
+        return programDetailsState.data.properties.filter(
+            property =>
+                property.sourceType === "dataElement" && FILE_VALUE_TYPES.has(property.valueType)
+        );
     }, [programDetailsState]);
 
     return (
@@ -378,33 +458,47 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
 
 type TemplateStepProps = {
     selectedProgram?: ProgramOption;
+    programDetailsState: AsyncData<ProgramFileProperties>;
     selectedOrgUnitId: string;
     orgUnitSelectionMode: OrgUnitSelectionMode;
     dateFrom: string;
     dateTo: string;
     value: string;
     templateError?: string;
+    templateInputRef: React.RefObject<HTMLTextAreaElement | null>;
+    quickPreviewState: AsyncData<ProgramEventPreview[]>;
+    quickPreviewRows: PreviewRow[];
     onSelectOrgUnit: (orgUnitId: string) => void;
     onSelectionModeChange: (mode: OrgUnitSelectionMode) => void;
     onDateFromChange: (date: string) => void;
     onDateToChange: (date: string) => void;
     onTemplateChange: (template: string) => void;
+    onInsertTemplateToken: (token: string) => void;
+    onRetryPreview: () => void;
 };
 
 const TemplateStep: React.FC<TemplateStepProps> = ({
     selectedProgram,
+    programDetailsState,
     selectedOrgUnitId,
     orgUnitSelectionMode,
     dateFrom,
     dateTo,
     value,
     templateError,
+    templateInputRef,
+    quickPreviewState,
+    quickPreviewRows,
     onSelectOrgUnit,
     onSelectionModeChange,
     onDateFromChange,
     onDateToChange,
     onTemplateChange,
+    onInsertTemplateToken,
+    onRetryPreview,
 }) => {
+    const hasPreviewScope = Boolean(selectedProgram && selectedOrgUnitId);
+
     return (
         <div className="wizard-step-content" aria-label="wizard-step-template">
             <h3>{i18n.t("Template")}</h3>
@@ -477,18 +571,117 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                         "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
                     )}
                 </p>
-                <textarea
-                    data-testid="wizard-template-input"
-                    rows={5}
-                    value={value}
-                    onChange={event => onTemplateChange(event.target.value)}
-                />
+                <div className="template-builder-grid">
+                    <div className="template-editor-panel">
+                        <textarea
+                            ref={templateInputRef}
+                            data-testid="wizard-template-input"
+                            rows={5}
+                            value={value}
+                            onChange={event => onTemplateChange(event.target.value)}
+                        />
+                    </div>
+                    <div className="template-properties-panel">
+                        <h5>{i18n.t("Available properties")}</h5>
+                        {!selectedProgram ? (
+                            <NoticeBox title={i18n.t("Program required")}>
+                                {i18n.t("Select a program to inspect available properties.")}
+                            </NoticeBox>
+                        ) : programDetailsState.status === "loading" ? (
+                            <CircularLoader small />
+                        ) : programDetailsState.status === "error" ? (
+                            <NoticeBox error title={i18n.t("Could not inspect program properties")}>
+                                {programDetailsState.error}
+                            </NoticeBox>
+                        ) : programDetailsState.status === "success" &&
+                          programDetailsState.data.propertyGroups.length > 0 ? (
+                            <div className="template-property-groups" data-testid="wizard-property-groups">
+                                {programDetailsState.data.propertyGroups.map(group => (
+                                    <div key={group.id} className="template-property-group">
+                                        <p className="template-property-group-title">{group.name}</p>
+                                        <ul>
+                                            {group.properties.map(property => {
+                                                const token = getPropertyTemplateToken(property);
+                                                return (
+                                                    <li key={`${group.id}:${property.sourceType}:${property.id}`}>
+                                                        <button
+                                                            type="button"
+                                                            className="template-token-button"
+                                                            data-testid={`wizard-token-${property.id}`}
+                                                            onClick={() => onInsertTemplateToken(token)}
+                                                        >
+                                                            {property.name}
+                                                            <span>{token}</span>
+                                                        </button>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <NoticeBox title={i18n.t("No properties found")}>
+                                {i18n.t("No resolvable properties were found for this program.")}
+                            </NoticeBox>
+                        )}
+                    </div>
+                </div>
                 {templateError ? (
                     <NoticeBox warning title={i18n.t("Template error")}>{templateError}</NoticeBox>
                 ) : (
                     <NoticeBox title={i18n.t("Template ready")}>
                         {i18n.t("Template syntax looks valid.")}
                     </NoticeBox>
+                )}
+            </section>
+
+            <section className="wizard-section">
+                <h4>{i18n.t("Quick preview (first 10 events)")}</h4>
+                {!hasPreviewScope ? (
+                    <NoticeBox title={i18n.t("Preview requirements")}>
+                        {i18n.t("Select program and organisation unit to load quick preview.")}
+                    </NoticeBox>
+                ) : templateError ? (
+                    <NoticeBox warning title={i18n.t("Template error")}>
+                        {i18n.t("Fix template errors to render quick preview rows.")}
+                    </NoticeBox>
+                ) : quickPreviewState.status === "loading" ? (
+                    <CircularLoader small />
+                ) : quickPreviewState.status === "error" ? (
+                    <div>
+                        <NoticeBox error title={i18n.t("Could not load quick preview")}>
+                            {quickPreviewState.error}
+                        </NoticeBox>
+                        <div className="actions-row">
+                            <Button small onClick={onRetryPreview}>
+                                {i18n.t("Retry preview")}
+                            </Button>
+                        </div>
+                    </div>
+                ) : quickPreviewRows.length === 0 ? (
+                    <NoticeBox title={i18n.t("No events found")}>
+                        {i18n.t("No quick preview events match the current selection.")}
+                    </NoticeBox>
+                ) : (
+                    <table className="preview-table" data-testid="wizard-quick-preview-table">
+                        <thead>
+                            <tr>
+                                <th>{i18n.t("Event")}</th>
+                                <th>{i18n.t("Date")}</th>
+                                <th>{i18n.t("Resolved template")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {quickPreviewRows.map(row => (
+                                <tr key={row.event.id}>
+                                    <td>{row.event.id}</td>
+                                    <td>{row.event.eventDate ?? "-"}</td>
+                                    <td>{row.resolvedTemplate || "-"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 )}
             </section>
         </div>
@@ -581,6 +774,7 @@ type PreviewStepProps = {
     dateTo: string;
     previewState: AsyncData<ProgramEventPreview[]>;
     filteredPreview: ProgramEventPreview[];
+    previewRows: PreviewRow[];
     onRetry: () => void;
 };
 
@@ -592,6 +786,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
     dateTo,
     previewState,
     filteredPreview,
+    previewRows,
     onRetry,
 }) => {
     const hasScope = Boolean(selectedProgramId && selectedOrgUnitId);
@@ -638,21 +833,35 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
                                 <th>{i18n.t("Date")}</th>
                                 <th>{i18n.t("Org unit")}</th>
                                 <th>{i18n.t("File values")}</th>
+                                <th>{i18n.t("Resolved template")}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredPreview.map(event => (
-                                <tr key={event.id}>
-                                    <td>{event.id}</td>
-                                    <td>{event.eventDate ?? "-"}</td>
-                                    <td>{event.orgUnitName ?? event.orgUnitId}</td>
+                            {previewRows.map(row => (
+                                <tr key={row.event.id}>
+                                    <td>{row.event.id}</td>
+                                    <td>{row.event.eventDate ?? "-"}</td>
+                                    <td>{row.event.orgUnitName ?? row.event.orgUnitId}</td>
                                     <td>
-                                        {Object.entries(event.fileValues)
+                                        {Object.entries(row.event.fileValues)
                                             .map(([key, value]) => `${key}: ${value}`)
                                             .join(", ") || "-"}
                                     </td>
+                                    <td>{row.resolvedTemplate || "-"}</td>
                                 </tr>
                             ))}
+                            {filteredPreview.length > previewRows.length ? (
+                                <tr key="limited-preview-info">
+                                    <td colSpan={5}>
+                                        {i18n.t(
+                                            "Showing first {{count}} events for quick preview.",
+                                            {
+                                                count: String(previewRows.length),
+                                            }
+                                        )}
+                                    </td>
+                                </tr>
+                            ) : null}
                         </tbody>
                     </table>
                 )

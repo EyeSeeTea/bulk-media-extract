@@ -4,7 +4,8 @@
 TBD - created by archiving change implement-wizard. Update Purpose after archive.
 ## Requirements
 ### Requirement: Wizard provides ordered export setup steps
-The system SHALL provide a multi-step wizard that enforces a fixed order: scope selection, storage configuration, path/file naming template setup, preview, and execution.
+The system SHALL provide a multi-step wizard that enforces a fixed order: scope selection, storage configuration, path/file naming template setup, preview, and execution.  
+The path/file naming template setup step MUST expose a visual template builder with side-by-side editor and property browser.
 
 #### Scenario: Wizard starts at first step
 - **WHEN** the user opens the export wizard

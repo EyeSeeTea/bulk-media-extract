@@ -31,6 +31,7 @@ describe("GetProgramFilePropertiesUseCase", () => {
                                     sourceType: "dataElement",
                                 }),
                             ],
+                            propertyGroups: [],
                         })
                     ),
             }),
@@ -55,6 +56,7 @@ describe("GetProgramFilePropertiesUseCase", () => {
                                 organisationUnits: [],
                             }),
                             properties: [],
+                            propertyGroups: [],
                         })
                     ),
             }),
@@ -89,6 +91,7 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
                         organisationUnits: [],
                     }),
                     properties: [],
+                    propertyGroups: [],
                 })
             ),
         getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>

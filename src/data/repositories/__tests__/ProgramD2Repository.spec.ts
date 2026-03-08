@@ -126,9 +126,56 @@ describe("ProgramD2Repository", () => {
         expect(details.program.organisationUnits).toEqual([
             { id: "ou-a", name: "Org Unit A", path: "/root/ou-a" },
         ]);
-        expect(details.properties).toHaveLength(2);
-        expect(details.properties[0]?.sourceType).toBe("dataElement");
-        expect(details.properties[1]?.sourceType).toBe("trackedEntityAttribute");
+        expect(details.properties.map(property => property.id)).toEqual(
+            expect.arrayContaining(["orgUnitName", "enrollmentDate", "de-a", "attr-a"])
+        );
+        expect(details.propertyGroups.map(group => group.id)).toEqual([
+            "metadata",
+            "trackedEntityAttributes",
+            "stage-a",
+        ]);
+    });
+
+    it("groups event program properties under event data elements", async () => {
+        const api = buildApi({
+            "/programs": {
+                programs: [
+                    {
+                        id: "program-e",
+                        displayName: "Program E",
+                        programType: "WITHOUT_REGISTRATION",
+                        organisationUnits: [],
+                        programStages: [
+                            {
+                                id: "stage-e",
+                                displayName: "Event Stage",
+                                programStageDataElements: [
+                                    {
+                                        dataElement: {
+                                            id: "de-e",
+                                            displayName: "Event Attachment",
+                                            valueType: "FILE_RESOURCE",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        programTrackedEntityAttributes: [],
+                    },
+                ],
+            },
+        });
+
+        const repository = new ProgramD2Repository(api);
+        const details = await repository.getProgramFileProperties("program-e").toPromise();
+
+        expect(details.propertyGroups.map(group => group.id)).toEqual([
+            "metadata",
+            "eventDataElements",
+        ]);
+        expect(details.propertyGroups[1]?.properties.map(property => property.id)).toEqual([
+            "de-e",
+        ]);
     });
 
     it("maps event preview data", async () => {
@@ -139,6 +186,7 @@ describe("ProgramD2Repository", () => {
                         event: "event-1",
                         eventDate: "2026-01-20",
                         orgUnit: "ou-1",
+                        orgUnitName: "Org Unit One",
                         dataValues: [{ dataElement: "de-a", value: "file-1" }],
                     },
                 ],
@@ -152,6 +200,8 @@ describe("ProgramD2Repository", () => {
             .toPromise();
 
         expect(events).toHaveLength(1);
+        expect(events[0]?.orgUnitName).toBe("Org Unit One");
+        expect(events[0]?.dataValues["de-a"]).toBe("file-1");
         expect(events[0]?.fileValues["de-a"]).toBe("file-1");
     });
 

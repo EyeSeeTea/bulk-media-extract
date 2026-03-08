@@ -32,6 +32,7 @@ describe("ProgramDetails", () => {
                     valueType: "FILE_RESOURCE",
                 }),
             ],
+            propertyGroups: [],
         });
 
         const view = render(

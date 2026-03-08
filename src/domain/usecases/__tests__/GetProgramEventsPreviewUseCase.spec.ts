@@ -19,6 +19,7 @@ describe("GetProgramEventsPreviewUseCase", () => {
                             id: "event-1",
                             eventDate: "2026-01-01",
                             orgUnitId: "ou-1",
+                            dataValues: { "de-1": "file-1" },
                             fileValues: { "de-1": "file-1" },
                         }),
                     ]),
@@ -69,6 +70,7 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
                         organisationUnits: [],
                     }),
                     properties: [],
+                    propertyGroups: [],
                 })
             ),
         getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>

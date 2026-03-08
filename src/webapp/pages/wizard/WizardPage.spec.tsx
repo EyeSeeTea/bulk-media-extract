@@ -86,6 +86,39 @@ describe("WizardPage", () => {
         });
     });
 
+    it("inserts selected property token into template at cursor", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(page.getByText("Next"));
+
+        const input = page.getByTestId("wizard-template-input") as HTMLTextAreaElement;
+        input.focus();
+        input.setSelectionRange(0, 0);
+        fireEvent.click(await page.findByTestId("wizard-token-orgUnitName"));
+
+        expect(input.value.startsWith("{orgUnitName}")).toBe(true);
+    });
+
+    it("blocks quick preview rendering when template is invalid", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/{unsupported}" },
+        });
+
+        expect(page.getAllByText("Template contains unsupported token syntax.").length).toBeGreaterThan(
+            0
+        );
+        expect(page.getByText("Fix template errors to render quick preview rows.")).toBeInTheDocument();
+        expect(page.queryByTestId("wizard-quick-preview-table")).not.toBeInTheDocument();
+    });
+
     it("allows clicking available step tabs to navigate", async () => {
         const page = getReactComponent(<WizardPage />);
 

@@ -3,6 +3,7 @@ import {
     FileCapableProgram,
     ProgramEventPreview,
     ProgramFileProperties,
+    ProgramFilePropertyGroup,
     ProgramFileProperty,
     ProgramType,
 } from "$/domain/entities/FileExportProgram";
@@ -18,9 +19,8 @@ export class ProgramD2Repository implements ProgramRepository {
     public getFileCapablePrograms(): FutureData<FileCapableProgram[]> {
         return this.getProgramMetadata().map(programs => {
             return programs
-                .map(program => this.buildProgramFileProperties(program))
-                .filter(details => details.properties.length > 0)
-                .map(details => details.program)
+                .filter(program => this.hasFileCapableProperty(program))
+                .map(program => this.buildProgram(program))
                 .sort((a, b) => a.name.localeCompare(b.name));
         });
     }
@@ -47,12 +47,12 @@ export class ProgramD2Repository implements ProgramRepository {
             page: "1",
             totalPages: "false",
             order: "eventDate:desc",
-            fields: "event,eventDate,occurredAt,orgUnit,dataValues[dataElement,value]",
+            fields: "event,eventDate,occurredAt,orgUnit,orgUnitName,dataValues[dataElement,value]",
         });
 
         return this.get<D2EventsResponse>(`/events?${query}`).map(response => {
             return (response.events ?? []).map(event => {
-                const fileValues = (event.dataValues ?? []).reduce<Record<string, string>>(
+                const dataValues = (event.dataValues ?? []).reduce<Record<string, string>>(
                     (acc, dataValue) => {
                         const value = dataValue.value ?? "";
                         if (value) {
@@ -67,7 +67,9 @@ export class ProgramD2Repository implements ProgramRepository {
                     id: event.event,
                     eventDate: event.eventDate ?? event.occurredAt ?? null,
                     orgUnitId: event.orgUnit,
-                    fileValues,
+                    orgUnitName: event.orgUnitName,
+                    dataValues,
+                    fileValues: dataValues,
                 });
             });
         });
@@ -114,12 +116,79 @@ export class ProgramD2Repository implements ProgramRepository {
     }
 
     private buildProgramFileProperties(program: D2Program): ProgramFileProperties {
-        const eventProperties: ProgramFileProperty[] = (program.programStages ?? []).flatMap(
-            stage => {
-                return (stage.programStageDataElements ?? [])
+        const programType = normalizeProgramType(program.programType);
+        const metadataProperties = buildMetadataProperties();
+        const eventPropertiesByStage = this.buildStageGroups(program);
+        const eventProperties = eventPropertiesByStage.flatMap(group => group.properties);
+        const teiProperties = this.buildTrackedEntityProperties(program);
+        const propertyGroups: ProgramFilePropertyGroup[] =
+            programType === "WITH_REGISTRATION"
+                ? [
+                      ...metadataProperties.groups,
+                      ...teiProperties.groups,
+                      ...eventPropertiesByStage,
+                  ]
+                : [...metadataProperties.groups, ...this.buildEventProgramGroup(eventProperties)];
+
+        const properties = propertyGroups.flatMap(group => group.properties);
+
+        return new ProgramFileProperties({
+            program: this.buildProgram(program),
+            properties,
+            propertyGroups,
+        });
+    }
+
+    private buildProgram(program: D2Program): FileCapableProgram {
+        return new FileCapableProgram({
+            id: program.id,
+            name: program.displayName,
+            programType: normalizeProgramType(program.programType),
+            organisationUnits: (program.organisationUnits ?? []).map(orgUnit => ({
+                id: orgUnit.id,
+                name: orgUnit.displayName,
+                path: orgUnit.path,
+            })),
+        });
+    }
+
+    private buildTrackedEntityProperties(program: D2Program): {
+        groups: ProgramFilePropertyGroup[];
+        properties: ProgramFileProperty[];
+    } {
+        const properties: ProgramFileProperty[] = (program.programTrackedEntityAttributes ?? [])
+            .map(entry => entry.trackedEntityAttribute)
+            .filter(isDefined)
+            .map(attribute => {
+                return new ProgramFileProperty({
+                    id: attribute.id,
+                    name: attribute.displayName,
+                    valueType: attribute.valueType,
+                    sourceType: "trackedEntityAttribute",
+                });
+            });
+
+        const groups =
+            properties.length > 0
+                ? [
+                      new ProgramFilePropertyGroup({
+                          id: "trackedEntityAttributes",
+                          name: "Tracked entity attributes",
+                          sourceType: "trackedEntityAttribute",
+                          properties,
+                      }),
+                  ]
+                : [];
+
+        return { groups, properties };
+    }
+
+    private buildStageGroups(program: D2Program): ProgramFilePropertyGroup[] {
+        return (program.programStages ?? [])
+            .map(stage => {
+                const properties: ProgramFileProperty[] = (stage.programStageDataElements ?? [])
                     .map(psde => psde.dataElement)
                     .filter(isDefined)
-                    .filter(dataElement => FILE_VALUE_TYPES.has(dataElement.valueType))
                     .map(dataElement => {
                         return new ProgramFileProperty({
                             id: dataElement.id,
@@ -130,37 +199,48 @@ export class ProgramD2Repository implements ProgramRepository {
                             sourceContainerName: stage.displayName,
                         });
                     });
-            }
+
+                return new ProgramFilePropertyGroup({
+                    id: stage.id,
+                    name: stage.displayName,
+                    sourceType: "dataElement",
+                    properties,
+                });
+            })
+            .filter(group => group.properties.length > 0);
+    }
+
+    private buildEventProgramGroup(properties: ProgramFileProperty[]): ProgramFilePropertyGroup[] {
+        if (properties.length === 0) {
+            return [];
+        }
+
+        return [
+            new ProgramFilePropertyGroup({
+                id: "eventDataElements",
+                name: "Event data elements",
+                sourceType: "dataElement",
+                properties,
+            }),
+        ];
+    }
+
+    private hasFileCapableProperty(program: D2Program): boolean {
+        const hasFileStageDataElement = (program.programStages ?? []).some(stage =>
+            (stage.programStageDataElements ?? [])
+                .map(psde => psde.dataElement)
+                .filter(isDefined)
+                .some(dataElement => FILE_VALUE_TYPES.has(dataElement.valueType))
         );
 
-        const teiProperties: ProgramFileProperty[] = (program.programTrackedEntityAttributes ?? [])
+        if (hasFileStageDataElement) {
+            return true;
+        }
+
+        return (program.programTrackedEntityAttributes ?? [])
             .map(entry => entry.trackedEntityAttribute)
             .filter(isDefined)
-            .filter(attribute => FILE_VALUE_TYPES.has(attribute.valueType))
-            .map(attribute => {
-                return new ProgramFileProperty({
-                    id: attribute.id,
-                    name: attribute.displayName,
-                    valueType: attribute.valueType,
-                    sourceType: "trackedEntityAttribute",
-                });
-            });
-
-        const properties = [...eventProperties, ...teiProperties];
-
-        return new ProgramFileProperties({
-            program: new FileCapableProgram({
-                id: program.id,
-                name: program.displayName,
-                programType: normalizeProgramType(program.programType),
-                organisationUnits: (program.organisationUnits ?? []).map(orgUnit => ({
-                    id: orgUnit.id,
-                    name: orgUnit.displayName,
-                    path: orgUnit.path,
-                })),
-            }),
-            properties,
-        });
+            .some(attribute => FILE_VALUE_TYPES.has(attribute.valueType));
     }
 
     private get<Data>(path: string): FutureData<Data> {
@@ -189,6 +269,44 @@ function normalizeProgramType(programType?: string): ProgramType {
 
 function isDefined<T>(value: T | undefined | null): value is T {
     return value !== undefined && value !== null;
+}
+
+function buildMetadataProperties(): {
+    groups: ProgramFilePropertyGroup[];
+    properties: ProgramFileProperty[];
+} {
+    const properties = [
+        new ProgramFileProperty({
+            id: "orgUnitName",
+            name: "Organisation unit name",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+        new ProgramFileProperty({
+            id: "orgUnitId",
+            name: "Organisation unit id",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+        new ProgramFileProperty({
+            id: "enrollmentDate",
+            name: "Enrollment/event date",
+            valueType: "DATE",
+            sourceType: "metadata",
+        }),
+    ];
+
+    return {
+        properties,
+        groups: [
+            new ProgramFilePropertyGroup({
+                id: "metadata",
+                name: "Metadata",
+                sourceType: "metadata",
+                properties,
+            }),
+        ],
+    };
 }
 
 type D2ProgramsResponse = {
@@ -230,6 +348,7 @@ type D2EventsResponse = {
         eventDate?: string;
         occurredAt?: string;
         orgUnit: string;
+        orgUnitName?: string;
         dataValues?: Array<{
             dataElement: string;
             value?: string;

@@ -24,6 +24,7 @@ function buildState(overrides: Partial<WizardState>): WizardState {
 describe("wizardConfig", () => {
     it("validates template token syntax", () => {
         expect(validateTemplate("/{orgUnitName}/{enrollmentDate}")).toBeUndefined();
+        expect(validateTemplate("/{orgUnitId}/{dataElement:de-file}")).toBeUndefined();
         expect(validateTemplate("/{unsupported}")).toBe("Template contains unsupported token syntax.");
         expect(validateTemplate("/{orgUnitName")).toBe("Template has unbalanced braces.");
     });

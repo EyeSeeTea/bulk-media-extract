@@ -2,6 +2,7 @@ import { Future } from "$/domain/entities/generic/Future";
 import {
     FileCapableProgram,
     ProgramEventPreview,
+    ProgramFilePropertyGroup,
     ProgramFileProperties,
     ProgramFileProperty,
 } from "$/domain/entities/FileExportProgram";
@@ -28,6 +29,24 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
         program: PROGRAM_A,
         properties: [
             new ProgramFileProperty({
+                id: "orgUnitName",
+                name: "Organisation unit name",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            }),
+            new ProgramFileProperty({
+                id: "enrollmentDate",
+                name: "Enrollment/event date",
+                valueType: "DATE",
+                sourceType: "metadata",
+            }),
+            new ProgramFileProperty({
+                id: "orgUnitId",
+                name: "Organisation unit id",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            }),
+            new ProgramFileProperty({
                 id: "de-file",
                 name: "Visit Form",
                 valueType: "FILE_RESOURCE",
@@ -42,10 +61,83 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceType: "trackedEntityAttribute",
             }),
         ],
+        propertyGroups: [
+            new ProgramFilePropertyGroup({
+                id: "metadata",
+                name: "Metadata",
+                sourceType: "metadata",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "orgUnitName",
+                        name: "Organisation unit name",
+                        valueType: "TEXT",
+                        sourceType: "metadata",
+                    }),
+                    new ProgramFileProperty({
+                        id: "enrollmentDate",
+                        name: "Enrollment/event date",
+                        valueType: "DATE",
+                        sourceType: "metadata",
+                    }),
+                    new ProgramFileProperty({
+                        id: "orgUnitId",
+                        name: "Organisation unit id",
+                        valueType: "TEXT",
+                        sourceType: "metadata",
+                    }),
+                ],
+            }),
+            new ProgramFilePropertyGroup({
+                id: "trackedEntityAttributes",
+                name: "Tracked entity attributes",
+                sourceType: "trackedEntityAttribute",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "attr-image",
+                        name: "Patient Photo",
+                        valueType: "IMAGE",
+                        sourceType: "trackedEntityAttribute",
+                    }),
+                ],
+            }),
+            new ProgramFilePropertyGroup({
+                id: "stage-1",
+                name: "Main Stage",
+                sourceType: "dataElement",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "de-file",
+                        name: "Visit Form",
+                        valueType: "FILE_RESOURCE",
+                        sourceType: "dataElement",
+                        sourceContainerId: "stage-1",
+                        sourceContainerName: "Main Stage",
+                    }),
+                ],
+            }),
+        ],
     }),
     "prog-b": new ProgramFileProperties({
         program: PROGRAM_B,
         properties: [
+            new ProgramFileProperty({
+                id: "orgUnitName",
+                name: "Organisation unit name",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            }),
+            new ProgramFileProperty({
+                id: "enrollmentDate",
+                name: "Enrollment/event date",
+                valueType: "DATE",
+                sourceType: "metadata",
+            }),
+            new ProgramFileProperty({
+                id: "orgUnitId",
+                name: "Organisation unit id",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            }),
             new ProgramFileProperty({
                 id: "de-file-b",
                 name: "Attachment",
@@ -53,6 +145,48 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceType: "dataElement",
                 sourceContainerId: "stage-2",
                 sourceContainerName: "Outreach Stage",
+            }),
+        ],
+        propertyGroups: [
+            new ProgramFilePropertyGroup({
+                id: "metadata",
+                name: "Metadata",
+                sourceType: "metadata",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "orgUnitName",
+                        name: "Organisation unit name",
+                        valueType: "TEXT",
+                        sourceType: "metadata",
+                    }),
+                    new ProgramFileProperty({
+                        id: "enrollmentDate",
+                        name: "Enrollment/event date",
+                        valueType: "DATE",
+                        sourceType: "metadata",
+                    }),
+                    new ProgramFileProperty({
+                        id: "orgUnitId",
+                        name: "Organisation unit id",
+                        valueType: "TEXT",
+                        sourceType: "metadata",
+                    }),
+                ],
+            }),
+            new ProgramFilePropertyGroup({
+                id: "eventDataElements",
+                name: "Event data elements",
+                sourceType: "dataElement",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "de-file-b",
+                        name: "Attachment",
+                        valueType: "FILE_RESOURCE",
+                        sourceType: "dataElement",
+                        sourceContainerId: "stage-2",
+                        sourceContainerName: "Outreach Stage",
+                    }),
+                ],
             }),
         ],
     }),
@@ -65,6 +199,7 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             eventDate: "2026-01-10",
             orgUnitId: "ou-a",
             orgUnitName: "Central Clinic",
+            dataValues: { "de-file": "file-123" },
             fileValues: { "de-file": "file-123" },
         }),
     ],
@@ -74,6 +209,7 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             eventDate: "2026-01-12",
             orgUnitId: "ou-b",
             orgUnitName: "North District",
+            dataValues: { "de-file-b": "file-555" },
             fileValues: { "de-file-b": "file-555" },
         }),
     ],
