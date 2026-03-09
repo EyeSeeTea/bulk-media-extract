@@ -43,6 +43,7 @@ export type ProgramEventPreviewAttrs = {
     attributeValues: Record<string, string>;
     fileValues: Record<string, string>;
     fileNames: Record<string, string>;
+    fileSizes?: Record<string, number>;
     resolvedTemplate?: string;
 };
 

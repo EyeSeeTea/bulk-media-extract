@@ -1,26 +1,4 @@
-# org-unit-event-preview Specification
-
-## Purpose
-TBD - created by archiving change add-file-aware-program-picker-preview. Update Purpose after archive.
-## Requirements
-### Requirement: Event preview requires program and org unit context
-The system SHALL display a hierarchical `OrganisationUnitTree` for org unit selection in event preview, with selectable nodes restricted to the org units registered for the currently selected program.
-
-#### Scenario: Org unit tree renders with program-specific roots
-- **WHEN** a program is selected and its org units are available
-- **THEN** the tree is rooted at the program's org units, preventing selection of unrelated org units
-
-#### Scenario: Preview blocked until required selections exist
-- **WHEN** either program or organisation unit is missing
-- **THEN** the preview area remains disabled and explains required selections
-
-#### Scenario: Preview query succeeds
-- **WHEN** the user selects an organisation unit from the tree after selecting a program
-- **THEN** the system displays a limited sample of matching events with core context fields
-
-#### Scenario: No events match selection
-- **WHEN** preview query returns no matching events
-- **THEN** the UI displays a no-results state for the current selection
+## MODIFIED Requirements
 
 ### Requirement: Preview returns limited sample events
 The system MUST fetch and display the full set of exportable files for the selected scope and selected file mappings once a valid template is provided, rather than a bounded sample of events.  
@@ -41,12 +19,7 @@ The system SHALL include file-related values for each previewed export row when 
 - **WHEN** a previewed export row corresponds to an available file
 - **THEN** the preview output includes the file-related value reference together with its filename and available size metadata
 
-### Requirement: Preview failures are recoverable
-The system SHALL provide clear error feedback and retry for failed preview requests.
-
-#### Scenario: Preview request fails
-- **WHEN** the event preview request returns an error
-- **THEN** the UI shows an error state with retry option while preserving current selections
+## ADDED Requirements
 
 ### Requirement: Preview reports export totals and duplicate target paths
 The system MUST compute aggregate preview statistics and identify duplicate resolved target filepaths before export can continue.  

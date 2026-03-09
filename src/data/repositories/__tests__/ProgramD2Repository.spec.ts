@@ -617,6 +617,68 @@ describe("ProgramD2Repository", () => {
         expect(api.__calls.some((path: string) => path.includes("filter=de-a%3Agt%3A1"))).toBe(true);
     });
 
+    it("stops loading all pages when subsequent pages repeat the same events", async () => {
+        const api = buildApi(
+            {
+                "/programs": {
+                    programs: [
+                        {
+                            id: "program-a",
+                            displayName: "Program A",
+                            programType: "WITH_REGISTRATION",
+                            organisationUnits: [],
+                            programStages: [
+                                {
+                                    id: "stage-a",
+                                    displayName: "Stage A",
+                                    programStageDataElements: [
+                                        {
+                                            dataElement: {
+                                                id: "de-a",
+                                                displayName: "Attachment",
+                                                valueType: "FILE_RESOURCE",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                            programTrackedEntityAttributes: [],
+                        },
+                    ],
+                },
+                "/tracker/events": {
+                    total: 500,
+                    instances: [
+                        {
+                            event: "event-1",
+                            trackedEntity: "tei-1",
+                            occurredAt: "2026-01-20",
+                            orgUnit: "ou-1",
+                            dataValues: [{ dataElement: "de-a", value: "file-1" }],
+                        },
+                    ],
+                },
+                "/tracker/trackedEntities": {
+                    instances: [{ trackedEntity: "tei-1", attributes: [] }],
+                },
+                "/fileResources/file-1": {
+                    id: "file-1",
+                    originalName: "original-file-name.pdf",
+                },
+            },
+            undefined,
+            true
+        );
+        const repository = new ProgramD2Repository(api);
+
+        const events = await repository
+            .getProgramEventsPreview("program-a", "ou-1", "selected", "stage-a", "de-a", 1, true)
+            .toPromise();
+
+        expect(events.events).toHaveLength(2);
+        expect(api.__calls.filter((path: string) => path.startsWith("/tracker/events?"))).toHaveLength(2);
+    });
+
     it("propagates API errors", async () => {
         const api = buildApi({}, new Error("api-down"));
         const repository = new ProgramD2Repository(api);

@@ -92,7 +92,8 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
             _orgUnitMode: "selected" | "descendants",
             _programStageId: string | undefined,
             _fileDataElementId: string | undefined,
-            _pageSize: number
+            _pageSize: number,
+            _loadAllPages?: boolean
         ) =>
             Future.success<Error, ProgramEventsPreviewResult>(
                 new ProgramEventsPreviewResult({ events: [] })

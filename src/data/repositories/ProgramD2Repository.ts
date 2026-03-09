@@ -17,6 +17,7 @@ const FILE_VALUE_TYPES = new Set(["FILE_RESOURCE", "IMAGE"]);
 
 export class ProgramD2Repository implements ProgramRepository {
     private fileResourceNameCache = new Map<string, string>();
+    private fileResourceSizeCache = new Map<string, number>();
     private orgUnitNameCache = new Map<string, string>();
 
     constructor(private api: D2Api) {}
@@ -46,41 +47,78 @@ export class ProgramD2Repository implements ProgramRepository {
         orgUnitMode: "selected" | "descendants",
         programStageId: string | undefined,
         fileDataElementId: string | undefined,
-        pageSize: number
+        pageSize: number,
+        loadAllPages = false
     ): FutureData<ProgramEventsPreviewResult> {
         return Future.block(async $ => {
-            const [programs, response] = await $(
-                Future.join2(
-                    this.getProgramMetadata(programId),
-                    apiToFuture<D2TrackerEventsResponse>(
-                        this.api.tracker.events.get({
-                            program: programId,
-                            programStage: programStageId,
-                            filter: toTrackerDataElementGreaterThanOneFilter(fileDataElementId),
-                            orgUnit: orgUnitId,
-                            ouMode: toTrackerOrgUnitMode(orgUnitMode),
-                            pageSize,
-                            page: 1,
-                            totalPages: false,
-                            order: "occurredAt:desc",
-                            fields: {
-                                event: true,
-                                trackedEntity: true,
-                                occurredAt: true,
-                                scheduledAt: true,
-                                orgUnit: true,
-                                orgUnitName: true,
-                                dataValues: {
-                                    dataElement: true,
-                                    value: true,
-                                },
+            const getEventsPage = (page: number): FutureData<D2TrackerEventsResponse> =>
+                apiToFuture<D2TrackerEventsResponse>(
+                    this.api.tracker.events.get({
+                        program: programId,
+                        programStage: programStageId,
+                        filter: toTrackerDataElementGreaterThanOneFilter(fileDataElementId),
+                        orgUnit: orgUnitId,
+                        ouMode: toTrackerOrgUnitMode(orgUnitMode),
+                        pageSize,
+                        page,
+                        totalPages: false,
+                        order: "occurredAt:desc",
+                        fields: {
+                            event: true,
+                            trackedEntity: true,
+                            occurredAt: true,
+                            scheduledAt: true,
+                            orgUnit: true,
+                            orgUnitName: true,
+                            dataValues: {
+                                dataElement: true,
+                                value: true,
                             },
-                        })
-                    )
-                )
+                        },
+                    })
+                );
+
+            const [programs, firstResponse] = await $(
+                Future.join2(this.getProgramMetadata(programId), getEventsPage(1))
             );
             const program = programs[0];
-            const events = response.instances ?? response.events ?? [];
+            const responses = [firstResponse];
+            if (loadAllPages) {
+                const total = firstResponse.total ?? firstResponse.pager?.total;
+                const seenEventIds = new Set(
+                    (firstResponse.instances ?? firstResponse.events ?? []).map(event => event.event)
+                );
+                let lastPageEvents = firstResponse.instances ?? firstResponse.events ?? [];
+                let accumulatedCount = lastPageEvents.length;
+                let nextPage = 2;
+                let guard = 0;
+
+                while (guard < 100) {
+                    const reachedKnownTotal = total !== undefined && accumulatedCount >= total;
+                    if (reachedKnownTotal || lastPageEvents.length < pageSize) {
+                        break;
+                    }
+
+                    const nextResponse = await $(getEventsPage(nextPage));
+                    const nextPageEvents = nextResponse.instances ?? nextResponse.events ?? [];
+                    if (nextPageEvents.length === 0) {
+                        break;
+                    }
+
+                    const hasNewEvent = nextPageEvents.some(event => !seenEventIds.has(event.event));
+                    responses.push(nextResponse);
+                    nextPageEvents.forEach(event => seenEventIds.add(event.event));
+                    accumulatedCount += nextPageEvents.length;
+                    lastPageEvents = nextPageEvents;
+                    nextPage += 1;
+                    guard += 1;
+
+                    if (!hasNewEvent) {
+                        break;
+                    }
+                }
+            }
+            const events = responses.flatMap(response => response.instances ?? response.events ?? []);
             const fileDataElementIds = new Set(
                 (program?.programStages ?? []).flatMap(stage => {
                     return (stage.programStageDataElements ?? [])
@@ -102,30 +140,40 @@ export class ProgramD2Repository implements ProgramRepository {
             );
 
             const fileResources = await $(
-                Future.parallel<Error, { id: string; fileName?: string }>(
+                Future.parallel<Error, { id: string; fileName?: string; fileSize?: number }>(
                     fileResourceIds.map(fileResourceId => {
                         const cachedFileName = this.fileResourceNameCache.get(fileResourceId);
-                        if (cachedFileName) {
+                        const cachedFileSize = this.fileResourceSizeCache.get(fileResourceId);
+                        if (cachedFileName || cachedFileSize !== undefined) {
                             return Future.success({
                                 id: fileResourceId,
                                 fileName: cachedFileName,
+                                fileSize: cachedFileSize,
                             });
                         }
 
                         return this.get<D2FileResource>(
-                            `/fileResources/${fileResourceId}?fields=id,name,originalName`
+                            `/fileResources/${fileResourceId}?fields=id,name,originalName,contentLength`
                         )
-                            .map<{ id: string; fileName?: string }>(fileResource => {
+                            .map<{ id: string; fileName?: string; fileSize?: number }>(fileResource => {
                                 const fileName =
                                     fileResource.originalName ?? fileResource.name ?? fileResourceId;
+                                const fileSize = normalizeContentLength(fileResource.contentLength);
                                 this.fileResourceNameCache.set(fileResourceId, fileName);
+                                if (fileSize !== undefined) {
+                                    this.fileResourceSizeCache.set(fileResourceId, fileSize);
+                                }
                                 return {
                                     id: fileResourceId,
                                     fileName,
+                                    fileSize,
                                 };
                             })
                             .flatMapError(() => {
-                                return Future.success<Error, { id: string; fileName?: string }>({
+                                return Future.success<
+                                    Error,
+                                    { id: string; fileName?: string; fileSize?: number }
+                                >({
                                     id: fileResourceId,
                                 });
                             });
@@ -140,6 +188,13 @@ export class ProgramD2Repository implements ProgramRepository {
                         Boolean(fileResource.fileName)
                     )
                     .map(fileResource => [fileResource.id, fileResource.fileName])
+            );
+            const fileSizeById = Object.fromEntries(
+                fileResources
+                    .filter((fileResource): fileResource is { id: string; fileSize: number } =>
+                        fileResource.fileSize !== undefined
+                    )
+                    .map(fileResource => [fileResource.id, fileResource.fileSize])
             );
             const trackedEntityIds = Array.from(
                 new Set(
@@ -243,6 +298,16 @@ export class ProgramD2Repository implements ProgramRepository {
                             return fileName ? [[dataElementId, fileName] as const] : [];
                         })
                 );
+                const fileSizes = Object.fromEntries(
+                    Object.entries(dataValues)
+                        .filter(([dataElementId]) => fileDataElementIds.has(dataElementId))
+                        .flatMap(([dataElementId, fileResourceId]) => {
+                            const fileSize = fileSizeById[fileResourceId];
+                            return fileSize === undefined
+                                ? []
+                                : [[dataElementId, fileSize] as const];
+                        })
+                );
 
                 return new ProgramEventPreview({
                     id: event.event,
@@ -256,13 +321,14 @@ export class ProgramD2Repository implements ProgramRepository {
                         : {},
                     fileValues: dataValues,
                     fileNames,
+                    fileSizes,
                 });
             });
 
             return new ProgramEventsPreviewResult({
                 events: previewEvents,
-                total: response.total ?? response.pager?.total,
-                pageCount: response.pageCount ?? response.pager?.pageCount,
+                total: firstResponse.total ?? firstResponse.pager?.total,
+                pageCount: firstResponse.pageCount ?? firstResponse.pager?.pageCount,
             });
         });
     }
@@ -613,4 +679,18 @@ type D2FileResource = {
     id: string;
     name?: string;
     originalName?: string;
+    contentLength?: number | string;
 };
+
+function normalizeContentLength(value?: number | string): number | undefined {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === "string" && value.trim()) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    return undefined;
+}

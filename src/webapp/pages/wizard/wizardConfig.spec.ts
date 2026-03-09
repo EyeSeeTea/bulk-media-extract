@@ -3,6 +3,7 @@ import {
     getStepValidationError,
     initialWizardState,
     validateTemplate,
+    WIZARD_STEPS,
     WizardState,
 } from "$/webapp/pages/wizard/wizardConfig";
 
@@ -22,6 +23,16 @@ function buildState(overrides: Partial<WizardState>): WizardState {
 }
 
 describe("wizardConfig", () => {
+    it("orders preview before storage", () => {
+        expect(WIZARD_STEPS.map(step => step.id)).toEqual([
+            "program",
+            "template",
+            "preview",
+            "storage",
+            "execution",
+        ]);
+    });
+
     it("validates template token syntax", () => {
         expect(validateTemplate("/{orgUnitName}/{enrollmentDate}")).toBeUndefined();
         expect(validateTemplate("/{orgUnitId}/{dataElement:de-file}")).toBeUndefined();

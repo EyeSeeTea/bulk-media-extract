@@ -1,7 +1,6 @@
 import { FutureData } from "$/data/api-futures";
 import {
     FileCapableProgram,
-    ProgramEventPreview,
     ProgramEventsPreviewResult,
     ProgramFileProperties,
 } from "$/domain/entities/FileExportProgram";
@@ -16,7 +15,8 @@ export interface ProgramRepository {
         orgUnitMode: "selected" | "descendants",
         programStageId: string | undefined,
         fileDataElementId: string | undefined,
-        pageSize: number
+        pageSize: number,
+        loadAllPages?: boolean
     ): FutureData<ProgramEventsPreviewResult>;
     getOrganisationUnits(): FutureData<NamedRef[]>;
 }

@@ -56,6 +56,14 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceContainerName: "Main Stage",
             }),
             new ProgramFileProperty({
+                id: "de-file-b",
+                name: "Consent Form",
+                valueType: "FILE_RESOURCE",
+                sourceType: "dataElement",
+                sourceContainerId: "stage-1",
+                sourceContainerName: "Main Stage",
+            }),
+            new ProgramFileProperty({
                 id: "attr-image",
                 name: "Patient Photo",
                 valueType: "IMAGE",
@@ -117,6 +125,14 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                     new ProgramFileProperty({
                         id: "de-file",
                         name: "Visit Form",
+                        valueType: "FILE_RESOURCE",
+                        sourceType: "dataElement",
+                        sourceContainerId: "stage-1",
+                        sourceContainerName: "Main Stage",
+                    }),
+                    new ProgramFileProperty({
+                        id: "de-file-b",
+                        name: "Consent Form",
                         valueType: "FILE_RESOURCE",
                         sourceType: "dataElement",
                         sourceContainerId: "stage-1",
@@ -223,10 +239,11 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             eventDate: "2026-01-10",
             orgUnitId: "ou-a",
             orgUnitName: "Central Clinic",
-            dataValues: { "de-file": "file-123" },
+            dataValues: { "de-file": "file-123", "de-file-b": "file-456" },
             attributeValues: { "attr-image": "patient-photo.jpg" },
-            fileValues: { "de-file": "file-123" },
-            fileNames: { "de-file": "visit-form.pdf" },
+            fileValues: { "de-file": "file-123", "de-file-b": "file-456" },
+            fileNames: { "de-file": "visit-form.pdf", "de-file-b": "consent-form.pdf" },
+            fileSizes: { "de-file": 1024, "de-file-b": 2048 },
         }),
     ],
     "prog-b:ou-b": [
@@ -239,6 +256,7 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             attributeValues: {},
             fileValues: { "de-file-b": "file-555" },
             fileNames: { "de-file-b": "outreach-attachment.jpg" },
+            fileSizes: { "de-file-b": 2048 },
         }),
     ],
 };
@@ -267,7 +285,8 @@ export class ProgramTestRepository implements ProgramRepository {
         _orgUnitMode: "selected" | "descendants",
         _programStageId: string | undefined,
         _fileDataElementId: string | undefined,
-        pageSize: number
+        pageSize: number,
+        _loadAllPages = false
     ): FutureData<ProgramEventsPreviewResult> {
         const key = `${programId}:${orgUnitId}`;
         const rows = PREVIEW_BY_KEY[key] ?? [];

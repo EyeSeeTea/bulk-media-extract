@@ -1,4 +1,4 @@
-export type WizardStepId = "program" | "template" | "storage" | "preview" | "execution";
+export type WizardStepId = "program" | "template" | "preview" | "storage" | "execution";
 
 export type WizardStorageConfig = {
     url: string;
@@ -41,8 +41,8 @@ export type WizardStepDefinition = {
 export const WIZARD_STEPS: WizardStepDefinition[] = [
     { id: "program", title: "Program" },
     { id: "template", title: "Template" },
-    { id: "storage", title: "Storage" },
     { id: "preview", title: "Preview" },
+    { id: "storage", title: "Storage" },
     { id: "execution", title: "Execution" },
 ];
 

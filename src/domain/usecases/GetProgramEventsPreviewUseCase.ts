@@ -13,7 +13,8 @@ export class GetProgramEventsPreviewUseCase {
         orgUnitMode: "selected" | "descendants" = "selected",
         programStageId?: string,
         fileDataElementId?: string,
-        pageSize = DEFAULT_PREVIEW_PAGE_SIZE
+        pageSize = DEFAULT_PREVIEW_PAGE_SIZE,
+        loadAllPages = false
     ): FutureData<ProgramEventsPreviewResult> {
         return this.options.programRepository.getProgramEventsPreview(
             programId,
@@ -21,7 +22,8 @@ export class GetProgramEventsPreviewUseCase {
             orgUnitMode,
             programStageId,
             fileDataElementId,
-            pageSize
+            pageSize,
+            loadAllPages
         );
     }
 }
