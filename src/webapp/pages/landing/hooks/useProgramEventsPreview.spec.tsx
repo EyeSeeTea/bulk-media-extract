@@ -18,7 +18,7 @@ const context = {
 
 describe("useProgramEventsPreview", () => {
     it("returns idle when program or org unit is missing", async () => {
-        const { result } = renderHook(() => useProgramEventsPreview("prog-a", ""), {
+        const { result } = renderHook(() => useProgramEventsPreview("prog-a", "", "selected"), {
             wrapper: ({ children }) => (
                 <AppContext.Provider value={context}>{children}</AppContext.Provider>
             ),
@@ -30,7 +30,7 @@ describe("useProgramEventsPreview", () => {
     });
 
     it("loads event preview for selected program and org unit", async () => {
-        const { result } = renderHook(() => useProgramEventsPreview("prog-a", "ou-a"), {
+        const { result } = renderHook(() => useProgramEventsPreview("prog-a", "ou-a", "descendants"), {
             wrapper: ({ children }) => (
                 <AppContext.Provider value={context}>{children}</AppContext.Provider>
             ),
@@ -44,8 +44,9 @@ describe("useProgramEventsPreview", () => {
             throw new Error("Expected success state");
         }
 
-        expect(result.current.state.data).toEqual(
+        expect(result.current.state.data.events).toEqual(
             expect.arrayContaining([expect.objectContaining({ id: "evt-1" })])
         );
+        expect(result.current.state.data.total).toBe(1);
     });
 });

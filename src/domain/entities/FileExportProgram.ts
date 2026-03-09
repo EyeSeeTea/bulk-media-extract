@@ -40,8 +40,16 @@ export type ProgramEventPreviewAttrs = {
     orgUnitId: Id;
     orgUnitName?: string;
     dataValues: Record<string, string>;
+    attributeValues: Record<string, string>;
     fileValues: Record<string, string>;
+    fileNames: Record<string, string>;
     resolvedTemplate?: string;
+};
+
+export type ProgramEventsPreviewResultAttrs = {
+    events: ProgramEventPreview[];
+    total?: number;
+    pageCount?: number;
 };
 
 export class FileCapableProgram extends Struct<FileCapableProgramAttrs>() {}
@@ -53,3 +61,5 @@ export class ProgramFilePropertyGroup extends Struct<ProgramFilePropertyGroupAtt
 export class ProgramFileProperties extends Struct<ProgramFilePropertiesAttrs>() {}
 
 export class ProgramEventPreview extends Struct<ProgramEventPreviewAttrs>() {}
+
+export class ProgramEventsPreviewResult extends Struct<ProgramEventsPreviewResultAttrs>() {}

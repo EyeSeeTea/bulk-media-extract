@@ -2,8 +2,10 @@ import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
 import {
     ProgramEventPreview,
+    ProgramEventsPreviewResult,
     ProgramFileProperties,
     ProgramFileProperty,
+    ProgramFilePropertyGroup,
 } from "$/domain/entities/FileExportProgram";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
@@ -16,12 +18,14 @@ import {
     OrgUnitSelectionMode,
     WizardStepId,
     getStepValidationError,
+    validateTemplate,
     WIZARD_STEPS,
 } from "$/webapp/pages/wizard/wizardConfig";
 import {
     getPropertyTemplateToken,
     insertAtCursor,
     resolveTemplateForEvent,
+    buildFileMetadataPropertyGroup,
 } from "$/webapp/pages/wizard/templateBuilder";
 import "./WizardPage.css";
 
@@ -37,6 +41,38 @@ type PreviewRow = {
 };
 
 const FILE_VALUE_TYPES = new Set(["FILE_RESOURCE", "IMAGE"]);
+
+function getVisiblePropertyGroupsForFile(
+    propertyGroups: ProgramFileProperties["propertyGroups"],
+    selectedFileProperties: ProgramFileProperty[],
+    currentFileProperty: ProgramFileProperty
+) {
+    const fileMetadataGroup = buildFileMetadataPropertyGroup(selectedFileProperties);
+    const currentStageId = currentFileProperty.sourceContainerId;
+    const scopedGroups = propertyGroups
+        .map(group => {
+            if (group.sourceType !== "dataElement") {
+                return group;
+            }
+
+            const properties = group.properties.filter(property => {
+                if (!currentStageId) {
+                    return true;
+                }
+                return property.sourceContainerId === currentStageId;
+            });
+
+            return ProgramFilePropertyGroup.create({
+                id: group.id,
+                name: group.name,
+                sourceType: group.sourceType,
+                properties,
+            });
+        })
+        .filter(group => group.properties.length > 0);
+
+    return fileMetadataGroup ? [...scopedGroups, fileMetadataGroup] : scopedGroups;
+}
 
 export const WizardPage: React.FC = React.memo(() => {
     return (
@@ -55,7 +91,8 @@ const WizardContent: React.FC = () => {
         setScope,
         setStorage,
         validateStorageConnection,
-        setTemplate,
+        setSelectedFileDataValueIds,
+        setFileMapping,
         setStep,
         goBack,
         goNext,
@@ -71,6 +108,50 @@ const WizardContent: React.FC = () => {
         }
         return programsState.data.find(program => program.id === state.selectedProgramId);
     }, [programsState, state.selectedProgramId]);
+
+    const selectableFileDataElements = React.useMemo(() => {
+        if (programDetailsState.status !== "success") {
+            return [];
+        }
+
+        return programDetailsState.data.properties.filter(
+            property =>
+                property.sourceType === "dataElement" && FILE_VALUE_TYPES.has(property.valueType)
+        );
+    }, [programDetailsState]);
+
+    const selectedFileDataElements = React.useMemo(() => {
+        const selectedIdSet = new Set(state.selectedFileDataValueIds);
+        return selectableFileDataElements.filter(property => selectedIdSet.has(property.id));
+    }, [selectableFileDataElements, state.selectedFileDataValueIds]);
+
+    const selectedFilePropertyById = React.useMemo(() => {
+        return Object.fromEntries(
+            selectedFileDataElements.map(fileProperty => [fileProperty.id, fileProperty])
+        );
+    }, [selectedFileDataElements]);
+
+    const previewProgramStageId = selectedFileDataElements[0]?.sourceContainerId;
+    const previewFileDataElementId = selectedFileDataElements[0]?.id;
+
+    React.useEffect(() => {
+        if (programDetailsState.status !== "success") {
+            return;
+        }
+
+        const selectableIdSet = new Set(selectableFileDataElements.map(property => property.id));
+        const normalizedSelection = state.selectedFileDataValueIds.filter(fileKey =>
+            selectableIdSet.has(fileKey)
+        );
+        if (normalizedSelection.length !== state.selectedFileDataValueIds.length) {
+            setSelectedFileDataValueIds(normalizedSelection);
+        }
+    }, [
+        programDetailsState.status,
+        selectableFileDataElements,
+        setSelectedFileDataValueIds,
+        state.selectedFileDataValueIds,
+    ]);
 
     React.useEffect(() => {
         if (!selectedProgram) {
@@ -89,8 +170,12 @@ const WizardContent: React.FC = () => {
         }
     }, [selectedProgram, setScope, state.selectedOrgUnitId]);
 
+    const firstSelectedTemplate = state.selectedFileDataValueIds[0]
+        ? state.mappingByFileKey[state.selectedFileDataValueIds[0]] ?? ""
+        : "";
+    const activeTemplateForPreview = firstSelectedTemplate || state.template;
+    const isTemplateValid = !validateTemplate(activeTemplateForPreview);
     const previewEnabled = currentStepId === "preview";
-    const isTemplateValid = !state.templateError;
     const canPreviewFromTemplateStep = Boolean(
         currentStepId === "template" &&
             state.selectedProgramId &&
@@ -100,6 +185,9 @@ const WizardContent: React.FC = () => {
     const { state: previewState, reload: reloadPreview } = useProgramEventsPreview(
         state.selectedProgramId,
         state.selectedOrgUnitId,
+        state.orgUnitSelectionMode,
+        previewProgramStageId,
+        previewFileDataElementId,
         {
             enabled: previewEnabled || canPreviewFromTemplateStep,
         }
@@ -123,7 +211,11 @@ const WizardContent: React.FC = () => {
         const from = state.dateFrom ? new Date(state.dateFrom).getTime() : undefined;
         const to = state.dateTo ? new Date(state.dateTo).getTime() : undefined;
 
-        return previewState.data.filter(event => {
+        return previewState.data.events.filter(event => {
+            if (from === undefined && to === undefined) {
+                return true;
+            }
+
             if (!event.eventDate) {
                 return false;
             }
@@ -139,39 +231,46 @@ const WizardContent: React.FC = () => {
     }, [previewState, state.dateFrom, state.dateTo]);
 
     const previewRows = React.useMemo<PreviewRow[]>(() => {
-        if (!isTemplateValid) {
+        const template = activeTemplateForPreview;
+        if (!template || validateTemplate(template)) {
             return [];
         }
 
         return filteredPreview.slice(0, 10).map(event => ({
             event,
-            resolvedTemplate: resolveTemplateForEvent(state.template, event),
+            resolvedTemplate: resolveTemplateForEvent(
+                template,
+                event,
+                selectedFileDataElements[0]
+            ),
         }));
-    }, [filteredPreview, isTemplateValid, state.template]);
+    }, [activeTemplateForPreview, filteredPreview, selectedFileDataElements]);
 
-    const templateInputRef = React.useRef<HTMLTextAreaElement | null>(null);
+    const quickPreviewByFileKey = React.useMemo<Record<string, string[]>>(() => {
+        const previewSource = filteredPreview.slice(0, 10);
+        return state.selectedFileDataValueIds.reduce<Record<string, string[]>>((acc, fileKey) => {
+            const template = state.mappingByFileKey[fileKey] ?? "";
+            const selectedFileProperty = selectedFilePropertyById[fileKey];
+            if (!template || validateTemplate(template)) {
+                acc[fileKey] = [];
+                return acc;
+            }
 
-    const onInsertTemplateToken = React.useCallback(
-        (token: string) => {
-            const input = templateInputRef.current;
-            const result = insertAtCursor(
-                state.template,
-                token,
-                input?.selectionStart,
-                input?.selectionEnd
-            );
-            setTemplate(result.value);
+            acc[fileKey] = previewSource
+                .filter(event => {
+                    if (!selectedFileProperty) {
+                        return true;
+                    }
 
-            window.setTimeout(() => {
-                if (!templateInputRef.current) {
-                    return;
-                }
-                templateInputRef.current.focus();
-                templateInputRef.current.setSelectionRange(result.caret, result.caret);
-            }, 0);
-        },
-        [setTemplate, state.template]
-    );
+                    return Boolean(event.fileNames[selectedFileProperty.id]);
+                })
+                .map(event =>
+                    resolveTemplateForEvent(template, event, selectedFileProperty)
+                )
+                .filter(value => Boolean(value));
+            return acc;
+        }, {});
+    }, [filteredPreview, selectedFilePropertyById, state.mappingByFileKey, state.selectedFileDataValueIds]);
 
     const onRunExecution = React.useCallback(async () => {
         setExecution({ status: "running", progress: 0 });
@@ -228,7 +327,9 @@ const WizardContent: React.FC = () => {
                         programsState={programsState}
                         selectedProgramId={state.selectedProgramId}
                         programDetailsState={programDetailsState}
+                        selectedFileDataValueIds={state.selectedFileDataValueIds}
                         onSelectProgram={programId => setScope({ selectedProgramId: programId })}
+                        onSelectFileDataValueIds={setSelectedFileDataValueIds}
                     />
                 );
             case "template":
@@ -240,19 +341,17 @@ const WizardContent: React.FC = () => {
                         orgUnitSelectionMode={state.orgUnitSelectionMode}
                         dateFrom={state.dateFrom}
                         dateTo={state.dateTo}
-                        value={state.template}
-                        templateError={state.templateError}
-                        templateInputRef={templateInputRef}
+                        selectedFileDataElements={selectedFileDataElements}
+                        mappingByFileKey={state.mappingByFileKey}
                         quickPreviewState={previewState}
-                        quickPreviewRows={previewRows}
+                        quickPreviewByFileKey={quickPreviewByFileKey}
                         onSelectOrgUnit={selectedOrgUnitId => setScope({ selectedOrgUnitId })}
                         onSelectionModeChange={orgUnitSelectionMode =>
                             setScope({ orgUnitSelectionMode })
                         }
                         onDateFromChange={dateFrom => setScope({ dateFrom })}
                         onDateToChange={dateTo => setScope({ dateTo })}
-                        onTemplateChange={setTemplate}
-                        onInsertTemplateToken={onInsertTemplateToken}
+                        onMappingChange={setFileMapping}
                         onRetryPreview={() => {
                             void reloadPreview();
                         }}
@@ -369,14 +468,18 @@ type ProgramStepProps = {
     programsState: AsyncData<ProgramOption[]>;
     selectedProgramId: string;
     programDetailsState: AsyncData<{ properties: ProgramFileProperty[] }>;
+    selectedFileDataValueIds: string[];
     onSelectProgram: (programId: string) => void;
+    onSelectFileDataValueIds: (selectedFileDataValueIds: string[]) => void;
 };
 
 const ProgramStep: React.FC<ProgramStepProps> = ({
     programsState,
     selectedProgramId,
     programDetailsState,
+    selectedFileDataValueIds,
     onSelectProgram,
+    onSelectFileDataValueIds,
 }) => {
     const fileDataElements = React.useMemo(() => {
         if (programDetailsState.status !== "success") {
@@ -388,6 +491,20 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
                 property.sourceType === "dataElement" && FILE_VALUE_TYPES.has(property.valueType)
         );
     }, [programDetailsState]);
+
+    const selectedIdSet = React.useMemo(() => {
+        return new Set(selectedFileDataValueIds);
+    }, [selectedFileDataValueIds]);
+
+    const onToggleFileSelection = React.useCallback(
+        (fileDataElementId: string) => {
+            const nextSelection = selectedIdSet.has(fileDataElementId)
+                ? selectedFileDataValueIds.filter(selectedId => selectedId !== fileDataElementId)
+                : [...selectedFileDataValueIds, fileDataElementId];
+            onSelectFileDataValueIds(nextSelection);
+        },
+        [onSelectFileDataValueIds, selectedFileDataValueIds, selectedIdSet]
+    );
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-program">
@@ -417,10 +534,10 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
                 </>
             ) : null}
 
-            <h4>{i18n.t("File data elements preview")}</h4>
+            <h4>{i18n.t("File data values to sync")}</h4>
             {!selectedProgramId ? (
                 <NoticeBox title={i18n.t("Program required")}>
-                    {i18n.t("Select a program to inspect file data elements.")}
+                    {i18n.t("Select a program to inspect file data values.")}
                 </NoticeBox>
             ) : programDetailsState.status === "loading" ? (
                 <CircularLoader small />
@@ -436,6 +553,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
                 <table className="preview-table" data-testid="wizard-file-data-elements">
                     <thead>
                         <tr>
+                            <th>{i18n.t("Sync")}</th>
                             <th>{i18n.t("Data element")}</th>
                             <th>{i18n.t("Value type")}</th>
                             <th>{i18n.t("Program stage")}</th>
@@ -444,6 +562,14 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
                     <tbody>
                         {fileDataElements.map(item => (
                             <tr key={item.id}>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        data-testid={`wizard-file-select-${item.id}`}
+                                        checked={selectedIdSet.has(item.id)}
+                                        onChange={() => onToggleFileSelection(item.id)}
+                                    />
+                                </td>
                                 <td>{item.name}</td>
                                 <td>{item.valueType}</td>
                                 <td>{item.sourceContainerName ?? "-"}</td>
@@ -463,17 +589,15 @@ type TemplateStepProps = {
     orgUnitSelectionMode: OrgUnitSelectionMode;
     dateFrom: string;
     dateTo: string;
-    value: string;
-    templateError?: string;
-    templateInputRef: React.RefObject<HTMLTextAreaElement | null>;
-    quickPreviewState: AsyncData<ProgramEventPreview[]>;
-    quickPreviewRows: PreviewRow[];
+    selectedFileDataElements: ProgramFileProperty[];
+    mappingByFileKey: Record<string, string>;
+    quickPreviewState: AsyncData<ProgramEventsPreviewResult>;
+    quickPreviewByFileKey: Record<string, string[]>;
     onSelectOrgUnit: (orgUnitId: string) => void;
     onSelectionModeChange: (mode: OrgUnitSelectionMode) => void;
     onDateFromChange: (date: string) => void;
     onDateToChange: (date: string) => void;
-    onTemplateChange: (template: string) => void;
-    onInsertTemplateToken: (token: string) => void;
+    onMappingChange: (fileKey: string, mapping: string) => void;
     onRetryPreview: () => void;
 };
 
@@ -484,20 +608,47 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
     orgUnitSelectionMode,
     dateFrom,
     dateTo,
-    value,
-    templateError,
-    templateInputRef,
+    selectedFileDataElements,
+    mappingByFileKey,
     quickPreviewState,
-    quickPreviewRows,
+    quickPreviewByFileKey,
     onSelectOrgUnit,
     onSelectionModeChange,
     onDateFromChange,
     onDateToChange,
-    onTemplateChange,
-    onInsertTemplateToken,
+    onMappingChange,
     onRetryPreview,
 }) => {
     const hasPreviewScope = Boolean(selectedProgram && selectedOrgUnitId);
+    const selectedFileIdSet = React.useMemo(() => {
+        return new Set(selectedFileDataElements.map(property => property.id));
+    }, [selectedFileDataElements]);
+
+    const templateInputRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+    const onInsertTemplateToken = React.useCallback(
+        (fileKey: string, token: string) => {
+            const input = templateInputRefs.current[fileKey];
+            const currentValue = mappingByFileKey[fileKey] ?? "";
+            const result = insertAtCursor(
+                currentValue,
+                token,
+                input?.selectionStart,
+                input?.selectionEnd
+            );
+
+            onMappingChange(fileKey, result.value);
+            window.setTimeout(() => {
+                const nextInput = templateInputRefs.current[fileKey];
+                if (!nextInput) {
+                    return;
+                }
+                nextInput.focus();
+                nextInput.setSelectionRange(result.caret, result.caret);
+            }, 0);
+        },
+        [mappingByFileKey, onMappingChange]
+    );
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-template">
@@ -564,126 +715,152 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                 </div>
             </section>
 
-            <section className="wizard-section">
-                <h4>{i18n.t("Path and filename template")}</h4>
-                <p>
-                    {i18n.t(
-                        "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
-                    )}
-                </p>
-                <div className="template-builder-grid">
-                    <div className="template-editor-panel">
-                        <textarea
-                            ref={templateInputRef}
-                            data-testid="wizard-template-input"
-                            rows={5}
-                            value={value}
-                            onChange={event => onTemplateChange(event.target.value)}
-                        />
-                    </div>
-                    <div className="template-properties-panel">
-                        <h5>{i18n.t("Available properties")}</h5>
-                        {!selectedProgram ? (
-                            <NoticeBox title={i18n.t("Program required")}>
-                                {i18n.t("Select a program to inspect available properties.")}
-                            </NoticeBox>
-                        ) : programDetailsState.status === "loading" ? (
-                            <CircularLoader small />
-                        ) : programDetailsState.status === "error" ? (
-                            <NoticeBox error title={i18n.t("Could not inspect program properties")}>
-                                {programDetailsState.error}
-                            </NoticeBox>
-                        ) : programDetailsState.status === "success" &&
-                          programDetailsState.data.propertyGroups.length > 0 ? (
-                            <div className="template-property-groups" data-testid="wizard-property-groups">
-                                {programDetailsState.data.propertyGroups.map(group => (
-                                    <div key={group.id} className="template-property-group">
-                                        <p className="template-property-group-title">{group.name}</p>
-                                        <ul>
-                                            {group.properties.map(property => {
-                                                const token = getPropertyTemplateToken(property);
-                                                return (
-                                                    <li key={`${group.id}:${property.sourceType}:${property.id}`}>
-                                                        <button
-                                                            type="button"
-                                                            className="template-token-button"
-                                                            data-testid={`wizard-token-${property.id}`}
-                                                            onClick={() => onInsertTemplateToken(token)}
-                                                        >
-                                                            {property.name}
-                                                            <span>{token}</span>
-                                                        </button>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <NoticeBox title={i18n.t("No properties found")}>
-                                {i18n.t("No resolvable properties were found for this program.")}
-                            </NoticeBox>
-                        )}
-                    </div>
-                </div>
-                {templateError ? (
-                    <NoticeBox warning title={i18n.t("Template error")}>{templateError}</NoticeBox>
-                ) : (
-                    <NoticeBox title={i18n.t("Template ready")}>
-                        {i18n.t("Template syntax looks valid.")}
+            {selectedFileDataElements.length === 0 ? (
+                <section className="wizard-section">
+                    <NoticeBox title={i18n.t("No selected files")}>
+                        {i18n.t("Go back to step 1 and select at least one file data value to sync.")}
                     </NoticeBox>
-                )}
-            </section>
+                </section>
+            ) : (
+                selectedFileDataElements.map((fileProperty, fileIndex) => {
+                    const templateValue = mappingByFileKey[fileProperty.id] ?? "";
+                    const templateError = validateTemplate(templateValue);
+                    const resolvedTemplates = quickPreviewByFileKey[fileProperty.id] ?? [];
+                    const visiblePropertyGroups =
+                        programDetailsState.status === "success"
+                            ? getVisiblePropertyGroupsForFile(
+                                  programDetailsState.data.propertyGroups,
+                                  selectedFileDataElements,
+                                  fileProperty
+                              )
+                            : [];
 
-            <section className="wizard-section">
-                <h4>{i18n.t("Quick preview (first 10 events)")}</h4>
-                {!hasPreviewScope ? (
-                    <NoticeBox title={i18n.t("Preview requirements")}>
-                        {i18n.t("Select program and organisation unit to load quick preview.")}
-                    </NoticeBox>
-                ) : templateError ? (
-                    <NoticeBox warning title={i18n.t("Template error")}>
-                        {i18n.t("Fix template errors to render quick preview rows.")}
-                    </NoticeBox>
-                ) : quickPreviewState.status === "loading" ? (
-                    <CircularLoader small />
-                ) : quickPreviewState.status === "error" ? (
-                    <div>
-                        <NoticeBox error title={i18n.t("Could not load quick preview")}>
-                            {quickPreviewState.error}
-                        </NoticeBox>
-                        <div className="actions-row">
-                            <Button small onClick={onRetryPreview}>
-                                {i18n.t("Retry preview")}
-                            </Button>
-                        </div>
-                    </div>
-                ) : quickPreviewRows.length === 0 ? (
-                    <NoticeBox title={i18n.t("No events found")}>
-                        {i18n.t("No quick preview events match the current selection.")}
-                    </NoticeBox>
-                ) : (
-                    <table className="preview-table" data-testid="wizard-quick-preview-table">
-                        <thead>
-                            <tr>
-                                <th>{i18n.t("Event")}</th>
-                                <th>{i18n.t("Date")}</th>
-                                <th>{i18n.t("Resolved template")}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {quickPreviewRows.map(row => (
-                                <tr key={row.event.id}>
-                                    <td>{row.event.id}</td>
-                                    <td>{row.event.eventDate ?? "-"}</td>
-                                    <td>{row.resolvedTemplate || "-"}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </section>
+                    return (
+                        <section className="wizard-section" key={fileProperty.id}>
+                            <h4>
+                                {i18n.t("Path and filename template - {{name}}", {
+                                    name: fileProperty.name,
+                                })}
+                            </h4>
+                            <p>
+                                {i18n.t(
+                                    "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
+                                )}
+                            </p>
+                            <div className="template-builder-grid">
+                                <div className="template-editor-panel">
+                                    <textarea
+                                        ref={input => {
+                                            templateInputRefs.current[fileProperty.id] = input;
+                                        }}
+                                        data-testid={
+                                            fileIndex === 0
+                                                ? "wizard-template-input"
+                                                : `wizard-template-input-${fileProperty.id}`
+                                        }
+                                        rows={5}
+                                        value={templateValue}
+                                        onChange={event =>
+                                            onMappingChange(fileProperty.id, event.target.value)
+                                        }
+                                    />
+                                </div>
+                                <div className="template-properties-panel">
+                                    <h5>{i18n.t("Available properties")}</h5>
+                                    {!selectedProgram ? (
+                                        <NoticeBox title={i18n.t("Program required")}>
+                                            {i18n.t("Select a program to inspect available properties.")}
+                                        </NoticeBox>
+                                    ) : programDetailsState.status === "loading" ? (
+                                        <CircularLoader small />
+                                    ) : programDetailsState.status === "error" ? (
+                                        <NoticeBox error title={i18n.t("Could not inspect program properties")}>
+                                            {programDetailsState.error}
+                                        </NoticeBox>
+                                    ) : programDetailsState.status === "success" &&
+                                      visiblePropertyGroups.length > 0 ? (
+                                        <div className="template-property-groups" data-testid="wizard-property-groups">
+                                            {visiblePropertyGroups.map(group => (
+                                                <div key={group.id} className="template-property-group">
+                                                    <p className="template-property-group-title">{group.name}</p>
+                                                    <ul>
+                                                        {group.properties.map(property => {
+                                                            if (
+                                                                group.id !== "fileMetadata" &&
+                                                                property.sourceType === "dataElement" &&
+                                                                FILE_VALUE_TYPES.has(property.valueType) &&
+                                                                !selectedFileIdSet.has(property.id)
+                                                            ) {
+                                                                return null;
+                                                            }
+                                                            const token = getPropertyTemplateToken(property);
+                                                            return (
+                                                                <li key={`${group.id}:${property.sourceType}:${property.id}`}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="template-token-button"
+                                                                        data-testid={
+                                                                            fileIndex === 0
+                                                                                ? `wizard-token-${property.id}`
+                                                                                : `wizard-token-${fileProperty.id}-${property.id}`
+                                                                        }
+                                                                        onClick={() =>
+                                                                            onInsertTemplateToken(
+                                                                                fileProperty.id,
+                                                                                token
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {property.name}
+                                                                        <span>{token}</span>
+                                                                    </button>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <NoticeBox title={i18n.t("No properties found")}>
+                                            {i18n.t("No resolvable properties were found for this program.")}
+                                        </NoticeBox>
+                                    )}
+                                </div>
+                            </div>
+                            {templateError ? (
+                                <NoticeBox warning title={i18n.t("Template error")}>{templateError}</NoticeBox>
+                            ) : (
+                                <NoticeBox title={i18n.t("Template ready")}>
+                                    <p>{i18n.t("Template syntax looks valid.")}</p>
+                                    {!hasPreviewScope ? (
+                                        <p>{i18n.t("Select program and organisation unit to load resolved values.")}</p>
+                                    ) : quickPreviewState.status === "loading" ? (
+                                        <CircularLoader small />
+                                    ) : quickPreviewState.status === "error" ? (
+                                        <span>
+                                            {i18n.t("Could not load resolved values.")}{" "}
+                                            <Button small onClick={onRetryPreview}>
+                                                {i18n.t("Retry preview")}
+                                            </Button>
+                                        </span>
+                                    ) : resolvedTemplates.length === 0 ? (
+                                        <p>{i18n.t("No resolved template values found for current filters.")}</p>
+                                    ) : (
+                                        <ul data-testid={`wizard-resolved-template-list-${fileProperty.id}`}>
+                                            {resolvedTemplates.map((resolvedTemplate, index) => (
+                                                <li key={`${fileProperty.id}:${String(index)}`}>
+                                                    {resolvedTemplate}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </NoticeBox>
+                            )}
+                        </section>
+                    );
+                })
+            )}
         </div>
     );
 };
@@ -772,7 +949,7 @@ type PreviewStepProps = {
     orgUnitSelectionMode: OrgUnitSelectionMode;
     dateFrom: string;
     dateTo: string;
-    previewState: AsyncData<ProgramEventPreview[]>;
+    previewState: AsyncData<ProgramEventsPreviewResult>;
     filteredPreview: ProgramEventPreview[];
     previewRows: PreviewRow[];
     onRetry: () => void;
@@ -819,52 +996,60 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
                 </div>
             ) : null}
             {hasScope && previewState.status === "success" ? (
-                filteredPreview.length === 0 ? (
-                    <NoticeBox title={i18n.t("No events found")}>
-                        {dateFrom || dateTo
-                            ? i18n.t("No preview events match the selected date filters.")
-                            : i18n.t("No preview events match the current selection.")}
-                    </NoticeBox>
-                ) : (
-                    <table className="preview-table">
-                        <thead>
-                            <tr>
-                                <th>{i18n.t("Event")}</th>
-                                <th>{i18n.t("Date")}</th>
-                                <th>{i18n.t("Org unit")}</th>
-                                <th>{i18n.t("File values")}</th>
-                                <th>{i18n.t("Resolved template")}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {previewRows.map(row => (
-                                <tr key={row.event.id}>
-                                    <td>{row.event.id}</td>
-                                    <td>{row.event.eventDate ?? "-"}</td>
-                                    <td>{row.event.orgUnitName ?? row.event.orgUnitId}</td>
-                                    <td>
-                                        {Object.entries(row.event.fileValues)
-                                            .map(([key, value]) => `${key}: ${value}`)
-                                            .join(", ") || "-"}
-                                    </td>
-                                    <td>{row.resolvedTemplate || "-"}</td>
+                <>
+                    <p>
+                        {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
+                            total: String(previewState.data.total ?? filteredPreview.length),
+                            pages: String(previewState.data.pageCount ?? 1),
+                        })}
+                    </p>
+                    {filteredPreview.length === 0 ? (
+                        <NoticeBox title={i18n.t("No events found")}>
+                            {dateFrom || dateTo
+                                ? i18n.t("No preview events match the selected date filters.")
+                                : i18n.t("No preview events match the current selection.")}
+                        </NoticeBox>
+                    ) : (
+                        <table className="preview-table">
+                            <thead>
+                                <tr>
+                                    <th>{i18n.t("Event")}</th>
+                                    <th>{i18n.t("Date")}</th>
+                                    <th>{i18n.t("Org unit")}</th>
+                                    <th>{i18n.t("File values")}</th>
+                                    <th>{i18n.t("Resolved template")}</th>
                                 </tr>
-                            ))}
-                            {filteredPreview.length > previewRows.length ? (
-                                <tr key="limited-preview-info">
-                                    <td colSpan={5}>
-                                        {i18n.t(
-                                            "Showing first {{count}} events for quick preview.",
-                                            {
-                                                count: String(previewRows.length),
-                                            }
-                                        )}
-                                    </td>
-                                </tr>
-                            ) : null}
-                        </tbody>
-                    </table>
-                )
+                            </thead>
+                            <tbody>
+                                {previewRows.map(row => (
+                                    <tr key={row.event.id}>
+                                        <td>{row.event.id}</td>
+                                        <td>{row.event.eventDate ?? "-"}</td>
+                                        <td>{row.event.orgUnitName ?? row.event.orgUnitId}</td>
+                                        <td>
+                                            {Object.entries(row.event.fileValues)
+                                                .map(([key, value]) => `${key}: ${value}`)
+                                                .join(", ") || "-"}
+                                        </td>
+                                        <td>{row.resolvedTemplate || "-"}</td>
+                                    </tr>
+                                ))}
+                                {filteredPreview.length > previewRows.length ? (
+                                    <tr key="limited-preview-info">
+                                        <td colSpan={5}>
+                                            {i18n.t(
+                                                "Showing first {{count}} events for quick preview.",
+                                                {
+                                                    count: String(previewRows.length),
+                                                }
+                                            )}
+                                        </td>
+                                    </tr>
+                                ) : null}
+                            </tbody>
+                        </table>
+                    )}
+                </>
             ) : null}
         </div>
     );

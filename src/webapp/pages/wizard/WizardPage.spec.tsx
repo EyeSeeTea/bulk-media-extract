@@ -34,14 +34,19 @@ describe("WizardPage", () => {
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
 
         fireEvent.click(page.getByText("Next"));
         expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expect(page.getByText("Path and filename template - Visit Form")).toBeInTheDocument();
 
         fireEvent.click(page.getByTestId("org-unit-tree-picker"));
         fireEvent.change(page.getByTestId("wizard-org-unit-mode"), { target: { value: "selected" } });
         fireEvent.change(page.getByTestId("wizard-date-from"), { target: { value: "2026-01-01" } });
         fireEvent.change(page.getByTestId("wizard-date-to"), { target: { value: "2026-01-31" } });
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/{dataElement:de-file}.pdf" },
+        });
 
         fireEvent.click(page.getByText("Next"));
         expect(page.getByText("Step 3 of 5: Storage")).toBeInTheDocument();
@@ -59,11 +64,15 @@ describe("WizardPage", () => {
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
         fireEvent.click(page.getByText("Next"));
 
         fireEvent.click(page.getByTestId("org-unit-tree-picker"));
         fireEvent.change(page.getByTestId("wizard-date-from"), { target: { value: "2026-01-01" } });
         fireEvent.change(page.getByTestId("wizard-date-to"), { target: { value: "2026-01-31" } });
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/{dataElement:de-file}.pdf" },
+        });
         fireEvent.click(page.getByText("Next"));
 
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
@@ -91,6 +100,7 @@ describe("WizardPage", () => {
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
         fireEvent.click(page.getByText("Next"));
 
         const input = page.getByTestId("wizard-template-input") as HTMLTextAreaElement;
@@ -101,22 +111,35 @@ describe("WizardPage", () => {
         expect(input.value.startsWith("{orgUnitName}")).toBe(true);
     });
 
-    it("blocks quick preview rendering when template is invalid", async () => {
+    it("shows resolved template values inside template ready notice", async () => {
         const page = getReactComponent(<WizardPage />);
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
         fireEvent.click(page.getByText("Next"));
 
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
         fireEvent.change(page.getByTestId("wizard-template-input"), {
-            target: { value: "/{unsupported}" },
+            target: { value: "/{fileName}" },
         });
 
-        expect(page.getAllByText("Template contains unsupported token syntax.").length).toBeGreaterThan(
-            0
-        );
-        expect(page.getByText("Fix template errors to render quick preview rows.")).toBeInTheDocument();
+        expect(await page.findByText("Template ready")).toBeInTheDocument();
+        expect(await page.findByTestId("wizard-resolved-template-list-de-file")).toBeInTheDocument();
+        expect(page.getByText("/visit-form.pdf")).toBeInTheDocument();
         expect(page.queryByTestId("wizard-quick-preview-table")).not.toBeInTheDocument();
+    });
+
+    it("limits available data element properties to the selected file stage", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        expect(await page.findByTestId("wizard-token-orgUnitName")).toBeInTheDocument();
+        expect(page.queryByTestId("wizard-token-de-other-stage-text")).not.toBeInTheDocument();
     });
 
     it("allows clicking available step tabs to navigate", async () => {
@@ -124,7 +147,11 @@ describe("WizardPage", () => {
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
         fireEvent.click(page.getByText("Next"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/{dataElement:de-file}.pdf" },
+        });
 
         const storageTab = page.getByTestId("wizard-step-tab-storage");
         expect(storageTab).toBeEnabled();
@@ -133,5 +160,32 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByTestId("wizard-step-tab-program"));
         expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
+    });
+
+    it("blocks next when no file data value is selected", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Select at least one file data value to sync.")).toBeInTheDocument();
+        expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
+    });
+
+    it("blocks template step progression when any selected file has no mapping", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("A mapping is required for each selected file.")).toBeInTheDocument();
+        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
     });
 });

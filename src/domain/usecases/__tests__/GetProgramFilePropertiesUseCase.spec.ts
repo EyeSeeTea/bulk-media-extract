@@ -2,6 +2,7 @@ import { Future } from "$/domain/entities/generic/Future";
 import {
     FileCapableProgram,
     ProgramEventPreview,
+    ProgramEventsPreviewResult,
     ProgramFileProperties,
     ProgramFileProperty,
 } from "$/domain/entities/FileExportProgram";
@@ -94,8 +95,17 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
                     propertyGroups: [],
                 })
             ),
-        getProgramEventsPreview: (_programId: string, _orgUnitId: string, _pageSize: number) =>
-            Future.success<Error, ProgramEventPreview[]>([]),
+        getProgramEventsPreview: (
+            _programId: string,
+            _orgUnitId: string,
+            _orgUnitMode: "selected" | "descendants",
+            _programStageId: string | undefined,
+            _fileDataElementId: string | undefined,
+            _pageSize: number
+        ) =>
+            Future.success<Error, ProgramEventsPreviewResult>(
+                new ProgramEventsPreviewResult({ events: [] })
+            ),
         getOrganisationUnits: () => Future.success<Error, NamedRef[]>([]),
         ...overrides,
     };

@@ -25,6 +25,8 @@ type WizardContextValue = {
     setStorage: (values: Partial<WizardStorageConfig>) => void;
     validateStorageConnection: () => Promise<void>;
     setTemplate: (template: string) => void;
+    setSelectedFileDataValueIds: (selectedFileDataValueIds: string[]) => void;
+    setFileMapping: (fileKey: string, mapping: string) => void;
     setStep: (step: number) => void;
     goNext: () => boolean;
     goBack: () => void;
@@ -60,6 +62,8 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
                     : values.orgUnitSelectionMode ?? previous.orgUnitSelectionMode,
                 dateFrom: isProgramChange ? "" : values.dateFrom ?? previous.dateFrom,
                 dateTo: isProgramChange ? "" : values.dateTo ?? previous.dateTo,
+                selectedFileDataValueIds: isProgramChange ? [] : previous.selectedFileDataValueIds,
+                mappingByFileKey: isProgramChange ? {} : previous.mappingByFileKey,
                 execution: {
                     status: "idle",
                     progress: 0,
@@ -115,6 +119,37 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
         }));
     }, []);
 
+    const setSelectedFileDataValueIds = React.useCallback((selectedFileDataValueIds: string[]) => {
+        setState(previous => {
+            const normalizedIds = Array.from(new Set(selectedFileDataValueIds));
+            const normalizedIdSet = new Set(normalizedIds);
+            const mappingByFileKey = normalizedIds.reduce<Record<string, string>>((acc, fileKey) => {
+                acc[fileKey] = previous.mappingByFileKey[fileKey] ?? "";
+                return acc;
+            }, {});
+
+            return {
+                ...previous,
+                selectedFileDataValueIds: normalizedIds,
+                mappingByFileKey,
+                execution: normalizedIdSet.size === previous.selectedFileDataValueIds.length &&
+                    previous.selectedFileDataValueIds.every(fileKey => normalizedIdSet.has(fileKey))
+                    ? previous.execution
+                    : { status: "idle", progress: 0 },
+            };
+        });
+    }, []);
+
+    const setFileMapping = React.useCallback((fileKey: string, mapping: string) => {
+        setState(previous => ({
+            ...previous,
+            mappingByFileKey: {
+                ...previous.mappingByFileKey,
+                [fileKey]: mapping,
+            },
+        }));
+    }, []);
+
     const setStep = React.useCallback((step: number) => {
         setState(previous => ({
             ...previous,
@@ -160,6 +195,8 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
             setStorage,
             validateStorageConnection,
             setTemplate,
+            setSelectedFileDataValueIds,
+            setFileMapping,
             setStep,
             goNext,
             goBack,
@@ -175,6 +212,8 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
             setScope,
             setStorage,
             setTemplate,
+            setSelectedFileDataValueIds,
+            setFileMapping,
             setStep,
             state,
             validateStorageConnection,

@@ -28,6 +28,8 @@ export type WizardState = {
     connectionError?: string;
     template: string;
     templateError?: string;
+    selectedFileDataValueIds: string[];
+    mappingByFileKey: Record<string, string>;
     execution: WizardExecutionState;
 };
 
@@ -45,7 +47,7 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
 ];
 
 const TEMPLATE_TOKEN =
-    /\{(?:orgUnitName|orgUnitId|enrollmentDate|attribute:[A-Za-z0-9_-]+|dataElement:[A-Za-z0-9_-]+)\}/g;
+    /\{(?:orgUnitName|orgUnitId|enrollmentDate|fileName|fileDataElementId|fileDataElementName|fileProgramStageId|fileProgramStageName|fileValueType|attribute:[A-Za-z0-9_-]+|dataElement:[A-Za-z0-9_-]+)\}/g;
 
 function isDateRangeOrdered(dateFrom: string, dateTo: string): boolean {
     if (!dateFrom || !dateTo) {
@@ -80,20 +82,32 @@ export function getStepValidationError(state: WizardState, stepId: WizardStepId)
         if (!state.selectedProgramId) {
             return "Program is required.";
         }
+        if (state.selectedFileDataValueIds.length === 0) {
+            return "Select at least one file data value to sync.";
+        }
     }
 
     if (stepId === "template") {
-        const templateError = validateTemplate(state.template);
-        if (templateError) {
-            return templateError;
-        }
-
         if (!state.selectedOrgUnitId) {
             return "Organisation unit is required.";
         }
 
         if (!isDateRangeOrdered(state.dateFrom, state.dateTo)) {
             return "Date range is invalid. End date must be after start date.";
+        }
+
+        const hasMissingTemplateForSelectedFile = state.selectedFileDataValueIds.some(fileKey => {
+            return !state.mappingByFileKey[fileKey]?.trim();
+        });
+        if (hasMissingTemplateForSelectedFile) {
+            return "A mapping is required for each selected file.";
+        }
+
+        for (const fileKey of state.selectedFileDataValueIds) {
+            const templateError = validateTemplate(state.mappingByFileKey[fileKey] ?? "");
+            if (templateError) {
+                return `Template is invalid for selected file "${fileKey}": ${templateError}`;
+            }
         }
     }
 
@@ -129,6 +143,8 @@ export const initialWizardState: WizardState = {
     },
     connectionStatus: "idle",
     template: "/{orgUnitName}/{enrollmentDate}/{dataElement:file}.pdf",
+    selectedFileDataValueIds: [],
+    mappingByFileKey: {},
     execution: {
         status: "idle",
         progress: 0,

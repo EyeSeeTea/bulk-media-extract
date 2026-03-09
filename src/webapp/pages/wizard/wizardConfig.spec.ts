@@ -25,8 +25,33 @@ describe("wizardConfig", () => {
     it("validates template token syntax", () => {
         expect(validateTemplate("/{orgUnitName}/{enrollmentDate}")).toBeUndefined();
         expect(validateTemplate("/{orgUnitId}/{dataElement:de-file}")).toBeUndefined();
+        expect(validateTemplate("/{fileName}/{fileDataElementId}")).toBeUndefined();
         expect(validateTemplate("/{unsupported}")).toBe("Template contains unsupported token syntax.");
         expect(validateTemplate("/{orgUnitName")).toBe("Template has unbalanced braces.");
+    });
+
+    it("requires selecting at least one file data value in program step", () => {
+        const state = buildState({
+            selectedProgramId: "prog-a",
+            selectedFileDataValueIds: [],
+        });
+
+        expect(getStepValidationError(state, "program")).toBe(
+            "Select at least one file data value to sync."
+        );
+    });
+
+    it("requires mapping for each selected file in template step", () => {
+        const state = buildState({
+            selectedProgramId: "prog-a",
+            selectedOrgUnitId: "ou-a",
+            selectedFileDataValueIds: ["de-file"],
+            mappingByFileKey: {},
+        });
+
+        expect(getStepValidationError(state, "template")).toBe(
+            "A mapping is required for each selected file."
+        );
     });
 
     it("requires validated storage connection before proceeding", () => {

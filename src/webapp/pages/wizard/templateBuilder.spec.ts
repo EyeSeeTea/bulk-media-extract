@@ -1,5 +1,6 @@
 import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
 import {
+    buildFileMetadataPropertyGroup,
     getPropertyTemplateToken,
     insertAtCursor,
     resolveTemplateForEvent,
@@ -63,13 +64,51 @@ describe("templateBuilder", () => {
             orgUnitId: "ou-a",
             orgUnitName: "Central Clinic",
             dataValues: { "de-file": "file-123" },
+            attributeValues: { "attr-photo": "photo-001.jpg" },
             fileValues: { "de-file": "file-123" },
+            fileNames: { "de-file": "visit-form.pdf" },
+        });
+        const selectedFileProperty = ProgramFileProperty.create({
+            id: "de-file",
+            name: "Visit Form",
+            valueType: "FILE_RESOURCE",
+            sourceType: "dataElement",
+            sourceContainerId: "stage-1",
+            sourceContainerName: "Main Stage",
         });
 
         const value = resolveTemplateForEvent(
-            "/{orgUnitName}/{orgUnitId}/{enrollmentDate}/{dataElement:de-file}.pdf",
-            event
+            "/{orgUnitName}/{orgUnitId}/{enrollmentDate}/{dataElement:de-file}/{attribute:attr-photo}/{fileName}/{fileDataElementId}/{fileDataElementName}/{fileProgramStageId}/{fileProgramStageName}/{fileValueType}.pdf",
+            event,
+            selectedFileProperty
         );
-        expect(value).toBe("/Central Clinic/ou-a/2026-01-10/file-123.pdf");
+        expect(value).toBe(
+            "/Central Clinic/ou-a/2026-01-10/file-123/photo-001.jpg/visit-form.pdf/de-file/Visit Form/stage-1/Main Stage/FILE_RESOURCE.pdf"
+        );
+    });
+
+    it("builds file metadata property group from selected file data elements", () => {
+        const group = buildFileMetadataPropertyGroup([
+            ProgramFileProperty.create({
+                id: "de-file",
+                name: "Visit Form",
+                valueType: "FILE_RESOURCE",
+                sourceType: "dataElement",
+                sourceContainerId: "stage-1",
+                sourceContainerName: "Main Stage",
+            }),
+        ]);
+
+        expect(group?.id).toBe("fileMetadata");
+        expect(group?.properties.map(property => property.id)).toEqual(
+            expect.arrayContaining([
+                "fileName",
+                "fileDataElementId",
+                "fileDataElementName",
+                "fileProgramStageId",
+                "fileProgramStageName",
+                "fileValueType",
+            ])
+        );
     });
 });

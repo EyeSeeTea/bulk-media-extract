@@ -2,11 +2,13 @@ import { apiToFuture, FutureData } from "$/data/api-futures";
 import {
     FileCapableProgram,
     ProgramEventPreview,
+    ProgramEventsPreviewResult,
     ProgramFileProperties,
     ProgramFilePropertyGroup,
     ProgramFileProperty,
     ProgramType,
 } from "$/domain/entities/FileExportProgram";
+import { Future } from "$/domain/entities/generic/Future";
 import { NamedRef } from "$/domain/entities/Ref";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
 import { D2Api } from "$/types/d2-api";
@@ -14,6 +16,9 @@ import { D2Api } from "$/types/d2-api";
 const FILE_VALUE_TYPES = new Set(["FILE_RESOURCE", "IMAGE"]);
 
 export class ProgramD2Repository implements ProgramRepository {
+    private fileResourceNameCache = new Map<string, string>();
+    private orgUnitNameCache = new Map<string, string>();
+
     constructor(private api: D2Api) {}
 
     public getFileCapablePrograms(): FutureData<FileCapableProgram[]> {
@@ -38,20 +43,188 @@ export class ProgramD2Repository implements ProgramRepository {
     public getProgramEventsPreview(
         programId: string,
         orgUnitId: string,
+        orgUnitMode: "selected" | "descendants",
+        programStageId: string | undefined,
+        fileDataElementId: string | undefined,
         pageSize: number
-    ): FutureData<ProgramEventPreview[]> {
-        const query = toQueryString({
-            program: programId,
-            orgUnit: orgUnitId,
-            pageSize: String(pageSize),
-            page: "1",
-            totalPages: "false",
-            order: "eventDate:desc",
-            fields: "event,eventDate,occurredAt,orgUnit,orgUnitName,dataValues[dataElement,value]",
-        });
+    ): FutureData<ProgramEventsPreviewResult> {
+        return Future.block(async $ => {
+            const [programs, response] = await $(
+                Future.join2(
+                    this.getProgramMetadata(programId),
+                    apiToFuture<D2TrackerEventsResponse>(
+                        this.api.tracker.events.get({
+                            program: programId,
+                            programStage: programStageId,
+                            filter: toTrackerDataElementGreaterThanOneFilter(fileDataElementId),
+                            orgUnit: orgUnitId,
+                            ouMode: toTrackerOrgUnitMode(orgUnitMode),
+                            pageSize,
+                            page: 1,
+                            totalPages: false,
+                            order: "occurredAt:desc",
+                            fields: {
+                                event: true,
+                                trackedEntity: true,
+                                occurredAt: true,
+                                scheduledAt: true,
+                                orgUnit: true,
+                                orgUnitName: true,
+                                dataValues: {
+                                    dataElement: true,
+                                    value: true,
+                                },
+                            },
+                        })
+                    )
+                )
+            );
+            const program = programs[0];
+            const events = response.instances ?? response.events ?? [];
+            const fileDataElementIds = new Set(
+                (program?.programStages ?? []).flatMap(stage => {
+                    return (stage.programStageDataElements ?? [])
+                        .map(psde => psde.dataElement)
+                        .filter(isDefined)
+                        .filter(dataElement => FILE_VALUE_TYPES.has(dataElement.valueType))
+                        .map(dataElement => dataElement.id);
+                })
+            );
+            const fileResourceIds = Array.from(
+                new Set(
+                    events.flatMap(event => {
+                        return (event.dataValues ?? [])
+                            .filter(dataValue => fileDataElementIds.has(dataValue.dataElement))
+                            .map(dataValue => dataValue.value ?? "")
+                            .filter(Boolean);
+                    })
+                )
+            );
 
-        return this.get<D2EventsResponse>(`/events?${query}`).map(response => {
-            return (response.events ?? []).map(event => {
+            const fileResources = await $(
+                Future.parallel<Error, { id: string; fileName?: string }>(
+                    fileResourceIds.map(fileResourceId => {
+                        const cachedFileName = this.fileResourceNameCache.get(fileResourceId);
+                        if (cachedFileName) {
+                            return Future.success({
+                                id: fileResourceId,
+                                fileName: cachedFileName,
+                            });
+                        }
+
+                        return this.get<D2FileResource>(
+                            `/fileResources/${fileResourceId}?fields=id,name,originalName`
+                        )
+                            .map<{ id: string; fileName?: string }>(fileResource => {
+                                const fileName =
+                                    fileResource.originalName ?? fileResource.name ?? fileResourceId;
+                                this.fileResourceNameCache.set(fileResourceId, fileName);
+                                return {
+                                    id: fileResourceId,
+                                    fileName,
+                                };
+                            })
+                            .flatMapError(() => {
+                                return Future.success<Error, { id: string; fileName?: string }>({
+                                    id: fileResourceId,
+                                });
+                            });
+                    }),
+                    { concurrency: 4 }
+                )
+            );
+
+            const fileNameById = Object.fromEntries(
+                fileResources
+                    .filter((fileResource): fileResource is { id: string; fileName: string } =>
+                        Boolean(fileResource.fileName)
+                    )
+                    .map(fileResource => [fileResource.id, fileResource.fileName])
+            );
+            const trackedEntityIds = Array.from(
+                new Set(
+                    events
+                        .map(event => event.trackedEntity)
+                        .filter(isDefined)
+                        .filter(Boolean)
+                )
+            );
+            const trackedEntities = trackedEntityIds.length
+                ? await $(
+                      apiToFuture<D2TrackerTrackedEntitiesResponse>(
+                          this.api.tracker.trackedEntities.get({
+                              program: programId,
+                              trackedEntity: trackedEntityIds.join(";"),
+                              ouMode: "ACCESSIBLE",
+                              skipPaging: true,
+                              fields: {
+                                  attributes: {
+                                      attribute: true,
+                                      value: true,
+                                  },
+                                  trackedEntity: true,
+                              },
+                          })
+                      )
+                  )
+                : { instances: [] };
+            const trackedEntityRows =
+                trackedEntities.instances ?? trackedEntities.trackedEntities ?? [];
+            const attributeValuesByTrackedEntityId = Object.fromEntries(
+                trackedEntityRows.map(trackedEntity => [
+                    trackedEntity.trackedEntity,
+                    Object.fromEntries(
+                        (trackedEntity.attributes ?? [])
+                            .filter(attribute => Boolean(attribute.attribute))
+                            .map(attribute => [attribute.attribute, String(attribute.value ?? "")])
+                    ),
+                ])
+            );
+            const orgUnitIds = Array.from(
+                new Set(events.map(event => event.orgUnit).filter(Boolean).filter(isDefined))
+            );
+            const orgUnits = await $(
+                Future.parallel<Error, { id: string; name?: string }>(
+                    orgUnitIds.map(eventOrgUnitId => {
+                        const cachedName = this.orgUnitNameCache.get(eventOrgUnitId);
+                        if (cachedName) {
+                            return Future.success({
+                                id: eventOrgUnitId,
+                                name: cachedName,
+                            });
+                        }
+
+                        return this.get<D2OrgUnit>(
+                            `/organisationUnits/${eventOrgUnitId}?fields=id,displayName`
+                        )
+                            .map<{ id: string; name?: string }>(orgUnit => {
+                                const name = orgUnit.displayName;
+                                if (name) {
+                                    this.orgUnitNameCache.set(eventOrgUnitId, name);
+                                }
+                                return {
+                                    id: eventOrgUnitId,
+                                    name,
+                                };
+                            })
+                            .flatMapError(() => {
+                                return Future.success<Error, { id: string; name?: string }>({
+                                    id: eventOrgUnitId,
+                                });
+                            });
+                    }),
+                    { concurrency: 4 }
+                )
+            );
+            const orgUnitNameById = Object.fromEntries(
+                orgUnits
+                    .filter((orgUnit): orgUnit is { id: string; name: string } =>
+                        Boolean(orgUnit.name)
+                    )
+                    .map(orgUnit => [orgUnit.id, orgUnit.name])
+            );
+
+            const previewEvents = events.map(event => {
                 const dataValues = (event.dataValues ?? []).reduce<Record<string, string>>(
                     (acc, dataValue) => {
                         const value = dataValue.value ?? "";
@@ -62,15 +235,34 @@ export class ProgramD2Repository implements ProgramRepository {
                     },
                     {}
                 );
+                const fileNames = Object.fromEntries(
+                    Object.entries(dataValues)
+                        .filter(([dataElementId]) => fileDataElementIds.has(dataElementId))
+                        .flatMap(([dataElementId, fileResourceId]) => {
+                            const fileName = fileNameById[fileResourceId];
+                            return fileName ? [[dataElementId, fileName] as const] : [];
+                        })
+                );
 
                 return new ProgramEventPreview({
                     id: event.event,
-                    eventDate: event.eventDate ?? event.occurredAt ?? null,
+                    eventDate:
+                        event.occurredAt ?? event.eventDate ?? event.scheduledAt ?? null,
                     orgUnitId: event.orgUnit,
-                    orgUnitName: event.orgUnitName,
+                    orgUnitName: event.orgUnitName ?? orgUnitNameById[event.orgUnit],
                     dataValues,
+                    attributeValues: event.trackedEntity
+                        ? attributeValuesByTrackedEntityId[event.trackedEntity] ?? {}
+                        : {},
                     fileValues: dataValues,
+                    fileNames,
                 });
+            });
+
+            return new ProgramEventsPreviewResult({
+                events: previewEvents,
+                total: response.total ?? response.pager?.total,
+                pageCount: response.pageCount ?? response.pager?.pageCount,
             });
         });
     }
@@ -267,6 +459,14 @@ function normalizeProgramType(programType?: string): ProgramType {
     return "UNKNOWN";
 }
 
+function toTrackerOrgUnitMode(orgUnitMode: "selected" | "descendants"): "SELECTED" | "DESCENDANTS" {
+    return orgUnitMode === "selected" ? "SELECTED" : "DESCENDANTS";
+}
+
+function toTrackerDataElementGreaterThanOneFilter(fileDataElementId?: string): string | undefined {
+    return fileDataElementId ? `${fileDataElementId}:gt:1` : undefined;
+}
+
 function isDefined<T>(value: T | undefined | null): value is T {
     return value !== undefined && value !== null;
 }
@@ -342,16 +542,56 @@ type D2Program = {
     }>;
 };
 
-type D2EventsResponse = {
-    events?: Array<{
+type D2TrackerEventsResponse = {
+    total?: number;
+    pageCount?: number;
+    pager?: {
+        page?: number;
+        pageSize?: number;
+        total?: number;
+        pageCount?: number;
+    };
+    instances?: Array<{
         event: string;
-        eventDate?: string;
+        trackedEntity?: string;
         occurredAt?: string;
+        scheduledAt?: string;
+        eventDate?: string;
         orgUnit: string;
         orgUnitName?: string;
         dataValues?: Array<{
             dataElement: string;
             value?: string;
+        }>;
+    }>;
+    events?: Array<{
+        event: string;
+        trackedEntity?: string;
+        occurredAt?: string;
+        scheduledAt?: string;
+        eventDate?: string;
+        orgUnit: string;
+        orgUnitName?: string;
+        dataValues?: Array<{
+            dataElement: string;
+            value?: string;
+        }>;
+    }>;
+};
+
+type D2TrackerTrackedEntitiesResponse = {
+    instances?: Array<{
+        trackedEntity: string;
+        attributes?: Array<{
+            attribute: string;
+            value?: string | number | Date;
+        }>;
+    }>;
+    trackedEntities?: Array<{
+        trackedEntity: string;
+        attributes?: Array<{
+            attribute: string;
+            value?: string | number | Date;
         }>;
     }>;
 };
@@ -362,4 +602,15 @@ type D2OrgUnitsResponse = {
         displayName: string;
         path?: string;
     }>;
+};
+
+type D2OrgUnit = {
+    id: string;
+    displayName?: string;
+};
+
+type D2FileResource = {
+    id: string;
+    name?: string;
+    originalName?: string;
 };

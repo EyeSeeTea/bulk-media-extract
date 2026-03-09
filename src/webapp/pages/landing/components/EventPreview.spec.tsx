@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { ProgramEventPreview } from "$/domain/entities/FileExportProgram";
+import { ProgramEventPreview, ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
 import { describe, expect, it, vi } from "vitest";
 import { EventPreview } from "$/webapp/pages/landing/components/EventPreview";
 
@@ -82,16 +82,22 @@ describe("EventPreview", () => {
                 onSelectOrgUnit={vi.fn()}
                 previewState={{
                     status: "success",
-                    data: [
-                        ProgramEventPreview.create({
-                            id: "evt-1",
-                            eventDate: "2024-01-01",
-                            orgUnitId: "ou-a",
-                            orgUnitName: "Org Unit A",
-                            dataValues: { "de-file": "file-123" },
-                            fileValues: { "de-file": "file-123" },
-                        }),
-                    ],
+                    data: ProgramEventsPreviewResult.create({
+                        events: [
+                            ProgramEventPreview.create({
+                                id: "evt-1",
+                                eventDate: "2024-01-01",
+                                orgUnitId: "ou-a",
+                                orgUnitName: "Org Unit A",
+                                dataValues: { "de-file": "file-123" },
+                                attributeValues: {},
+                                fileValues: { "de-file": "file-123" },
+                                fileNames: { "de-file": "file-123.pdf" },
+                            }),
+                        ],
+                        total: 1,
+                        pageCount: 1,
+                    }),
                 }}
                 onRetryPreview={vi.fn()}
             />
@@ -99,5 +105,6 @@ describe("EventPreview", () => {
 
         expect(utils.getByText("evt-1")).toBeInTheDocument();
         expect(utils.getByText(/de-file: file-123/)).toBeInTheDocument();
+        expect(utils.getByText("Matching events: 1. Pages: 1.")).toBeInTheDocument();
     });
 });

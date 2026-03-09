@@ -2,6 +2,7 @@ import { Future } from "$/domain/entities/generic/Future";
 import {
     FileCapableProgram,
     ProgramEventPreview,
+    ProgramEventsPreviewResult,
     ProgramFilePropertyGroup,
     ProgramFileProperties,
     ProgramFileProperty,
@@ -60,6 +61,14 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 valueType: "IMAGE",
                 sourceType: "trackedEntityAttribute",
             }),
+            new ProgramFileProperty({
+                id: "de-other-stage-text",
+                name: "Follow-up note",
+                valueType: "TEXT",
+                sourceType: "dataElement",
+                sourceContainerId: "stage-2",
+                sourceContainerName: "Follow-up Stage",
+            }),
         ],
         propertyGroups: [
             new ProgramFilePropertyGroup({
@@ -112,6 +121,21 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                         sourceType: "dataElement",
                         sourceContainerId: "stage-1",
                         sourceContainerName: "Main Stage",
+                    }),
+                ],
+            }),
+            new ProgramFilePropertyGroup({
+                id: "stage-2",
+                name: "Follow-up Stage",
+                sourceType: "dataElement",
+                properties: [
+                    new ProgramFileProperty({
+                        id: "de-other-stage-text",
+                        name: "Follow-up note",
+                        valueType: "TEXT",
+                        sourceType: "dataElement",
+                        sourceContainerId: "stage-2",
+                        sourceContainerName: "Follow-up Stage",
                     }),
                 ],
             }),
@@ -200,7 +224,9 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             orgUnitId: "ou-a",
             orgUnitName: "Central Clinic",
             dataValues: { "de-file": "file-123" },
+            attributeValues: { "attr-image": "patient-photo.jpg" },
             fileValues: { "de-file": "file-123" },
+            fileNames: { "de-file": "visit-form.pdf" },
         }),
     ],
     "prog-b:ou-b": [
@@ -210,7 +236,9 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             orgUnitId: "ou-b",
             orgUnitName: "North District",
             dataValues: { "de-file-b": "file-555" },
+            attributeValues: {},
             fileValues: { "de-file-b": "file-555" },
+            fileNames: { "de-file-b": "outreach-attachment.jpg" },
         }),
     ],
 };
@@ -236,11 +264,20 @@ export class ProgramTestRepository implements ProgramRepository {
     public getProgramEventsPreview(
         programId: string,
         orgUnitId: string,
+        _orgUnitMode: "selected" | "descendants",
+        _programStageId: string | undefined,
+        _fileDataElementId: string | undefined,
         pageSize: number
-    ): FutureData<ProgramEventPreview[]> {
+    ): FutureData<ProgramEventsPreviewResult> {
         const key = `${programId}:${orgUnitId}`;
         const rows = PREVIEW_BY_KEY[key] ?? [];
-        return Future.success(rows.slice(0, pageSize));
+        return Future.success(
+            new ProgramEventsPreviewResult({
+                events: rows.slice(0, pageSize),
+                total: rows.length,
+                pageCount: rows.length === 0 ? 0 : 1,
+            })
+        );
     }
 
     public getOrganisationUnits(): FutureData<NamedRef[]> {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import { ProgramEventPreview } from "$/domain/entities/FileExportProgram";
+import { ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
 import { NamedRef } from "$/domain/entities/Ref";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
@@ -11,7 +11,7 @@ type Props = {
     selectedProgramId: string;
     selectedOrgUnitId: string;
     onSelectOrgUnit: (orgUnitId: string) => void;
-    previewState: AsyncData<ProgramEventPreview[]>;
+    previewState: AsyncData<ProgramEventsPreviewResult>;
     onRetryPreview: () => void;
 };
 
@@ -77,7 +77,13 @@ export const EventPreview: React.FC<Props> = React.memo(
                 )}
                 {selectedProgramId && selectedOrgUnitId && previewState.status === "success" && (
                     <>
-                        {previewState.data.length === 0 ? (
+                        <p>
+                            {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
+                                total: String(previewState.data.total ?? previewState.data.events.length),
+                                pages: String(previewState.data.pageCount ?? 1),
+                            })}
+                        </p>
+                        {previewState.data.events.length === 0 ? (
                             <NoticeBox title={i18n.t("No events found")}>
                                 {i18n.t("No preview events match the current selections.")}
                             </NoticeBox>
@@ -92,7 +98,7 @@ export const EventPreview: React.FC<Props> = React.memo(
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {previewState.data.map(event => (
+                                    {previewState.data.events.map(event => (
                                         <tr key={event.id}>
                                             <td>{event.id}</td>
                                             <td>{event.eventDate ?? "-"}</td>

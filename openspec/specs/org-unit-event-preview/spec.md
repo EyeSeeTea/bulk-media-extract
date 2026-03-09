@@ -4,23 +4,23 @@
 TBD - created by archiving change add-file-aware-program-picker-preview. Update Purpose after archive.
 ## Requirements
 ### Requirement: Event preview requires program and org unit context
-The system SHALL enable org unit selection only for org units that are registered against the currently selected program. Selection uses the `OrganisationUnitTree` component from `@dhis2/ui` instead of a flat select element. When preview is used from the export wizard, preview requests SHALL be scoped by the wizard's selected program, org unit, and date range before allowing continuation to execution.
+The system SHALL display a hierarchical `OrganisationUnitTree` for org unit selection in event preview, with selectable nodes restricted to the org units registered for the currently selected program.
+
+#### Scenario: Org unit tree renders with program-specific roots
+- **WHEN** a program is selected and its org units are available
+- **THEN** the tree is rooted at the program's org units, preventing selection of unrelated org units
 
 #### Scenario: Preview blocked until required selections exist
 - **WHEN** either program or organisation unit is missing
 - **THEN** the preview area remains disabled and explains required selections
 
-#### Scenario: Org unit tree shows only program org units
-- **WHEN** a program is selected
-- **THEN** the org unit picker renders `OrganisationUnitTree` with only the program's registered org units as selectable roots
+#### Scenario: Preview query succeeds
+- **WHEN** the user selects an organisation unit from the tree after selecting a program
+- **THEN** the system displays a limited sample of matching events with core context fields
 
-#### Scenario: Selecting an org unit from the tree triggers preview
-- **WHEN** the user selects an org unit from the tree
-- **THEN** `onSelectOrgUnit` is called with the selected org unit id and event preview is triggered
-
-#### Scenario: Wizard preview gating requires scoped context
-- **WHEN** the user is in the wizard preview step without a valid date range
-- **THEN** the system blocks preview execution and indicates the missing date range requirement
+#### Scenario: No events match selection
+- **WHEN** preview query returns no matching events
+- **THEN** the UI displays a no-results state for the current selection
 
 ### Requirement: Preview returns limited sample events
 The system MUST fetch and display a bounded sample of events for the selected program and organisation unit, capped to the first 10 events for quick feedback.  
