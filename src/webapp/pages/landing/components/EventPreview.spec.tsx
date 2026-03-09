@@ -94,6 +94,7 @@ describe("EventPreview", () => {
                                 eventDate: "2024-01-01",
                                 orgUnitId: "ou-a",
                                 orgUnitName: "Org Unit A",
+                                orgUnitAttributeValues: {},
                                 dataValues: { "de-file": "file-123" },
                                 attributeValues: {},
                                 fileValues: { "de-file": "file-123" },

@@ -5,8 +5,16 @@ import {
 } from "$/domain/entities/FileExportProgram";
 
 export function getPropertyTemplateToken(property: ProgramFileProperty): string {
-    if (property.sourceType === "metadata") {
+    if (
+        property.sourceType === "metadata" ||
+        property.sourceType === "organisationUnit" ||
+        property.sourceType === "event"
+    ) {
         return `{${property.id}}`;
+    }
+
+    if (property.sourceType === "organisationUnitAttribute") {
+        return `{orgUnitAttribute:${sanitizeToken(property.id)}}`;
     }
 
     if (property.sourceType === "trackedEntityAttribute") {
@@ -47,12 +55,32 @@ export function resolveTemplateForEvent(
             return event.orgUnitId;
         }
 
+        if (token === "orgUnitCode") {
+            return event.orgUnitCode ?? "";
+        }
+
+        if (token === "orgUnitShortName") {
+            return event.orgUnitShortName ?? "";
+        }
+
+        if (token === "orgUnitPath") {
+            return event.orgUnitPath ?? "";
+        }
+
+        if (token === "orgUnitLevel") {
+            return event.orgUnitLevel !== undefined ? String(event.orgUnitLevel) : "";
+        }
+
         if (token === "enrollmentDate") {
             return event.eventDate ?? "";
         }
 
         if (token === "fileName") {
             return firstFileName;
+        }
+
+        if (token === "fileExtension") {
+            return getFileExtension(firstFileName);
         }
 
         if (token === "fileDataElementId") {
@@ -85,6 +113,11 @@ export function resolveTemplateForEvent(
             return event.attributeValues[key] ?? "";
         }
 
+        if (token.startsWith("orgUnitAttribute:")) {
+            const key = token.slice("orgUnitAttribute:".length);
+            return event.orgUnitAttributeValues[key] ?? "";
+        }
+
         return "";
     });
 }
@@ -104,6 +137,20 @@ export function buildFileMetadataPropertyGroup(
             sourceType: "metadata",
         }),
     ];
+
+    if (
+        selectedFileProperties.some(property => property.valueType) ||
+        selectedFileProperties.some(property => property.name)
+    ) {
+        properties.push(
+            ProgramFileProperty.create({
+                id: "fileExtension",
+                name: "File extension",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            })
+        );
+    }
 
     if (selectedFileProperties.some(property => property.id)) {
         properties.push(
@@ -170,4 +217,14 @@ export function buildFileMetadataPropertyGroup(
 
 function sanitizeToken(value: string): string {
     return value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+function getFileExtension(fileName: string): string {
+    const normalized = fileName.trim();
+    const lastDot = normalized.lastIndexOf(".");
+    if (lastDot <= 0 || lastDot === normalized.length - 1) {
+        return "";
+    }
+
+    return normalized.slice(lastDot + 1);
 }

@@ -573,7 +573,7 @@ describe("WizardPage", () => {
         expect(input.value.startsWith("{orgUnitName}")).toBe(true);
     });
 
-    it("shows resolved template values inside template ready notice", async () => {
+    it("shows resolved template values inside inline template preview", async () => {
         const page = getReactComponent(<WizardPage />);
 
         const programSelect = await page.findByTestId("wizard-program-select");
@@ -586,7 +586,7 @@ describe("WizardPage", () => {
             target: { value: "/{fileName}" },
         });
 
-        expect(await page.findByText("Template ready")).toBeInTheDocument();
+        expect(await page.findByText("Valid template. Preview:")).toBeInTheDocument();
         expect(await page.findByTestId("wizard-resolved-template-list-de-file")).toBeInTheDocument();
         expect(page.getByText("/visit-form.pdf")).toBeInTheDocument();
         expect(page.queryByTestId("wizard-preview-table")).not.toBeInTheDocument();
@@ -602,6 +602,72 @@ describe("WizardPage", () => {
 
         expect(await page.findByTestId("wizard-token-orgUnitName")).toBeInTheDocument();
         expect(page.queryByTestId("wizard-token-de-other-stage-text")).not.toBeInTheDocument();
+    });
+
+    it("shows file metadata first and places the token hint below the template input", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        const propertyGroups = await page.findByTestId("wizard-property-groups");
+        const fileMetadataTitle = within(propertyGroups).getByText("File metadata");
+        const organisationUnitTitle = within(propertyGroups).getByText("Organisation unit");
+        const input = page.getByTestId("wizard-template-input");
+        const hint = page.getByText(
+            "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
+        );
+
+        fireEvent.change(input, {
+            target: { value: "/{fileName}" },
+        });
+
+        const preview = await page.findByText("Valid template. Preview:");
+
+        expect(
+            fileMetadataTitle.compareDocumentPosition(organisationUnitTitle)
+        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(input.compareDocumentPosition(hint)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(hint.compareDocumentPosition(preview)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(await page.findByTestId("wizard-token-fileExtension")).toBeInTheDocument();
+    });
+
+    it("uses quiet inline feedback for missing template instead of a template error notice", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "" },
+        });
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.queryByText("Template error")).not.toBeInTheDocument();
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Required.")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-template-input")).toHaveClass("wizard-input-invalid");
+    });
+
+    it("does not repeat the current step title inside template content", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expect(
+            page.queryByRole("heading", {
+                level: 3,
+                name: "Template",
+            })
+        ).not.toBeInTheDocument();
     });
 
     it("allows clicking available step tabs to navigate after preview is valid", async () => {
@@ -623,9 +689,12 @@ describe("WizardPage", () => {
         expect(storageTab).toBeEnabled();
         fireEvent.click(storageTab);
         expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-tab-storage")).toHaveAttribute("aria-current", "step");
+        expect(page.getByTestId("wizard-step-tab-template")).not.toHaveAttribute("aria-current");
 
         fireEvent.click(page.getByTestId("wizard-step-tab-program"));
         expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-tab-program")).toHaveAttribute("aria-current", "step");
     });
 
     it("blocks next when no file data value is selected", async () => {

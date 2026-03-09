@@ -79,7 +79,37 @@ describe("OrgUnitTreePicker", () => {
 
         fireEvent.click(view.getByTestId("mock-org-unit-tree"));
 
-        expect(onChange).toHaveBeenCalledWith("ou-a");
+        expect(onChange).toHaveBeenCalledWith({ id: "ou-a", name: undefined });
+    });
+
+    it("keeps roots and filter references stable when scope content is unchanged", () => {
+        const { rerender } = render(
+            <OrgUnitTreePicker
+                programOrgUnits={[
+                    { id: "ou-a", name: "Org Unit A", path: "/root/ou-a" },
+                    { id: "ou-b", name: "Org Unit B", path: "/root/ou-b" },
+                ]}
+                selected=""
+                onChange={vi.fn()}
+            />
+        );
+
+        const firstCall = treePropsSpy.mock.calls[treePropsSpy.mock.calls.length - 1]?.[0];
+
+        rerender(
+            <OrgUnitTreePicker
+                programOrgUnits={[
+                    { id: "ou-a", name: "Org Unit A", path: "/root/ou-a" },
+                    { id: "ou-b", name: "Org Unit B", path: "/root/ou-b" },
+                ]}
+                selected="ou-a"
+                onChange={vi.fn()}
+            />
+        );
+
+        const lastCall = treePropsSpy.mock.calls[treePropsSpy.mock.calls.length - 1]?.[0];
+        expect(lastCall.roots).toBe(firstCall.roots);
+        expect(lastCall.filter).toBe(firstCall.filter);
     });
 
     it("disables selection when disabled", () => {

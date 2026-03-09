@@ -18,7 +18,7 @@ const FILE_VALUE_TYPES = new Set(["FILE_RESOURCE", "IMAGE"]);
 export class ProgramD2Repository implements ProgramRepository {
     private fileResourceNameCache = new Map<string, string>();
     private fileResourceSizeCache = new Map<string, number>();
-    private orgUnitNameCache = new Map<string, string>();
+    private orgUnitDetailsCache = new Map<string, ResolvedOrgUnit>();
 
     constructor(private api: D2Api) {}
 
@@ -239,45 +239,41 @@ export class ProgramD2Repository implements ProgramRepository {
                 new Set(events.map(event => event.orgUnit).filter(Boolean).filter(isDefined))
             );
             const orgUnits = await $(
-                Future.parallel<Error, { id: string; name?: string }>(
+                Future.parallel<Error, ResolvedOrgUnit>(
                     orgUnitIds.map(eventOrgUnitId => {
-                        const cachedName = this.orgUnitNameCache.get(eventOrgUnitId);
-                        if (cachedName) {
-                            return Future.success({
-                                id: eventOrgUnitId,
-                                name: cachedName,
-                            });
+                        const cachedOrgUnit = this.orgUnitDetailsCache.get(eventOrgUnitId);
+                        if (cachedOrgUnit) {
+                            return Future.success(cachedOrgUnit);
                         }
 
                         return this.get<D2OrgUnit>(
-                            `/organisationUnits/${eventOrgUnitId}?fields=id,displayName`
+                            `/organisationUnits/${eventOrgUnitId}?fields=id,displayName,code,shortName,path,level,attributeValues[attribute[id,displayName],value]`
                         )
-                            .map<{ id: string; name?: string }>(orgUnit => {
-                                const name = orgUnit.displayName;
-                                if (name) {
-                                    this.orgUnitNameCache.set(eventOrgUnitId, name);
-                                }
-                                return {
+                            .map<ResolvedOrgUnit>(orgUnit => {
+                                const resolvedOrgUnit = toResolvedOrgUnit({
                                     id: eventOrgUnitId,
-                                    name,
-                                };
+                                    displayName: orgUnit.displayName,
+                                    code: orgUnit.code,
+                                    shortName: orgUnit.shortName,
+                                    path: orgUnit.path,
+                                    level: orgUnit.level,
+                                    attributeValues: orgUnit.attributeValues,
+                                });
+
+                                this.orgUnitDetailsCache.set(eventOrgUnitId, resolvedOrgUnit);
+                                return resolvedOrgUnit;
                             })
                             .flatMapError(() => {
-                                return Future.success<Error, { id: string; name?: string }>({
+                                return Future.success<Error, ResolvedOrgUnit>({
                                     id: eventOrgUnitId,
+                                    attributeValues: {},
                                 });
                             });
                     }),
                     { concurrency: 4 }
                 )
             );
-            const orgUnitNameById = Object.fromEntries(
-                orgUnits
-                    .filter((orgUnit): orgUnit is { id: string; name: string } =>
-                        Boolean(orgUnit.name)
-                    )
-                    .map(orgUnit => [orgUnit.id, orgUnit.name])
-            );
+            const orgUnitById = Object.fromEntries(orgUnits.map(orgUnit => [orgUnit.id, orgUnit]));
 
             const previewEvents = events.map(event => {
                 const dataValues = (event.dataValues ?? []).reduce<Record<string, string>>(
@@ -314,7 +310,12 @@ export class ProgramD2Repository implements ProgramRepository {
                     eventDate:
                         event.occurredAt ?? event.eventDate ?? event.scheduledAt ?? null,
                     orgUnitId: event.orgUnit,
-                    orgUnitName: event.orgUnitName ?? orgUnitNameById[event.orgUnit],
+                    orgUnitName: event.orgUnitName ?? orgUnitById[event.orgUnit]?.name,
+                    orgUnitCode: orgUnitById[event.orgUnit]?.code,
+                    orgUnitShortName: orgUnitById[event.orgUnit]?.shortName,
+                    orgUnitPath: orgUnitById[event.orgUnit]?.path,
+                    orgUnitLevel: orgUnitById[event.orgUnit]?.level,
+                    orgUnitAttributeValues: orgUnitById[event.orgUnit]?.attributeValues ?? {},
                     dataValues,
                     attributeValues: event.trackedEntity
                         ? attributeValuesByTrackedEntityId[event.trackedEntity] ?? {}
@@ -358,7 +359,7 @@ export class ProgramD2Repository implements ProgramRepository {
                 "id",
                 "displayName",
                 "programType",
-                "organisationUnits[id,displayName,path]",
+                "organisationUnits[id,displayName,path,code,shortName,level,attributeValues[attribute[id,displayName],value]]",
                 "programTrackedEntityAttributes[trackedEntityAttribute[id,displayName,valueType]]",
                 "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType]]]",
             ].join(","),
@@ -375,7 +376,7 @@ export class ProgramD2Repository implements ProgramRepository {
 
     private buildProgramFileProperties(program: D2Program): ProgramFileProperties {
         const programType = normalizeProgramType(program.programType);
-        const metadataProperties = buildMetadataProperties();
+        const metadataProperties = buildMetadataProperties(program.organisationUnits ?? []);
         const eventPropertiesByStage = this.buildStageGroups(program);
         const eventProperties = eventPropertiesByStage.flatMap(group => group.properties);
         const teiProperties = this.buildTrackedEntityProperties(program);
@@ -537,41 +538,100 @@ function isDefined<T>(value: T | undefined | null): value is T {
     return value !== undefined && value !== null;
 }
 
-function buildMetadataProperties(): {
+function buildMetadataProperties(programOrgUnits: D2ProgramOrgUnit[]): {
     groups: ProgramFilePropertyGroup[];
     properties: ProgramFileProperty[];
 } {
-    const properties = [
+    const organisationUnitProperties: ProgramFileProperty[] = [
         new ProgramFileProperty({
             id: "orgUnitName",
             name: "Organisation unit name",
             valueType: "TEXT",
-            sourceType: "metadata",
+            sourceType: "organisationUnit",
         }),
         new ProgramFileProperty({
             id: "orgUnitId",
             name: "Organisation unit id",
             valueType: "TEXT",
-            sourceType: "metadata",
+            sourceType: "organisationUnit",
         }),
+    ];
+
+    if (programOrgUnits.some(orgUnit => Boolean(orgUnit.code))) {
+        organisationUnitProperties.push(
+            new ProgramFileProperty({
+                id: "orgUnitCode",
+                name: "Organisation unit code",
+                valueType: "TEXT",
+                sourceType: "organisationUnit",
+            })
+        );
+    }
+
+    if (programOrgUnits.some(orgUnit => Boolean(orgUnit.shortName))) {
+        organisationUnitProperties.push(
+            new ProgramFileProperty({
+                id: "orgUnitShortName",
+                name: "Organisation unit short name",
+                valueType: "TEXT",
+                sourceType: "organisationUnit",
+            })
+        );
+    }
+
+    if (programOrgUnits.some(orgUnit => Boolean(orgUnit.path))) {
+        organisationUnitProperties.push(
+            new ProgramFileProperty({
+                id: "orgUnitPath",
+                name: "Organisation unit path",
+                valueType: "TEXT",
+                sourceType: "organisationUnit",
+            })
+        );
+    }
+
+    if (programOrgUnits.some(orgUnit => orgUnit.level !== undefined)) {
+        organisationUnitProperties.push(
+            new ProgramFileProperty({
+                id: "orgUnitLevel",
+                name: "Organisation unit level",
+                valueType: "NUMBER",
+                sourceType: "organisationUnit",
+            })
+        );
+    }
+
+    const organisationUnitAttributeProperties = buildOrganisationUnitAttributeProperties(programOrgUnits);
+    const eventProperties = [
         new ProgramFileProperty({
             id: "enrollmentDate",
             name: "Enrollment/event date",
             valueType: "DATE",
-            sourceType: "metadata",
+            sourceType: "event",
         }),
+    ];
+    const properties = [
+        ...organisationUnitProperties,
+        ...organisationUnitAttributeProperties,
+        ...eventProperties,
     ];
 
     return {
         properties,
         groups: [
             new ProgramFilePropertyGroup({
-                id: "metadata",
-                name: "Metadata",
-                sourceType: "metadata",
-                properties,
+                id: "organisationUnit",
+                name: "Organisation unit",
+                sourceType: "organisationUnit",
+                properties: [...organisationUnitProperties, ...organisationUnitAttributeProperties],
             }),
-        ],
+            new ProgramFilePropertyGroup({
+                id: "event",
+                name: "Event",
+                sourceType: "event",
+                properties: eventProperties,
+            }),
+        ].filter(group => group.properties.length > 0),
     };
 }
 
@@ -583,11 +643,7 @@ type D2Program = {
     id: string;
     displayName: string;
     programType?: string;
-    organisationUnits?: Array<{
-        id: string;
-        displayName: string;
-        path?: string;
-    }>;
+    organisationUnits?: D2ProgramOrgUnit[];
     programStages?: Array<{
         id: string;
         displayName: string;
@@ -673,6 +729,11 @@ type D2OrgUnitsResponse = {
 type D2OrgUnit = {
     id: string;
     displayName?: string;
+    code?: string;
+    shortName?: string;
+    path?: string;
+    level?: number;
+    attributeValues?: D2OrgUnitAttributeValue[];
 };
 
 type D2FileResource = {
@@ -693,4 +754,90 @@ function normalizeContentLength(value?: number | string): number | undefined {
     }
 
     return undefined;
+}
+
+type D2ProgramOrgUnit = {
+    id: string;
+    displayName: string;
+    path?: string;
+    code?: string;
+    shortName?: string;
+    level?: number;
+    attributeValues?: D2OrgUnitAttributeValue[];
+};
+
+type D2OrgUnitAttributeValue = {
+    attribute?: {
+        id: string;
+        displayName?: string;
+    };
+    value?: string | number | boolean | Date;
+};
+
+type ResolvedOrgUnit = {
+    id: string;
+    name?: string;
+    code?: string;
+    shortName?: string;
+    path?: string;
+    level?: number;
+    attributeValues: Record<string, string>;
+};
+
+function buildOrganisationUnitAttributeProperties(
+    programOrgUnits: D2ProgramOrgUnit[]
+): ProgramFileProperty[] {
+    const attributesById = new Map<string, ProgramFileProperty>();
+
+    programOrgUnits.forEach(orgUnit => {
+        (orgUnit.attributeValues ?? []).forEach(attributeValue => {
+            const attributeId = attributeValue.attribute?.id;
+            if (!attributeId) {
+                return;
+            }
+
+            if (!attributesById.has(attributeId)) {
+                attributesById.set(
+                    attributeId,
+                    new ProgramFileProperty({
+                        id: attributeId,
+                        name:
+                            attributeValue.attribute?.displayName ??
+                            `Organisation unit attribute ${attributeId}`,
+                        valueType: "TEXT",
+                        sourceType: "organisationUnitAttribute",
+                    })
+                );
+            }
+        });
+    });
+
+    return Array.from(attributesById.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function toResolvedOrgUnit(orgUnit: {
+    id: string;
+    displayName?: string;
+    code?: string;
+    shortName?: string;
+    path?: string;
+    level?: number;
+    attributeValues?: D2OrgUnitAttributeValue[];
+}): ResolvedOrgUnit {
+    return {
+        id: orgUnit.id,
+        name: orgUnit.displayName,
+        code: orgUnit.code,
+        shortName: orgUnit.shortName,
+        path: orgUnit.path,
+        level: orgUnit.level,
+        attributeValues: Object.fromEntries(
+            (orgUnit.attributeValues ?? [])
+                .filter(attributeValue => Boolean(attributeValue.attribute?.id))
+                .map(attributeValue => [
+                    attributeValue.attribute?.id ?? "",
+                    String(attributeValue.value ?? ""),
+                ])
+        ),
+    };
 }

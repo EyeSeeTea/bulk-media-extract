@@ -12,7 +12,20 @@ describe("ProgramD2Repository", () => {
                         displayName: "Program A",
                         programType: "WITH_REGISTRATION",
                         organisationUnits: [
-                            { id: "ou-a", displayName: "Org Unit A", path: "/root/ou-a" },
+                            {
+                                id: "ou-a",
+                                displayName: "Org Unit A",
+                                path: "/root/ou-a",
+                                code: "OUA",
+                                shortName: "Org A",
+                                level: 2,
+                                attributeValues: [
+                                    {
+                                        attribute: { id: "ou-attr-zone", displayName: "Zone" },
+                                        value: "Urban",
+                                    },
+                                ],
+                            },
                         ],
                         programStages: [
                             {
@@ -87,7 +100,20 @@ describe("ProgramD2Repository", () => {
                         displayName: "Program A",
                         programType: "WITH_REGISTRATION",
                         organisationUnits: [
-                            { id: "ou-a", displayName: "Org Unit A", path: "/root/ou-a" },
+                            {
+                                id: "ou-a",
+                                displayName: "Org Unit A",
+                                path: "/root/ou-a",
+                                code: "OUA",
+                                shortName: "Org A",
+                                level: 2,
+                                attributeValues: [
+                                    {
+                                        attribute: { id: "ou-attr-zone", displayName: "Zone" },
+                                        value: "Urban",
+                                    },
+                                ],
+                            },
                         ],
                         programStages: [
                             {
@@ -127,10 +153,21 @@ describe("ProgramD2Repository", () => {
             { id: "ou-a", name: "Org Unit A", path: "/root/ou-a" },
         ]);
         expect(details.properties.map(property => property.id)).toEqual(
-            expect.arrayContaining(["orgUnitName", "enrollmentDate", "de-a", "attr-a"])
+            expect.arrayContaining([
+                "orgUnitName",
+                "orgUnitCode",
+                "orgUnitShortName",
+                "orgUnitPath",
+                "orgUnitLevel",
+                "ou-attr-zone",
+                "enrollmentDate",
+                "de-a",
+                "attr-a",
+            ])
         );
         expect(details.propertyGroups.map(group => group.id)).toEqual([
-            "metadata",
+            "organisationUnit",
+            "event",
             "trackedEntityAttributes",
             "stage-a",
         ]);
@@ -170,10 +207,14 @@ describe("ProgramD2Repository", () => {
         const details = await repository.getProgramFileProperties("program-e").toPromise();
 
         expect(details.propertyGroups.map(group => group.id)).toEqual([
-            "metadata",
+            "organisationUnit",
+            "event",
             "eventDataElements",
         ]);
         expect(details.propertyGroups[1]?.properties.map(property => property.id)).toEqual([
+            "enrollmentDate",
+        ]);
+        expect(details.propertyGroups[2]?.properties.map(property => property.id)).toEqual([
             "de-e",
         ]);
     });
@@ -375,6 +416,16 @@ describe("ProgramD2Repository", () => {
             "/organisationUnits/ou-1": {
                 id: "ou-1",
                 displayName: "Resolved Org Unit",
+                code: "OU1",
+                shortName: "Resolved",
+                path: "/root/ou-1",
+                level: 3,
+                attributeValues: [
+                    {
+                        attribute: { id: "ou-attr-zone", displayName: "Zone" },
+                        value: "North",
+                    },
+                ],
             },
             "/tracker/trackedEntities": {
                 instances: [{ trackedEntity: "tei-1", attributes: [] }],
@@ -392,6 +443,11 @@ describe("ProgramD2Repository", () => {
             .toPromise();
 
         expect(events.events[0]?.orgUnitName).toBe("Resolved Org Unit");
+        expect(events.events[0]?.orgUnitCode).toBe("OU1");
+        expect(events.events[0]?.orgUnitShortName).toBe("Resolved");
+        expect(events.events[0]?.orgUnitPath).toBe("/root/ou-1");
+        expect(events.events[0]?.orgUnitLevel).toBe(3);
+        expect(events.events[0]?.orgUnitAttributeValues["ou-attr-zone"]).toBe("North");
     });
 
     it("reads tracked entity attributes from legacy trackedEntities payload shape", async () => {

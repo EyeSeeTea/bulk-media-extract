@@ -85,6 +85,10 @@ export function useWizardExportPreview(
                     event.id,
                     ProgramEventPreview.create({
                         ...existing._getAttributes(),
+                        orgUnitAttributeValues: {
+                            ...existing.orgUnitAttributeValues,
+                            ...event.orgUnitAttributeValues,
+                        },
                         dataValues: { ...existing.dataValues, ...event.dataValues },
                         attributeValues: {
                             ...existing.attributeValues,

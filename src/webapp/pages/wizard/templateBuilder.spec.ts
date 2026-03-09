@@ -15,7 +15,7 @@ describe("templateBuilder", () => {
                     id: "orgUnitName",
                     name: "Org unit",
                     valueType: "TEXT",
-                    sourceType: "metadata",
+                    sourceType: "organisationUnit",
                 })
             )
         ).toBe("{orgUnitName}");
@@ -25,10 +25,20 @@ describe("templateBuilder", () => {
                     id: "orgUnitId",
                     name: "Org unit id",
                     valueType: "TEXT",
-                    sourceType: "metadata",
+                    sourceType: "organisationUnit",
                 })
             )
         ).toBe("{orgUnitId}");
+        expect(
+            getPropertyTemplateToken(
+                ProgramFileProperty.create({
+                    id: "org-unit-attr-zone",
+                    name: "Zone",
+                    valueType: "TEXT",
+                    sourceType: "organisationUnitAttribute",
+                })
+            )
+        ).toBe("{orgUnitAttribute:org-unit-attr-zone}");
         expect(
             getPropertyTemplateToken(
                 ProgramFileProperty.create({
@@ -63,6 +73,11 @@ describe("templateBuilder", () => {
             eventDate: "2026-01-10",
             orgUnitId: "ou-a",
             orgUnitName: "Central Clinic",
+            orgUnitCode: "CC",
+            orgUnitShortName: "Central",
+            orgUnitPath: "/root/ou-a",
+            orgUnitLevel: 2,
+            orgUnitAttributeValues: { "org-unit-attr-zone": "Urban" },
             dataValues: { "de-file": "file-123" },
             attributeValues: { "attr-photo": "photo-001.jpg" },
             fileValues: { "de-file": "file-123" },
@@ -78,12 +93,12 @@ describe("templateBuilder", () => {
         });
 
         const value = resolveTemplateForEvent(
-            "/{orgUnitName}/{orgUnitId}/{enrollmentDate}/{dataElement:de-file}/{attribute:attr-photo}/{fileName}/{fileDataElementId}/{fileDataElementName}/{fileProgramStageId}/{fileProgramStageName}/{fileValueType}.pdf",
+            "/{orgUnitName}/{orgUnitId}/{orgUnitCode}/{orgUnitShortName}/{orgUnitPath}/{orgUnitLevel}/{orgUnitAttribute:org-unit-attr-zone}/{enrollmentDate}/{dataElement:de-file}/{attribute:attr-photo}/{fileName}/{fileExtension}/{fileDataElementId}/{fileDataElementName}/{fileProgramStageId}/{fileProgramStageName}/{fileValueType}.pdf",
             event,
             selectedFileProperty
         );
         expect(value).toBe(
-            "/Central Clinic/ou-a/2026-01-10/file-123/photo-001.jpg/visit-form.pdf/de-file/Visit Form/stage-1/Main Stage/FILE_RESOURCE.pdf"
+            "/Central Clinic/ou-a/CC/Central//root/ou-a/2/Urban/2026-01-10/file-123/photo-001.jpg/visit-form.pdf/pdf/de-file/Visit Form/stage-1/Main Stage/FILE_RESOURCE.pdf"
         );
     });
 
@@ -103,6 +118,7 @@ describe("templateBuilder", () => {
         expect(group?.properties.map(property => property.id)).toEqual(
             expect.arrayContaining([
                 "fileName",
+                "fileExtension",
                 "fileDataElementId",
                 "fileDataElementName",
                 "fileProgramStageId",

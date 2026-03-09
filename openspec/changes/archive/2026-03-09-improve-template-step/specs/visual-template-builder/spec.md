@@ -1,14 +1,4 @@
-# visual-template-builder Specification
-
-## Purpose
-TBD - created by archiving change add-visual-template-builder. Update Purpose after archive.
-## Requirements
-### Requirement: Visual builder presents template editor and property browser together
-The system SHALL render the template editor and available property catalog side by side in the template setup step so users can compose templates without leaving context.
-
-#### Scenario: Side-by-side builder is visible
-- **WHEN** the user opens the template setup step in the export wizard
-- **THEN** the UI shows an editable template input and an interactive property list in a two-panel layout
+## MODIFIED Requirements
 
 ### Requirement: Property catalog is grouped by program type and metadata source
 The system MUST organize selectable properties according to the selected program type and separate file metadata, organisation unit properties, and event properties into distinct groups.  
@@ -32,23 +22,7 @@ The event group MUST contain enrollment/event placeholders that can be resolved 
 - **WHEN** the selected program scope includes organisation units with custom attributes
 - **THEN** the property catalog lists those attributes in the organisation unit section using dedicated organisation unit attribute tokens
 
-### Requirement: Selecting a property inserts placeholder at cursor position
-The system SHALL insert the selected property placeholder token at the current cursor location in the active template input.
-
-#### Scenario: Placeholder inserted at caret
-- **WHEN** the user places the cursor in the template input and clicks a property
-- **THEN** the placeholder token is inserted at that cursor position without losing existing text
-
-### Requirement: Quick preview is shown only for valid templates
-The system MUST validate template syntax and show a quick preview only when the template is valid.
-
-#### Scenario: Valid template renders preview rows
-- **WHEN** the template is valid and preview context is complete
-- **THEN** the UI displays resolved preview results for up to the first 10 matching events
-
-#### Scenario: Invalid template blocks preview
-- **WHEN** the template contains syntax or placeholder validation errors
-- **THEN** the UI shows validation feedback and does not render preview rows
+## ADDED Requirements
 
 ### Requirement: Template editor shows secondary token guidance below the input
 The system SHALL place token usage guidance below the template textarea and render it as helper text so the editor retains more horizontal space for template authoring.
@@ -69,4 +43,3 @@ For missing or invalid templates, the editor SHALL use quiet field-level feedbac
 #### Scenario: Missing template uses quiet field-level feedback
 - **WHEN** the current template is empty
 - **THEN** the textarea is marked as invalid and the editor shows compact field-level guidance instead of a separate template error notice
-

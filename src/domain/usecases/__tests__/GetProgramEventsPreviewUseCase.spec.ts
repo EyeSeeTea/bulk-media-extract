@@ -22,6 +22,7 @@ describe("GetProgramEventsPreviewUseCase", () => {
                                     id: "event-1",
                                     eventDate: "2026-01-01",
                                     orgUnitId: "ou-1",
+                                    orgUnitAttributeValues: {},
                                     dataValues: { "de-1": "file-1" },
                                     attributeValues: { "attr-1": "value-1" },
                                     fileValues: { "de-1": "file-1" },

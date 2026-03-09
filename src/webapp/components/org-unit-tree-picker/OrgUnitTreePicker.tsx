@@ -18,13 +18,23 @@ type TreeOnChangePayload = {
 export const OrgUnitTreePicker: React.FC<Props> = React.memo(
     ({ programOrgUnits, selected, onChange, disabled = false }) => {
         const [selectedPaths, setSelectedPaths] = React.useState<string[]>([]);
-        const filterPaths = React.useMemo(
-            () =>
-                programOrgUnits
-                    .map(orgUnit => orgUnit.path)
-                    .filter((path): path is string => Boolean(path)),
-            [programOrgUnits]
-        );
+        const scopeSignature = React.useMemo(() => {
+            return programOrgUnits
+                .map(orgUnit => `${orgUnit.id}:${orgUnit.path ?? ""}`)
+                .sort()
+                .join("|");
+        }, [programOrgUnits]);
+
+        const filterPaths = React.useMemo(() => {
+            if (!scopeSignature) {
+                return [];
+            }
+
+            return scopeSignature
+                .split("|")
+                .map(entry => entry.split(":")[1] ?? "")
+                .filter((path): path is string => Boolean(path));
+        }, [scopeSignature]);
 
         const rootIds = React.useMemo(() => {
             return Array.from(
@@ -35,6 +45,11 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 )
             );
         }, [filterPaths]);
+        const pathByOrgUnitId = React.useMemo(() => {
+            return new Map(
+                programOrgUnits.flatMap(orgUnit => (orgUnit.path ? [[orgUnit.id, orgUnit.path] as const] : []))
+            );
+        }, [programOrgUnits]);
 
         React.useEffect(() => {
             if (!selected) {
@@ -42,11 +57,14 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 return;
             }
 
-            const selectedPath = programOrgUnits.find(orgUnit => orgUnit.id === selected)?.path;
+            const selectedPath = pathByOrgUnitId.get(selected);
             if (selectedPath) {
                 setSelectedPaths([selectedPath]);
+                return;
             }
-        }, [programOrgUnits, selected]);
+
+            setSelectedPaths([]);
+        }, [pathByOrgUnitId, selected]);
 
         if (rootIds.length === 0 || filterPaths.length === 0) {
             return null;

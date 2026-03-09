@@ -118,7 +118,7 @@ function getVisiblePropertyGroupsForFile(
         })
         .filter(group => group.properties.length > 0);
 
-    return fileMetadataGroup ? [...scopedGroups, fileMetadataGroup] : scopedGroups;
+    return fileMetadataGroup ? [fileMetadataGroup, ...scopedGroups] : scopedGroups;
 }
 
 export const WizardPage: React.FC = React.memo(() => {
@@ -720,6 +720,7 @@ const WizardContent: React.FC = () => {
                                 className="wizard-step-tab"
                                 disabled={!isAvailable}
                                 data-testid={`wizard-step-tab-${step.id}`}
+                                aria-current={index === state.currentStep ? "step" : undefined}
                                 onClick={() => {
                                     if (isAvailable) {
                                         setStep(index);
@@ -799,7 +800,6 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-program">
-            <h3>{i18n.t("Select program")}</h3>
             {programsState.status === "loading" ? <CircularLoader small /> : null}
             {programsState.status === "error" ? (
                 <NoticeBox error title={i18n.t("Could not load programs")}>{programsState.error}</NoticeBox>
@@ -943,8 +943,6 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-template">
-            <h3>{i18n.t("Template")}</h3>
-
             <section className="wizard-section">
                 <h4>{i18n.t("Filters")}</h4>
 
@@ -1016,6 +1014,7 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                 selectedFileDataElements.map((fileProperty, fileIndex) => {
                     const templateValue = mappingByFileKey[fileProperty.id] ?? "";
                     const templateError = validateTemplate(templateValue);
+                    const isTemplateMissing = !templateValue.trim();
                     const resolvedTemplates = quickPreviewByFileKey[fileProperty.id] ?? [];
                     const visiblePropertyGroups =
                         programDetailsState.status === "success"
@@ -1033,17 +1032,13 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                                     name: fileProperty.name,
                                 })}
                             </h4>
-                            <p>
-                                {i18n.t(
-                                    "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
-                                )}
-                            </p>
                             <div className="template-builder-grid">
                                 <div className="template-editor-panel">
                                     <textarea
                                         ref={input => {
                                             templateInputRefs.current[fileProperty.id] = input;
                                         }}
+                                        className={templateError ? "wizard-input-invalid" : undefined}
                                         data-testid={
                                             fileIndex === 0
                                                 ? "wizard-template-input"
@@ -1055,6 +1050,64 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                                             onMappingChange(fileProperty.id, event.target.value)
                                         }
                                     />
+                                    <p className="wizard-helper-text template-editor-hint">
+                                        {i18n.t(
+                                            "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
+                                        )}
+                                    </p>
+                                    {templateError ? (
+                                        <p
+                                            className={`template-editor-feedback ${
+                                                isTemplateMissing ? "template-editor-feedback-muted" : "template-editor-feedback-error"
+                                            }`}
+                                            data-testid={`wizard-template-feedback-${fileProperty.id}`}
+                                        >
+                                            {isTemplateMissing
+                                                ? i18n.t("Required.")
+                                                : templateError}
+                                        </p>
+                                    ) : (
+                                        <div
+                                            className="template-preview-inline"
+                                            data-testid={`wizard-template-preview-${fileProperty.id}`}
+                                        >
+                                            <p className="template-preview-inline-title">
+                                                {i18n.t("Valid template. Preview:")}
+                                            </p>
+                                            {!hasPreviewScope ? (
+                                                <p className="template-editor-feedback template-editor-feedback-muted">
+                                                    {i18n.t(
+                                                        "Select program and organisation unit to load resolved values."
+                                                    )}
+                                                </p>
+                                            ) : quickPreviewState.status === "loading" ? (
+                                                <div className="wizard-inline-loader">
+                                                    <CircularLoader small />
+                                                </div>
+                                            ) : quickPreviewState.status === "error" ? (
+                                                <p className="template-editor-feedback template-editor-feedback-error">
+                                                    {i18n.t("Could not load resolved values.")}{" "}
+                                                    <Button small onClick={onRetryPreview}>
+                                                        {i18n.t("Retry preview")}
+                                                    </Button>
+                                                </p>
+                                            ) : resolvedTemplates.length === 0 ? (
+                                                <p className="template-editor-feedback template-editor-feedback-muted">
+                                                    {i18n.t(
+                                                        "No resolved template values found for current filters."
+                                                    )}
+                                                </p>
+                                            ) : (
+                                                <ul data-testid={`wizard-resolved-template-list-${fileProperty.id}`}>
+                                                    {resolvedTemplates.map((resolvedTemplate, index) => (
+                                                        <li key={`${fileProperty.id}:${String(index)}`}>
+                                                            {resolvedTemplate}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="template-properties-panel">
                                     <h5>{i18n.t("Available properties")}</h5>
@@ -1119,35 +1172,6 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                                     )}
                                 </div>
                             </div>
-                            {templateError ? (
-                                <NoticeBox warning title={i18n.t("Template error")}>{templateError}</NoticeBox>
-                            ) : (
-                                <NoticeBox title={i18n.t("Template ready")}>
-                                    <p>{i18n.t("Template syntax looks valid.")}</p>
-                                    {!hasPreviewScope ? (
-                                        <p>{i18n.t("Select program and organisation unit to load resolved values.")}</p>
-                                    ) : quickPreviewState.status === "loading" ? (
-                                        <CircularLoader small />
-                                    ) : quickPreviewState.status === "error" ? (
-                                        <span>
-                                            {i18n.t("Could not load resolved values.")}{" "}
-                                            <Button small onClick={onRetryPreview}>
-                                                {i18n.t("Retry preview")}
-                                            </Button>
-                                        </span>
-                                    ) : resolvedTemplates.length === 0 ? (
-                                        <p>{i18n.t("No resolved template values found for current filters.")}</p>
-                                    ) : (
-                                        <ul data-testid={`wizard-resolved-template-list-${fileProperty.id}`}>
-                                            {resolvedTemplates.map((resolvedTemplate, index) => (
-                                                <li key={`${fileProperty.id}:${String(index)}`}>
-                                                    {resolvedTemplate}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </NoticeBox>
-                            )}
                         </section>
                     );
                 })
@@ -1191,7 +1215,6 @@ const StorageStep: React.FC<StorageStepProps> = ({
         <div className="wizard-step-content wizard-storage-step" aria-label="wizard-step-storage">
             <div className="wizard-storage-header">
                 <div>
-                    <h3>{i18n.t("Connect WebDAV storage")}</h3>
                     <p className="wizard-subtitle wizard-storage-subtitle">
                         {i18n.t("WebDAV is the only available export target for now.")}
                     </p>
@@ -1398,7 +1421,6 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-preview">
-            <h3>{i18n.t("Preview files to export")}</h3>
             {!hasScope ? (
                 <NoticeBox title={i18n.t("Preview requirements")}>
                     {i18n.t("Select program and organisation unit filter before loading preview.")}
@@ -1662,7 +1684,6 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-execution">
-            <h3>{i18n.t("Run export")}</h3>
             <p>
                 {i18n.t(
                     "Start export to process the reviewed file list using the validated WebDAV configuration."
