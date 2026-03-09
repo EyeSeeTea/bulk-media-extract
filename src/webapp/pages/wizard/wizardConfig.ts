@@ -20,6 +20,7 @@ export type WizardState = {
     currentStep: number;
     selectedProgramId: string;
     selectedOrgUnitId: string;
+    selectedOrgUnitName?: string;
     orgUnitSelectionMode: OrgUnitSelectionMode;
     dateFrom: string;
     dateTo: string;
@@ -133,6 +134,7 @@ export const initialWizardState: WizardState = {
     currentStep: 0,
     selectedProgramId: "",
     selectedOrgUnitId: "",
+    selectedOrgUnitName: "",
     orgUnitSelectionMode: "descendants",
     dateFrom: "",
     dateTo: "",

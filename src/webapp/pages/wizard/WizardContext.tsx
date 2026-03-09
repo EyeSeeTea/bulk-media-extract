@@ -19,6 +19,7 @@ type WizardContextValue = {
             Pick<
                 WizardState,
                 "selectedProgramId" | "selectedOrgUnitId" | "orgUnitSelectionMode" | "dateFrom" | "dateTo"
+                | "selectedOrgUnitName"
             >
         >
     ) => void;
@@ -57,6 +58,9 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
                 selectedOrgUnitId: isProgramChange
                     ? ""
                     : values.selectedOrgUnitId ?? previous.selectedOrgUnitId,
+                selectedOrgUnitName: isProgramChange
+                    ? ""
+                    : values.selectedOrgUnitName ?? previous.selectedOrgUnitName,
                 orgUnitSelectionMode: isProgramChange
                     ? "descendants"
                     : values.orgUnitSelectionMode ?? previous.orgUnitSelectionMode,

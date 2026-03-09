@@ -245,10 +245,21 @@ const PREVIEW_BY_KEY: Record<string, ProgramEventPreview[]> = {
             fileNames: { "de-file": "visit-form.pdf", "de-file-b": "consent-form.pdf" },
             fileSizes: { "de-file": 1024, "de-file-b": 2048 },
         }),
+        new ProgramEventPreview({
+            id: "evt-2",
+            eventDate: "2026-01-11",
+            orgUnitId: "ou-a",
+            orgUnitName: "Central Clinic",
+            dataValues: { "de-file-b": "missing-resource-value" },
+            attributeValues: { "attr-image": "patient-photo-2.jpg" },
+            fileValues: { "de-file-b": "missing-resource-value" },
+            fileNames: {},
+            fileSizes: {},
+        }),
     ],
     "prog-b:ou-b": [
         new ProgramEventPreview({
-            id: "evt-2",
+            id: "evt-3",
             eventDate: "2026-01-12",
             orgUnitId: "ou-b",
             orgUnitName: "North District",

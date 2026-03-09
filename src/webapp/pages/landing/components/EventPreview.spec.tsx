@@ -7,13 +7,18 @@ vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
     OrgUnitTreePicker: (props: {
         programOrgUnits: Array<{ id: string; name: string; path?: string }>;
         disabled?: boolean;
-        onChange: (id: string) => void;
+        onChange: (selection: { id: string; name?: string }) => void;
     }) => (
         <button
             type="button"
             data-testid="org-unit-tree-picker"
             disabled={Boolean(props.disabled)}
-            onClick={() => props.onChange(props.programOrgUnits[0]?.id ?? "")}
+            onClick={() =>
+                props.onChange({
+                    id: props.programOrgUnits[0]?.id ?? "",
+                    name: props.programOrgUnits[0]?.name,
+                })
+            }
         >
             Mock org unit tree
         </button>
@@ -52,7 +57,7 @@ describe("EventPreview", () => {
         );
 
         fireEvent.click(view.getByTestId("org-unit-tree-picker"));
-        expect(onSelectOrgUnit).toHaveBeenCalledWith("ou-a");
+        expect(onSelectOrgUnit).toHaveBeenCalledWith({ id: "ou-a", name: "Org Unit A" });
     });
 
     it("renders event rows and retries on error", () => {

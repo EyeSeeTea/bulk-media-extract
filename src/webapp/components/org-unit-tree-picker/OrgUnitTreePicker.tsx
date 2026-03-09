@@ -5,12 +5,13 @@ import { NamedRef } from "$/domain/entities/Ref";
 type Props = {
     programOrgUnits: NamedRef[];
     selected: string;
-    onChange: (id: string) => void;
+    onChange: (selection: { id: string; name?: string }) => void;
     disabled?: boolean;
 };
 
 type TreeOnChangePayload = {
     id: string;
+    displayName: string;
     selected?: string[];
 };
 
@@ -60,7 +61,7 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 disableSelection={disabled}
                 onChange={(payload: TreeOnChangePayload) => {
                     setSelectedPaths(payload.selected ?? []);
-                    onChange(payload.id);
+                    onChange({ id: payload.id, name: payload.displayName });
                 }}
                 dataTest="org-unit-tree-picker"
             />

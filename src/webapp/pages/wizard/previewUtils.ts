@@ -4,21 +4,23 @@ import { resolveTemplateForEvent } from "$/webapp/pages/wizard/templateBuilder";
 export type ExportPreviewRow = {
     id: string;
     eventId: string;
-    eventDate: string | null;
-    orgUnitLabel: string;
+    eventOrgUnitId: string;
+    eventOrgUnitName: string;
     fileDataValueId: string;
     fileDataValueName: string;
-    fileResourceId: string;
-    fileName: string;
+    fileResourceId?: string;
+    fileName?: string;
     fileSize?: number;
-    resolvedTargetPath: string;
+    resolvedTargetPath?: string;
     hasDuplicateTargetPath: boolean;
+    isMissingFileResource: boolean;
 };
 
 export type ExportPreviewSummary = {
     totalFiles: number;
     totalSize: number;
     duplicateTargetPaths: string[];
+    missingFileResourceCount: number;
 };
 
 export function buildExportPreviewRows(
@@ -28,12 +30,14 @@ export function buildExportPreviewRows(
 ): ExportPreviewRow[] {
     const rows = events.flatMap(event => {
         return selectedFileDataElements.flatMap(fileProperty => {
-            const fileResourceId = event.fileValues[fileProperty.id];
-            if (!fileResourceId) {
+            const hasSelectedFileValue =
+                Object.prototype.hasOwnProperty.call(event.dataValues, fileProperty.id) ||
+                Object.prototype.hasOwnProperty.call(event.fileValues, fileProperty.id);
+            if (!hasSelectedFileValue) {
                 return [];
             }
 
-            const fileName = event.fileNames[fileProperty.id] ?? fileResourceId;
+            const fileResourceId = event.fileValues[fileProperty.id];
             const resolvedTargetPath = resolveTemplateForEvent(
                 mappingByFileKey[fileProperty.id] ?? "",
                 event,
@@ -44,45 +48,54 @@ export function buildExportPreviewRows(
                 {
                     id: `${event.id}:${fileProperty.id}`,
                     eventId: event.id,
-                    eventDate: event.eventDate,
-                    orgUnitLabel: event.orgUnitName ?? event.orgUnitId,
+                    eventOrgUnitId: event.orgUnitId,
+                    eventOrgUnitName: event.orgUnitName ?? event.orgUnitId,
                     fileDataValueId: fileProperty.id,
                     fileDataValueName: fileProperty.name,
                     fileResourceId,
-                    fileName,
+                    fileName: event.fileNames[fileProperty.id],
                     fileSize: event.fileSizes?.[fileProperty.id],
-                    resolvedTargetPath,
+                    resolvedTargetPath: event.fileNames[fileProperty.id] ? resolvedTargetPath : undefined,
                     hasDuplicateTargetPath: false,
+                    isMissingFileResource: !fileResourceId || !event.fileNames[fileProperty.id],
                 },
             ];
         });
     });
 
     const duplicateCounts = rows.reduce<Map<string, number>>((acc, row) => {
-        acc.set(row.resolvedTargetPath, (acc.get(row.resolvedTargetPath) ?? 0) + 1);
+        const targetPath = row.resolvedTargetPath;
+        if (!targetPath) {
+            return acc;
+        }
+        acc.set(targetPath, (acc.get(targetPath) ?? 0) + 1);
         return acc;
     }, new Map());
 
     return rows.map(row => ({
         ...row,
-        hasDuplicateTargetPath: (duplicateCounts.get(row.resolvedTargetPath) ?? 0) > 1,
+        hasDuplicateTargetPath: row.resolvedTargetPath
+            ? (duplicateCounts.get(row.resolvedTargetPath) ?? 0) > 1
+            : false,
     }));
 }
 
 export function summarizeExportPreview(rows: ExportPreviewRow[]): ExportPreviewSummary {
     const duplicateTargetPaths = Array.from(
         rows.reduce<Set<string>>((acc, row) => {
-            if (row.hasDuplicateTargetPath) {
-                acc.add(row.resolvedTargetPath);
+            const targetPath = row.resolvedTargetPath;
+            if (row.hasDuplicateTargetPath && targetPath) {
+                acc.add(targetPath);
             }
             return acc;
         }, new Set())
     );
 
     return {
-        totalFiles: rows.length,
+        totalFiles: rows.filter(row => !row.isMissingFileResource).length,
         totalSize: rows.reduce((sum, row) => sum + (row.fileSize ?? 0), 0),
         duplicateTargetPaths,
+        missingFileResourceCount: rows.filter(row => row.isMissingFileResource).length,
     };
 }
 
@@ -100,4 +113,48 @@ export function formatFileSize(size?: number): string {
     }
 
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function getPreviewCellValue(value?: string): string {
+    return value?.trim() ? value : "-";
+}
+
+export function getPreviewFileWarning(row: ExportPreviewRow): string | undefined {
+    if (!row.isMissingFileResource) {
+        return undefined;
+    }
+
+    return row.fileResourceId
+        ? `Missing FileResource metadata for ${row.fileResourceId}`
+        : "Missing FileResource";
+}
+
+export function buildCaptureEventUrl(
+    eventId: string,
+    orgUnitId: string,
+    baseUrl = getDhis2BaseUrl()
+): string {
+    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+    const params = new URLSearchParams({
+        eventId,
+        orgUnitId,
+    });
+
+    return `${normalizedBaseUrl}/dhis-web-capture/index.html#/enrollmentEventEdit?${params.toString()}`;
+}
+
+function getDhis2BaseUrl(): string {
+    const injectedBaseUrl = document
+        .querySelector('meta[name="dhis2-base-url"]')
+        ?.getAttribute("content");
+
+    if (injectedBaseUrl && injectedBaseUrl !== "__DHIS2_BASE_URL__") {
+        return injectedBaseUrl;
+    }
+
+    if (import.meta.env.DEV) {
+        return "/dhis2";
+    }
+
+    return "";
 }

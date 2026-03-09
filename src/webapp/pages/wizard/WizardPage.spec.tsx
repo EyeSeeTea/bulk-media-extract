@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import { getReactComponent } from "$/utils/tests";
 import { WizardPage } from "$/webapp/pages/wizard/WizardPage";
 import { describe, expect, it, vi } from "vitest";
@@ -6,12 +6,17 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
     OrgUnitTreePicker: (props: {
         programOrgUnits: Array<{ id: string; name: string; path?: string }>;
-        onChange: (id: string) => void;
+        onChange: (selection: { id: string; name?: string }) => void;
     }) => (
         <button
             type="button"
             data-testid="org-unit-tree-picker"
-            onClick={() => props.onChange(props.programOrgUnits[0]?.id ?? "")}
+            onClick={() =>
+                props.onChange({
+                    id: props.programOrgUnits[0]?.id ?? "",
+                    name: props.programOrgUnits[0]?.name,
+                })
+            }
         >
             Mock org unit tree
         </button>
@@ -79,7 +84,34 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        const summary = page.getByTestId("wizard-preview-summary");
+        expect(summary.textContent).toContain("Program");
+        expect(summary.textContent).toContain("Antenatal Visit");
+        expect(summary.textContent).toContain("Selected file data elements");
+        expect(summary.textContent).toContain("Visit Form");
+        expect(summary.textContent).toContain("/exports/{orgUnitName}/{fileName}");
+        expect(summary.textContent).toContain("Org unit");
+        expect(summary.textContent).toContain("Central Clinic");
+        expect(summary.textContent).toContain("Org unit mode");
+        const programText = within(summary).getByText("Antenatal Visit");
+        const mappingText = within(summary).getByText("Visit Form");
+        const orgUnitText = within(summary).getByText("Central Clinic");
+        const modeText = within(summary).getByText("Descendants");
+        expect(programText.compareDocumentPosition(mappingText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(mappingText.compareDocumentPosition(orgUnitText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(orgUnitText.compareDocumentPosition(modeText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+        const table = page.getByTestId("wizard-preview-table");
+        expect(within(table).queryByText("Date")).not.toBeInTheDocument();
+        expect(within(table).queryByText("Target filepath")).not.toBeInTheDocument();
         expect(page.getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
+        const eventLink = page.getByRole("link", { name: "evt-1" }) as HTMLAnchorElement;
+        expect(eventLink).toHaveClass("wizard-preview-event-link");
+        expect(eventLink.href).toContain(
+            "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-a"
+        );
+        const footer = page.getByTestId("wizard-preview-footer");
+        expect(table.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(page.getByText("Files")).toBeInTheDocument();
         expect(page.getAllByText("1.0 KB").length).toBeGreaterThan(0);
 
@@ -154,6 +186,29 @@ describe("WizardPage", () => {
         expect(
             page.getByText("Configuration export will be implemented in a future change.")
         ).toBeInTheDocument();
+    });
+
+    it("highlights rows missing FileResource and shows skipped-file warning", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file-b"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+
+        expect(await page.findByText("Files will be skipped")).toBeInTheDocument();
+        expect(page.getByText("1 files without FileResource won't be exported.")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-preview-row-evt-2:de-file-b")).toHaveClass(
+            "wizard-preview-row-warning"
+        );
+        expect(page.getByText("Missing FileResource metadata for missing-resource-value")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-preview-stats").textContent).toContain("1");
+        expect(page.getAllByText("-").length).toBeGreaterThan(0);
     });
 
     it("inserts selected property token into template at cursor", async () => {

@@ -10,7 +10,7 @@ type Props = {
     programOrgUnits: NamedRef[];
     selectedProgramId: string;
     selectedOrgUnitId: string;
-    onSelectOrgUnit: (orgUnitId: string) => void;
+    onSelectOrgUnit: (selection: { id: string; name?: string }) => void;
     previewState: AsyncData<ProgramEventsPreviewResult>;
     onRetryPreview: () => void;
 };

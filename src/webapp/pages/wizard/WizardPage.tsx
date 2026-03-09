@@ -12,10 +12,14 @@ import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { useFileCapablePrograms } from "$/webapp/pages/landing/hooks/useFileCapablePrograms";
 import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
 import { useProgramFileProperties } from "$/webapp/pages/landing/hooks/useProgramFileProperties";
+import { useOrganisationUnits } from "$/webapp/pages/landing/hooks/useOrganisationUnits";
 import {
     buildExportPreviewRows,
+    buildCaptureEventUrl,
     ExportPreviewRow,
     formatFileSize,
+    getPreviewFileWarning,
+    getPreviewCellValue,
     summarizeExportPreview,
 } from "$/webapp/pages/wizard/previewUtils";
 import { useWizardExportPreview } from "$/webapp/pages/wizard/useWizardExportPreview";
@@ -129,6 +133,7 @@ const WizardContent: React.FC = () => {
 
     const { state: programsState } = useFileCapablePrograms();
     const { state: programDetailsState } = useProgramFileProperties(state.selectedProgramId);
+    const { state: organisationUnitsState } = useOrganisationUnits();
 
     const selectedProgram = React.useMemo(() => {
         if (programsState.status !== "success") {
@@ -314,6 +319,40 @@ const WizardContent: React.FC = () => {
         return summarizeExportPreview(exportPreviewRows);
     }, [exportPreviewRows]);
 
+    const selectedOrgUnitName = React.useMemo(() => {
+        const availableOrgUnits =
+            organisationUnitsState.status === "success" ? organisationUnitsState.data : [];
+        const previewEvents =
+            exportPreviewState.status === "success"
+                ? exportPreviewState.data.events
+                : quickPreviewState.status === "success"
+                  ? quickPreviewState.data.events
+                  : [];
+        const selectedOrgUnitNameFromStateOrList =
+            state.selectedOrgUnitName ||
+            availableOrgUnits.find(orgUnit => orgUnit.id === state.selectedOrgUnitId)?.name;
+        const selectedOrgUnitNameFromPreview = previewEvents.find(
+            event => event.orgUnitId === state.selectedOrgUnitId
+        )?.orgUnitName;
+        const selectedOrgUnitNameFromProgram = selectedProgram?.organisationUnits.find(
+            orgUnit => orgUnit.id === state.selectedOrgUnitId
+        )?.name;
+
+        return (
+            selectedOrgUnitNameFromStateOrList ??
+            selectedOrgUnitNameFromPreview ??
+            selectedOrgUnitNameFromProgram ??
+            state.selectedOrgUnitId
+        );
+    }, [
+        exportPreviewState,
+        organisationUnitsState,
+        quickPreviewState,
+        selectedProgram,
+        state.selectedOrgUnitName,
+        state.selectedOrgUnitId,
+    ]);
+
     const getValidationErrorForStep = React.useCallback(
         (stepId: WizardStepId): string | undefined => {
             const baseError = getStepValidationError(state, stepId);
@@ -426,7 +465,12 @@ const WizardContent: React.FC = () => {
                         mappingByFileKey={state.mappingByFileKey}
                         quickPreviewState={quickPreviewState}
                         quickPreviewByFileKey={quickPreviewByFileKey}
-                        onSelectOrgUnit={selectedOrgUnitId => setScope({ selectedOrgUnitId })}
+                        onSelectOrgUnit={selection =>
+                            setScope({
+                                selectedOrgUnitId: selection.id,
+                                selectedOrgUnitName: selection.name,
+                            })
+                        }
                         onSelectionModeChange={orgUnitSelectionMode =>
                             setScope({ orgUnitSelectionMode })
                         }
@@ -441,9 +485,16 @@ const WizardContent: React.FC = () => {
             case "preview":
                 return (
                     <PreviewStep
+                        selectedProgramName={selectedProgram?.name ?? state.selectedProgramId}
                         selectedProgramId={state.selectedProgramId}
+                        selectedOrgUnitName={selectedOrgUnitName}
                         selectedOrgUnitId={state.selectedOrgUnitId}
                         orgUnitSelectionMode={state.orgUnitSelectionMode}
+                        selectedFileMappings={selectedFileDataElements.map(fileProperty => ({
+                            id: fileProperty.id,
+                            name: fileProperty.name,
+                            template: state.mappingByFileKey[fileProperty.id] ?? "",
+                        }))}
                         dateFrom={state.dateFrom}
                         dateTo={state.dateTo}
                         previewState={exportPreviewState}
@@ -675,7 +726,7 @@ type TemplateStepProps = {
     mappingByFileKey: Record<string, string>;
     quickPreviewState: AsyncData<ProgramEventsPreviewResult>;
     quickPreviewByFileKey: Record<string, string[]>;
-    onSelectOrgUnit: (orgUnitId: string) => void;
+    onSelectOrgUnit: (selection: { id: string; name?: string }) => void;
     onSelectionModeChange: (mode: OrgUnitSelectionMode) => void;
     onDateFromChange: (date: string) => void;
     onDateToChange: (date: string) => void;
@@ -1026,9 +1077,16 @@ const StorageStep: React.FC<StorageStepProps> = ({
 };
 
 type PreviewStepProps = {
+    selectedProgramName: string;
     selectedProgramId: string;
+    selectedOrgUnitName: string;
     selectedOrgUnitId: string;
     orgUnitSelectionMode: OrgUnitSelectionMode;
+    selectedFileMappings: Array<{
+        id: string;
+        name: string;
+        template: string;
+    }>;
     dateFrom: string;
     dateTo: string;
     previewState: AsyncData<ProgramEventsPreviewResult>;
@@ -1038,14 +1096,18 @@ type PreviewStepProps = {
         totalFiles: number;
         totalSize: number;
         duplicateTargetPaths: string[];
+        missingFileResourceCount: number;
     };
     onRetry: () => void;
 };
 
 const PreviewStep: React.FC<PreviewStepProps> = ({
+    selectedProgramName,
     selectedProgramId,
+    selectedOrgUnitName,
     selectedOrgUnitId,
     orgUnitSelectionMode,
+    selectedFileMappings,
     dateFrom,
     dateTo,
     previewState,
@@ -1060,11 +1122,6 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
     return (
         <div className="wizard-step-content" aria-label="wizard-step-preview">
             <h3>{i18n.t("Preview files to export")}</h3>
-            <p>
-                {i18n.t("Org unit mode: {{mode}}", {
-                    mode: orgUnitSelectionMode === "selected" ? "Selected" : "Descendants",
-                })}
-            </p>
             {!hasScope ? (
                 <NoticeBox title={i18n.t("Preview requirements")}>
                     {i18n.t("Select program and organisation unit filter before loading preview.")}
@@ -1086,52 +1143,44 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
             ) : null}
             {hasScope && previewState.status === "success" ? (
                 <>
+                    <div
+                        className="wizard-section wizard-preview-summary"
+                        data-testid="wizard-preview-summary"
+                    >
+                        <div className="wizard-preview-summary-item">
+                            <span>{i18n.t("Program")}</span>
+                            <strong>{selectedProgramName}</strong>
+                        </div>
+                        <div className="wizard-preview-summary-item">
+                            <span>{i18n.t("Selected file data elements")}</span>
+                            <ul
+                                className="wizard-preview-mapping-list"
+                                data-testid="wizard-preview-file-mappings"
+                            >
+                                {selectedFileMappings.map(fileMapping => (
+                                    <li key={fileMapping.id}>
+                                        <strong>{fileMapping.name}</strong>
+                                        <code>{fileMapping.template}</code>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="wizard-preview-summary-item">
+                            <span>{i18n.t("Org unit")}</span>
+                            <strong>{selectedOrgUnitName}</strong>
+                        </div>
+                        <div className="wizard-preview-summary-item">
+                            <span>{i18n.t("Org unit mode")}</span>
+                            <strong>
+                                {orgUnitSelectionMode === "selected"
+                                    ? i18n.t("Selected")
+                                    : i18n.t("Descendants")}
+                            </strong>
+                        </div>
+                    </div>
                     <p>
-                        {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
-                            total: String(previewState.data.total ?? filteredPreview.length),
-                            pages: String(previewState.data.pageCount ?? 1),
-                        })}
+                        {i18n.t("Preview the resolved export rows before continuing.")}
                     </p>
-                    <div className="wizard-preview-stats" data-testid="wizard-preview-stats">
-                        <div className="wizard-preview-stat">
-                            <span>{i18n.t("Files")}</span>
-                            <strong>{String(previewSummary.totalFiles)}</strong>
-                        </div>
-                        <div className="wizard-preview-stat">
-                            <span>{i18n.t("Total size")}</span>
-                            <strong>{formatFileSize(previewSummary.totalSize)}</strong>
-                        </div>
-                    </div>
-                    <div className="actions-row wizard-preview-actions">
-                        <Button
-                            secondary
-                            data-testid="wizard-export-config-button"
-                            onClick={() => setShowExportConfigNotice(true)}
-                        >
-                            {i18n.t("Export configuration")}
-                        </Button>
-                    </div>
-                    {showExportConfigNotice ? (
-                        <NoticeBox title={i18n.t("Not yet implemented")}>
-                            {i18n.t(
-                                "Configuration export will be implemented in a future change."
-                            )}
-                        </NoticeBox>
-                    ) : null}
-                    {previewSummary.duplicateTargetPaths.length > 0 ? (
-                        <NoticeBox
-                            warning
-                            title={i18n.t("Duplicate target filepaths detected")}
-                            dataTest="wizard-preview-duplicate-error"
-                        >
-                            {i18n.t(
-                                "Revise the template. {{count}} target filepath conflicts were found.",
-                                {
-                                    count: String(previewSummary.duplicateTargetPaths.length),
-                                }
-                            )}
-                        </NoticeBox>
-                    ) : null}
                     {previewRows.length === 0 ? (
                         <NoticeBox title={i18n.t("No files found")}>
                             {dateFrom || dateTo
@@ -1139,41 +1188,136 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
                                 : i18n.t("No exportable files match the current selection.")}
                         </NoticeBox>
                     ) : (
-                        <table className="preview-table" data-testid="wizard-preview-table">
-                            <thead>
-                                <tr>
-                                    <th>{i18n.t("Event")}</th>
-                                    <th>{i18n.t("Date")}</th>
-                                    <th>{i18n.t("Org unit")}</th>
-                                    <th>{i18n.t("File data value")}</th>
-                                    <th>{i18n.t("Source filename")}</th>
-                                    <th>{i18n.t("Size")}</th>
-                                    <th>{i18n.t("Target filepath")}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {previewRows.map(row => (
-                                    <tr
-                                        key={row.id}
-                                        data-testid={`wizard-preview-row-${row.id}`}
-                                        className={
-                                            row.hasDuplicateTargetPath
-                                                ? "wizard-preview-row-duplicate"
-                                                : ""
-                                        }
-                                    >
-                                        <td>{row.eventId}</td>
-                                        <td>{row.eventDate ?? "-"}</td>
-                                        <td>{row.orgUnitLabel}</td>
-                                        <td>{row.fileDataValueName}</td>
-                                        <td>{row.fileName}</td>
-                                        <td>{formatFileSize(row.fileSize)}</td>
-                                        <td>{row.resolvedTargetPath || "-"}</td>
+                        <div className="wizard-preview-table-wrap">
+                            <table className="preview-table wizard-preview-table" data-testid="wizard-preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>{i18n.t("Event")}</th>
+                                        <th>{i18n.t("File data value")}</th>
+                                        <th>{i18n.t("Source filename")}</th>
+                                        <th>{i18n.t("Size")}</th>
+                                        <th>{i18n.t("Target")}</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {previewRows.map(row => {
+                                        const warning = getPreviewFileWarning(row);
+
+                                        return (
+                                            <tr
+                                                key={row.id}
+                                                data-testid={`wizard-preview-row-${row.id}`}
+                                                className={[
+                                                    row.hasDuplicateTargetPath
+                                                        ? "wizard-preview-row-duplicate"
+                                                        : "",
+                                                    row.isMissingFileResource
+                                                        ? "wizard-preview-row-warning"
+                                                        : "",
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" ")}
+                                            >
+                                                <td>
+                                                    <a
+                                                        className="wizard-preview-event-link"
+                                                        href={buildCaptureEventUrl(
+                                                            row.eventId,
+                                                            row.eventOrgUnitId
+                                                        )}
+                                                        rel="noopener noreferrer"
+                                                        target="_blank"
+                                                    >
+                                                        {row.eventId}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <div className="wizard-preview-cell-primary">
+                                                        {row.fileDataValueName}
+                                                    </div>
+                                                    <div className="wizard-preview-cell-secondary">
+                                                        {row.eventOrgUnitName}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="wizard-preview-cell-primary">
+                                                        {getPreviewCellValue(row.fileName)}
+                                                    </div>
+                                                    {warning ? (
+                                                        <div className="wizard-preview-warning-text">
+                                                            {warning}
+                                                        </div>
+                                                    ) : null}
+                                                </td>
+                                                <td>{formatFileSize(row.fileSize)}</td>
+                                                <td>{getPreviewCellValue(row.resolvedTargetPath)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
+                    <div className="wizard-preview-footer" data-testid="wizard-preview-footer">
+                        {previewSummary.duplicateTargetPaths.length > 0 ? (
+                            <NoticeBox
+                                warning
+                                title={i18n.t("Duplicate target filepaths detected")}
+                                dataTest="wizard-preview-duplicate-error"
+                            >
+                                {i18n.t(
+                                    "Revise the template. {{count}} target filepath conflicts were found.",
+                                    {
+                                        count: String(previewSummary.duplicateTargetPaths.length),
+                                    }
+                                )}
+                            </NoticeBox>
+                        ) : null}
+                        {previewSummary.missingFileResourceCount > 0 ? (
+                            <NoticeBox warning title={i18n.t("Files will be skipped")}>
+                                {i18n.t(
+                                    "{{count}} files without FileResource won't be exported.",
+                                    {
+                                        count: String(previewSummary.missingFileResourceCount),
+                                    }
+                                )}
+                            </NoticeBox>
+                        ) : null}
+                        <div className="wizard-preview-footer-meta">
+                            <p className="wizard-preview-meta-text">
+                                {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
+                                    total: String(previewState.data.total ?? filteredPreview.length),
+                                    pages: String(previewState.data.pageCount ?? 1),
+                                })}
+                            </p>
+                            <div className="wizard-preview-stats" data-testid="wizard-preview-stats">
+                                <div className="wizard-preview-stat">
+                                    <span>{i18n.t("Files")}</span>
+                                    <strong>{String(previewSummary.totalFiles)}</strong>
+                                </div>
+                                <div className="wizard-preview-stat">
+                                    <span>{i18n.t("Total size")}</span>
+                                    <strong>{formatFileSize(previewSummary.totalSize)}</strong>
+                                </div>
+                            </div>
+                            <div className="actions-row wizard-preview-actions">
+                                <Button
+                                    secondary
+                                    data-testid="wizard-export-config-button"
+                                    onClick={() => setShowExportConfigNotice(true)}
+                                >
+                                    {i18n.t("Export configuration")}
+                                </Button>
+                            </div>
+                            {showExportConfigNotice ? (
+                                <NoticeBox title={i18n.t("Not yet implemented")}>
+                                    {i18n.t(
+                                        "Configuration export will be implemented in a future change."
+                                    )}
+                                </NoticeBox>
+                            ) : null}
+                        </div>
+                    </div>
                 </>
             ) : null}
         </div>

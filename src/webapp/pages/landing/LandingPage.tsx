@@ -52,7 +52,7 @@ export const LandingPage: React.FC = React.memo(() => {
                 programOrgUnits={programOrgUnits}
                 selectedProgramId={selectedProgramId}
                 selectedOrgUnitId={selectedOrgUnitId}
-                onSelectOrgUnit={setSelectedOrgUnitId}
+                onSelectOrgUnit={selection => setSelectedOrgUnitId(selection.id)}
                 previewState={previewState}
                 onRetryPreview={() => {
                     void reloadPreview();

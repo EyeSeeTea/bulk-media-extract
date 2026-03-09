@@ -1,7 +1,10 @@
 import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
 import {
+    buildCaptureEventUrl,
     buildExportPreviewRows,
     formatFileSize,
+    getPreviewFileWarning,
+    getPreviewCellValue,
     summarizeExportPreview,
 } from "$/webapp/pages/wizard/previewUtils";
 import { describe, expect, it } from "vitest";
@@ -36,12 +39,67 @@ describe("previewUtils", () => {
         expect(rows).toEqual([
             expect.objectContaining({
                 id: "evt-1:de-file",
+                eventOrgUnitId: "ou-a",
+                eventOrgUnitName: "Central Clinic",
                 fileName: "visit-form.pdf",
                 fileSize: 2048,
                 resolvedTargetPath: "/exports/Central Clinic/visit-form.pdf",
                 hasDuplicateTargetPath: false,
+                isMissingFileResource: false,
             }),
         ]);
+    });
+
+    it("keeps rows with missing file resources and counts skipped files", () => {
+        const rows = buildExportPreviewRows(
+            [
+                ProgramEventPreview.create({
+                    id: "evt-2",
+                    eventDate: "2026-01-11",
+                    orgUnitId: "ou-a",
+                    orgUnitName: "Central Clinic",
+                    dataValues: { "de-file": "missing-resource-value" },
+                    attributeValues: {},
+                    fileValues: { "de-file": "missing-resource-value" },
+                    fileNames: {},
+                    fileSizes: {},
+                }),
+            ],
+            [
+                ProgramFileProperty.create({
+                    id: "de-file",
+                    name: "Visit Form",
+                    valueType: "FILE_RESOURCE",
+                    sourceType: "dataElement",
+                }),
+            ],
+            { "de-file": "/exports/{fileName}" }
+        );
+
+        const summary = summarizeExportPreview(rows);
+        const firstRow = rows[0];
+
+        expect(rows).toEqual([
+            expect.objectContaining({
+                id: "evt-2:de-file",
+                fileResourceId: "missing-resource-value",
+                fileName: undefined,
+                resolvedTargetPath: undefined,
+                hasDuplicateTargetPath: false,
+                isMissingFileResource: true,
+            }),
+        ]);
+        expect(firstRow).toBeDefined();
+        if (!firstRow) {
+            throw new Error("Expected preview row");
+        }
+        expect(getPreviewFileWarning(firstRow)).toBe(
+            "Missing FileResource metadata for missing-resource-value"
+        );
+        expect(summary.totalFiles).toBe(0);
+        expect(summary.totalSize).toBe(0);
+        expect(summary.duplicateTargetPaths).toEqual([]);
+        expect(summary.missingFileResourceCount).toBe(1);
     });
 
     it("summarizes totals and duplicate target paths", () => {
@@ -84,7 +142,20 @@ describe("previewUtils", () => {
         expect(summary.totalFiles).toBe(2);
         expect(summary.totalSize).toBe(2048);
         expect(summary.duplicateTargetPaths).toEqual(["/exports/visit-form.pdf"]);
+        expect(summary.missingFileResourceCount).toBe(0);
         expect(rows.every(row => row.hasDuplicateTargetPath)).toBe(true);
+    });
+
+    it("builds Capture event links", () => {
+        expect(buildCaptureEventUrl("evt-1", "ou-b", "/dhis2")).toBe(
+            "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-b"
+        );
+    });
+
+    it("provides preview cell fallbacks", () => {
+        expect(getPreviewCellValue("visit-form.pdf")).toBe("visit-form.pdf");
+        expect(getPreviewCellValue("")).toBe("-");
+        expect(getPreviewCellValue(undefined)).toBe("-");
     });
 
     it("formats file sizes for display", () => {
