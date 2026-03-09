@@ -14,6 +14,7 @@ const context = {
         userGroups: [],
     }),
     compositionRoot: getTestCompositionRoot(),
+    baseUrl: "http://localhost:8081/dhis2",
 };
 
 describe("useProgramEventsPreview", () => {

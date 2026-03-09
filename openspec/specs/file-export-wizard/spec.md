@@ -65,13 +65,18 @@ The system MUST trigger export execution using the existing export use case and 
 - **THEN** the system shows error details and allows the user to retry execution without re-entering unaffected configuration
 
 ### Requirement: Wizard preview step exposes export configuration action
-The system SHALL display an export configuration action in the preview step so the workflow can later support running exports from a saved configuration.  
-This change MUST expose the action without generating a configuration file yet.
+The system SHALL display an export configuration action in the preview step and MUST generate a JSON execution configuration from the current reviewed preview result when the user activates it.  
+The downloaded configuration MUST use the defined execution-configuration contract and MUST reflect the same reviewed preview rows and resolved targets currently visible in the preview step, excluding rows that are marked as skipped because they are missing `FileResource`.
 
 #### Scenario: Preview shows export configuration button
 - **WHEN** the user reaches the preview step
 - **THEN** the system displays an export configuration button alongside the preview actions
 
-#### Scenario: Export configuration generation is not yet available
-- **WHEN** the user activates the export configuration button
-- **THEN** the system does not generate a configuration file and instead communicates that the action will be implemented in a future change
+#### Scenario: Export configuration downloads as JSON
+- **WHEN** the user activates the export configuration action after the preview has loaded
+- **THEN** the system downloads a JSON file containing the execution configuration for the current reviewed preview result
+
+#### Scenario: Export configuration excludes skipped rows
+- **WHEN** the current preview contains rows that are visible warnings because their `FileResource` could not be resolved
+- **THEN** the downloaded execution configuration omits those rows from its operations while preserving the reviewed exportable rows and skipped-row counts
+

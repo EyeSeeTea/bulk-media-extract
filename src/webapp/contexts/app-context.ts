@@ -5,6 +5,7 @@ import { User } from "$/domain/entities/User";
 export type AppContextState = {
     currentUser: User;
     compositionRoot: CompositionRoot;
+    baseUrl: string;
 };
 
 export const AppContext = React.createContext<AppContextState | null>(null);

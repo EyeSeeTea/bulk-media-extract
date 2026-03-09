@@ -9,6 +9,7 @@ import {
 } from "$/domain/entities/FileExportProgram";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
+import { useAppContext } from "$/webapp/contexts/app-context";
 import { useFileCapablePrograms } from "$/webapp/pages/landing/hooks/useFileCapablePrograms";
 import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
 import { useProgramFileProperties } from "$/webapp/pages/landing/hooks/useProgramFileProperties";
@@ -22,6 +23,12 @@ import {
     getPreviewCellValue,
     summarizeExportPreview,
 } from "$/webapp/pages/wizard/previewUtils";
+import {
+    buildExportExecutionConfiguration,
+    buildExportExecutionConfigurationFilename,
+    downloadExportExecutionConfiguration,
+    ExportExecutionConfigurationFileMapping,
+} from "$/webapp/pages/wizard/exportExecutionConfiguration";
 import { useWizardExportPreview } from "$/webapp/pages/wizard/useWizardExportPreview";
 import i18n from "$/utils/i18n";
 import { useWizardContext, WizardProvider } from "$/webapp/pages/wizard/WizardContext";
@@ -117,6 +124,7 @@ export const WizardPage: React.FC = React.memo(() => {
 });
 
 const WizardContent: React.FC = () => {
+    const { baseUrl } = useAppContext();
     const {
         state,
         currentStepId,
@@ -311,13 +319,24 @@ const WizardContent: React.FC = () => {
         return buildExportPreviewRows(
             filteredExportPreview,
             selectedFileDataElements,
-            state.mappingByFileKey
+            state.mappingByFileKey,
+            baseUrl
         );
-    }, [filteredExportPreview, selectedFileDataElements, state.mappingByFileKey]);
+    }, [baseUrl, filteredExportPreview, selectedFileDataElements, state.mappingByFileKey]);
 
     const exportPreviewSummary = React.useMemo(() => {
         return summarizeExportPreview(exportPreviewRows);
     }, [exportPreviewRows]);
+
+    const exportConfigurationFileMappings = React.useMemo<ExportExecutionConfigurationFileMapping[]>(() => {
+        return selectedFileDataElements.map(fileProperty => ({
+            id: fileProperty.id,
+            name: fileProperty.name,
+            template: state.mappingByFileKey[fileProperty.id] ?? "",
+            programStageId: fileProperty.sourceContainerId,
+            programStageName: fileProperty.sourceContainerName,
+        }));
+    }, [selectedFileDataElements, state.mappingByFileKey]);
 
     const selectedOrgUnitName = React.useMemo(() => {
         const availableOrgUnits =
@@ -495,6 +514,7 @@ const WizardContent: React.FC = () => {
                             name: fileProperty.name,
                             template: state.mappingByFileKey[fileProperty.id] ?? "",
                         }))}
+                        exportConfigurationFileMappings={exportConfigurationFileMappings}
                         dateFrom={state.dateFrom}
                         dateTo={state.dateTo}
                         previewState={exportPreviewState}
@@ -1087,6 +1107,7 @@ type PreviewStepProps = {
         name: string;
         template: string;
     }>;
+    exportConfigurationFileMappings: ExportExecutionConfigurationFileMapping[];
     dateFrom: string;
     dateTo: string;
     previewState: AsyncData<ProgramEventsPreviewResult>;
@@ -1108,6 +1129,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
     selectedOrgUnitId,
     orgUnitSelectionMode,
     selectedFileMappings,
+    exportConfigurationFileMappings,
     dateFrom,
     dateTo,
     previewState,
@@ -1117,7 +1139,41 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
     onRetry,
 }) => {
     const hasScope = Boolean(selectedProgramId && selectedOrgUnitId);
-    const [showExportConfigNotice, setShowExportConfigNotice] = React.useState(false);
+    const [exportConfigStatus, setExportConfigStatus] = React.useState<"idle" | "downloaded">(
+        "idle"
+    );
+
+    const onExportConfiguration = React.useCallback(() => {
+        const generatedAt = new Date().toISOString();
+        const configuration = buildExportExecutionConfiguration({
+            generatedAt,
+            selectedProgramId,
+            selectedProgramName,
+            selectedOrgUnitId,
+            selectedOrgUnitName,
+            orgUnitSelectionMode,
+            dateFrom,
+            dateTo,
+            selectedFileMappings: exportConfigurationFileMappings,
+            previewRows,
+        });
+
+        downloadExportExecutionConfiguration(
+            configuration,
+            buildExportExecutionConfigurationFilename(selectedProgramId, generatedAt)
+        );
+        setExportConfigStatus("downloaded");
+    }, [
+        dateFrom,
+        dateTo,
+        exportConfigurationFileMappings,
+        orgUnitSelectionMode,
+        previewRows,
+        selectedOrgUnitId,
+        selectedOrgUnitName,
+        selectedProgramId,
+        selectedProgramName,
+    ]);
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-preview">
@@ -1304,15 +1360,20 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
                                 <Button
                                     secondary
                                     data-testid="wizard-export-config-button"
-                                    onClick={() => setShowExportConfigNotice(true)}
+                                    onClick={onExportConfiguration}
                                 >
                                     {i18n.t("Export configuration")}
                                 </Button>
                             </div>
-                            {showExportConfigNotice ? (
-                                <NoticeBox title={i18n.t("Not yet implemented")}>
+                            <p className="wizard-preview-meta-text">
+                                {i18n.t(
+                                    "Download a JSON execution configuration for the current reviewed preview."
+                                )}
+                            </p>
+                            {exportConfigStatus === "downloaded" ? (
+                                <NoticeBox title={i18n.t("Execution configuration downloaded")}>
                                     {i18n.t(
-                                        "Configuration export will be implemented in a future change."
+                                        "The JSON execution configuration for this preview was downloaded."
                                     )}
                                 </NoticeBox>
                             ) : null}

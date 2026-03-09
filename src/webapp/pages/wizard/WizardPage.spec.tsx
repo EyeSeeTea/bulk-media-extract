@@ -1,7 +1,7 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
 import { getReactComponent } from "$/utils/tests";
 import { WizardPage } from "$/webapp/pages/wizard/WizardPage";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
     OrgUnitTreePicker: (props: {
@@ -22,6 +22,10 @@ vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
         </button>
     ),
 }));
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 describe("WizardPage", () => {
     it("blocks next when program is not selected", () => {
@@ -167,8 +171,29 @@ describe("WizardPage", () => {
         expect(page.getByText("Step 3 of 5: Preview")).toBeInTheDocument();
     });
 
-    it("shows export configuration action as not yet implemented", async () => {
+    it("downloads execution configuration json from preview", async () => {
         const page = getReactComponent(<WizardPage />);
+        let downloadedBlob: Blob | undefined;
+        const createObjectURLSpy = vi.fn((blob: Blob | MediaSource) => {
+            downloadedBlob = blob as Blob;
+            return "blob:preview-config";
+        });
+        const revokeObjectURLSpy = vi.fn(() => undefined);
+        const originalCreateObjectURL = URL.createObjectURL;
+        const originalRevokeObjectURL = URL.revokeObjectURL;
+        Object.defineProperty(URL, "createObjectURL", {
+            configurable: true,
+            writable: true,
+            value: createObjectURLSpy,
+        });
+        Object.defineProperty(URL, "revokeObjectURL", {
+            configurable: true,
+            writable: true,
+            value: revokeObjectURLSpy,
+        });
+        const clickSpy = vi
+            .spyOn(HTMLAnchorElement.prototype, "click")
+            .mockImplementation(() => undefined);
 
         const programSelect = await page.findByTestId("wizard-program-select");
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
@@ -180,12 +205,34 @@ describe("WizardPage", () => {
         });
         fireEvent.click(page.getByText("Next"));
 
-        fireEvent.click(await page.findByTestId("wizard-export-config-button"));
+        try {
+            fireEvent.click(await page.findByTestId("wizard-export-config-button"));
 
-        expect(await page.findByText("Not yet implemented")).toBeInTheDocument();
-        expect(
-            page.getByText("Configuration export will be implemented in a future change.")
-        ).toBeInTheDocument();
+            await waitFor(() => {
+                expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
+            });
+
+            expect(clickSpy).toHaveBeenCalledTimes(1);
+            expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:preview-config");
+            expect(await page.findByText("Execution configuration downloaded")).toBeInTheDocument();
+            expect(
+                page.getByText("The JSON execution configuration for this preview was downloaded.")
+            ).toBeInTheDocument();
+
+            expect(downloadedBlob).toBeInstanceOf(Blob);
+            expect((downloadedBlob as Blob).type).toBe("application/json");
+        } finally {
+            Object.defineProperty(URL, "createObjectURL", {
+                configurable: true,
+                writable: true,
+                value: originalCreateObjectURL,
+            });
+            Object.defineProperty(URL, "revokeObjectURL", {
+                configurable: true,
+                writable: true,
+                value: originalRevokeObjectURL,
+            });
+        }
     });
 
     it("highlights rows missing FileResource and shows skipped-file warning", async () => {

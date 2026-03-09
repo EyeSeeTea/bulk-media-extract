@@ -1,6 +1,7 @@
 import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
 import {
     buildCaptureEventUrl,
+    buildEventDataValueUrl,
     buildExportPreviewRows,
     formatFileSize,
     getPreviewFileWarning,
@@ -33,7 +34,8 @@ describe("previewUtils", () => {
                     sourceType: "dataElement",
                 }),
             ],
-            { "de-file": "/exports/{orgUnitName}/{fileName}" }
+            { "de-file": "/exports/{orgUnitName}/{fileName}" },
+            "http://localhost:8081/dhis2"
         );
 
         expect(rows).toEqual([
@@ -41,6 +43,11 @@ describe("previewUtils", () => {
                 id: "evt-1:de-file",
                 eventOrgUnitId: "ou-a",
                 eventOrgUnitName: "Central Clinic",
+                fileDataValue: "file-123",
+                fileDataValueUrl:
+                    "http://localhost:8081/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file",
+                programStageId: undefined,
+                programStageName: undefined,
                 fileName: "visit-form.pdf",
                 fileSize: 2048,
                 resolvedTargetPath: "/exports/Central Clinic/visit-form.pdf",
@@ -73,7 +80,8 @@ describe("previewUtils", () => {
                     sourceType: "dataElement",
                 }),
             ],
-            { "de-file": "/exports/{fileName}" }
+            { "de-file": "/exports/{fileName}" },
+            "http://localhost:8081/dhis2"
         );
 
         const summary = summarizeExportPreview(rows);
@@ -82,6 +90,7 @@ describe("previewUtils", () => {
         expect(rows).toEqual([
             expect.objectContaining({
                 id: "evt-2:de-file",
+                fileDataValue: "missing-resource-value",
                 fileResourceId: "missing-resource-value",
                 fileName: undefined,
                 resolvedTargetPath: undefined,
@@ -134,7 +143,8 @@ describe("previewUtils", () => {
             {
                 "de-file": "/exports/{fileName}",
                 "de-file-b": "/exports/{fileName}",
-            }
+            },
+            "http://localhost:8081/dhis2"
         );
 
         const summary = summarizeExportPreview(rows);
@@ -149,6 +159,12 @@ describe("previewUtils", () => {
     it("builds Capture event links", () => {
         expect(buildCaptureEventUrl("evt-1", "ou-b", "/dhis2")).toBe(
             "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-b"
+        );
+    });
+
+    it("builds data value urls", () => {
+        expect(buildEventDataValueUrl("evt-1", "de-file", "http://localhost:8081/dhis2")).toBe(
+            "http://localhost:8081/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file"
         );
     });
 

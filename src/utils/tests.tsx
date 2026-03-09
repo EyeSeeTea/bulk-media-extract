@@ -9,6 +9,7 @@ export function getTestContext(): AppContextState {
     return {
         currentUser: createAdminUser(),
         compositionRoot: getTestCompositionRoot(),
+        baseUrl: "http://localhost:8081/dhis2",
     };
 }
 

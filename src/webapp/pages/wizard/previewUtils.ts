@@ -6,8 +6,12 @@ export type ExportPreviewRow = {
     eventId: string;
     eventOrgUnitId: string;
     eventOrgUnitName: string;
+    fileDataValue: string;
     fileDataValueId: string;
     fileDataValueName: string;
+    fileDataValueUrl: string;
+    programStageId?: string;
+    programStageName?: string;
     fileResourceId?: string;
     fileName?: string;
     fileSize?: number;
@@ -26,7 +30,8 @@ export type ExportPreviewSummary = {
 export function buildExportPreviewRows(
     events: ProgramEventPreview[],
     selectedFileDataElements: ProgramFileProperty[],
-    mappingByFileKey: Record<string, string>
+    mappingByFileKey: Record<string, string>,
+    baseUrl = getDhis2BaseUrl()
 ): ExportPreviewRow[] {
     const rows = events.flatMap(event => {
         return selectedFileDataElements.flatMap(fileProperty => {
@@ -50,8 +55,12 @@ export function buildExportPreviewRows(
                     eventId: event.id,
                     eventOrgUnitId: event.orgUnitId,
                     eventOrgUnitName: event.orgUnitName ?? event.orgUnitId,
+                    fileDataValue: event.dataValues[fileProperty.id] ?? event.fileValues[fileProperty.id] ?? "",
                     fileDataValueId: fileProperty.id,
                     fileDataValueName: fileProperty.name,
+                    fileDataValueUrl: buildEventDataValueUrl(event.id, fileProperty.id, baseUrl),
+                    programStageId: fileProperty.sourceContainerId,
+                    programStageName: fileProperty.sourceContainerName,
                     fileResourceId,
                     fileName: event.fileNames[fileProperty.id],
                     fileSize: event.fileSizes?.[fileProperty.id],
@@ -143,7 +152,21 @@ export function buildCaptureEventUrl(
     return `${normalizedBaseUrl}/dhis-web-capture/index.html#/enrollmentEventEdit?${params.toString()}`;
 }
 
+export function buildEventDataValueUrl(
+    eventId: string,
+    dataElementId: string,
+    baseUrl = getDhis2BaseUrl()
+): string {
+    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+
+    return `${normalizedBaseUrl}/api/41/tracker/events/${eventId}/dataValues/${dataElementId}/file`;
+}
+
 function getDhis2BaseUrl(): string {
+    if (typeof document === "undefined") {
+        return import.meta.env.DEV ? "/dhis2" : "";
+    }
+
     const injectedBaseUrl = document
         .querySelector('meta[name="dhis2-base-url"]')
         ?.getAttribute("content");
