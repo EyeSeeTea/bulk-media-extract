@@ -13,8 +13,7 @@ export function getTestContext(): AppContextState {
     };
 }
 
-export function getReactComponent(children: ReactNode): RenderResult {
-    const context = getTestContext();
+export function getReactComponent(children: ReactNode, context: AppContextState = getTestContext()): RenderResult {
 
     return render(
         <AppContext.Provider value={context}>

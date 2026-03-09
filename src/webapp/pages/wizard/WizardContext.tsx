@@ -1,4 +1,5 @@
 import React from "react";
+import { StorageConnectionConfig } from "$/domain/repositories/StorageRepository";
 import {
     getStepValidationError,
     initialWizardState,
@@ -37,7 +38,14 @@ type WizardContextValue = {
 const WizardContext = React.createContext<WizardContextValue | null>(null);
 const DEFAULT_STEP: WizardStepDefinition = WIZARD_STEPS[0] ?? { id: "program", title: "Program" };
 
-export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+type WizardProviderProps = React.PropsWithChildren<{
+    validateStorageConnectionRequest: (config: StorageConnectionConfig) => Promise<void>;
+}>;
+
+export const WizardProvider: React.FC<WizardProviderProps> = ({
+    children,
+    validateStorageConnectionRequest,
+}) => {
     const [state, setState] = React.useState<WizardState>(initialWizardState);
 
     const currentStep = WIZARD_STEPS[state.currentStep] ?? DEFAULT_STEP;
@@ -89,31 +97,32 @@ export const WizardProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     }, []);
 
     const validateStorageConnection = React.useCallback(async () => {
+        const config = state.storage;
+
         setState(previous => ({
             ...previous,
             connectionStatus: "validating",
             connectionError: undefined,
         }));
 
-        await new Promise(resolve => {
-            setTimeout(resolve, 250);
-        });
-
-        setState(previous => {
-            const { url, username, password } = previous.storage;
-            const hasAllValues = Boolean(url && username && password);
-            const hasValidProtocol = /^https?:\/\//.test(url);
-            const isValid = hasAllValues && hasValidProtocol;
-
-            return {
+        try {
+            await validateStorageConnectionRequest(config);
+            setState(previous => ({
                 ...previous,
-                connectionStatus: isValid ? "valid" : "invalid",
-                connectionError: isValid
-                    ? undefined
-                    : "Connection validation failed. Ensure URL starts with http(s) and credentials are provided.",
-            };
-        });
-    }, []);
+                connectionStatus: "valid",
+                connectionError: undefined,
+            }));
+        } catch (error: unknown) {
+            setState(previous => ({
+                ...previous,
+                connectionStatus: "invalid",
+                connectionError:
+                    error instanceof Error
+                        ? error.message
+                        : "Connection validation failed. Ensure the WebDAV URL is correct, credentials are valid, and the server allows cross-origin requests from this app.",
+            }));
+        }
+    }, [state.storage, validateStorageConnectionRequest]);
 
     const setTemplate = React.useCallback((template: string) => {
         setState(previous => ({

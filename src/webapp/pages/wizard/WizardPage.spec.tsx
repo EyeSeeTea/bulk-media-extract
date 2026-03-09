@@ -1,5 +1,6 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { getReactComponent } from "$/utils/tests";
+import { Future } from "$/domain/entities/generic/Future";
+import { getReactComponent, getTestContext } from "$/utils/tests";
 import { WizardPage } from "$/webapp/pages/wizard/WizardPage";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -127,9 +128,9 @@ describe("WizardPage", () => {
         });
         fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
         fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
-        fireEvent.click(page.getByText("Validate connection"));
+        fireEvent.click(page.getByText("Test connection"));
 
-        await page.findByText("Storage connection validated.");
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByText("Step 5 of 5: Execution")).toBeInTheDocument();
@@ -138,6 +139,134 @@ describe("WizardPage", () => {
         await waitFor(() => {
             expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
         });
+    });
+
+    it("shows WebDAV guidance and blocks storage progression before successful validation", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+
+        fireEvent.click(page.getByText("Next"));
+        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expect(page.getByText("WebDAV is the only available export target for now.")).toBeInTheDocument();
+        expect(
+            page.getByText(
+                "You can use WebDAV-compatible storage such as ownCloud, Nextcloud, or another WebDAV-enabled server."
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(page.getByTestId("wizard-storage-remarks")).getByText(
+                "The WebDAV server must allow cross-origin requests from this app origin (CORS) or the browser will block validation and file transfer."
+            )
+        ).toBeInTheDocument();
+
+        expect(page.getByText("Complete the connection details")).toBeInTheDocument();
+        expect(page.getByText("Test connection")).toBeDisabled();
+
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Storage URL, username, and password are required.")).toBeInTheDocument();
+
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+
+        expect(page.getByText("Ready to test")).toBeInTheDocument();
+        expect(page.getByText("Test connection")).toBeEnabled();
+
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+    });
+
+    it("requires retesting after editing validated storage credentials", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret-2" } });
+
+        expect(page.queryByText("Connection valid")).not.toBeInTheDocument();
+        expect(page.getByText("Ready to test")).toBeInTheDocument();
+        expect(page.getByText("Test connection")).toBeEnabled();
+
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+    });
+
+    it("invokes storage validation use case with current credentials and keeps step blocked on failure", async () => {
+        const context = getTestContext();
+        const validateConnectionSpy = vi
+            .spyOn(context.compositionRoot.storage.validateConnection, "execute")
+            .mockReturnValue(Future.error(new Error("WebDAV server rejected the credentials.")));
+        const page = getReactComponent(<WizardPage />, context);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav/files/demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+
+        await page.findByText("WebDAV server rejected the credentials. Review the setup remarks above and try again.");
+        expect(validateConnectionSpy).toHaveBeenCalledWith({
+            url: "https://dav.example.org/remote.php/dav/files/demo",
+            username: "demo",
+            password: "secret",
+        });
+
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
     });
 
     it("blocks preview progression when duplicate target filepaths exist", async () => {

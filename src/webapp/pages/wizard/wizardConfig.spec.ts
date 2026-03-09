@@ -76,7 +76,7 @@ describe("wizardConfig", () => {
         });
 
         expect(getStepValidationError(state, "storage")).toBe(
-            "Storage connection must be validated before continuing."
+            "Test the WebDAV connection successfully before continuing."
         );
     });
 

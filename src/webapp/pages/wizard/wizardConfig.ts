@@ -117,7 +117,7 @@ export function getStepValidationError(state: WizardState, stepId: WizardStepId)
             return "Storage URL, username, and password are required.";
         }
         if (state.connectionStatus !== "valid") {
-            return "Storage connection must be validated before continuing.";
+            return "Test the WebDAV connection successfully before continuing.";
         }
     }
 
