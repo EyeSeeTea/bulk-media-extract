@@ -1,3 +1,5 @@
+import type { ExportExecutionReport } from "$/webapp/pages/wizard/exportExecutionReport";
+
 export type WizardStepId = "program" | "template" | "preview" | "storage" | "execution";
 
 export type WizardStorageConfig = {
@@ -11,9 +13,15 @@ export type OrgUnitSelectionMode = "selected" | "descendants";
 export type WizardConnectionStatus = "idle" | "validating" | "valid" | "invalid";
 
 export type WizardExecutionState = {
-    status: "idle" | "running" | "success" | "error";
+    status: "idle" | "running" | "success" | "partial-failure" | "failed" | "interrupted";
     progress: number;
+    processed: number;
+    total: number;
+    successCount: number;
+    failureCount: number;
+    currentTargetPath?: string;
     error?: string;
+    report?: ExportExecutionReport;
 };
 
 export type WizardState = {
@@ -130,6 +138,15 @@ export function getStepValidationError(state: WizardState, stepId: WizardStepId)
     return undefined;
 }
 
+export const initialExecutionState: WizardExecutionState = {
+    status: "idle",
+    progress: 0,
+    processed: 0,
+    total: 0,
+    successCount: 0,
+    failureCount: 0,
+};
+
 export const initialWizardState: WizardState = {
     currentStep: 0,
     selectedProgramId: "",
@@ -147,8 +164,5 @@ export const initialWizardState: WizardState = {
     template: "/{orgUnitName}/{enrollmentDate}/{dataElement:file}.pdf",
     selectedFileDataValueIds: [],
     mappingByFileKey: {},
-    execution: {
-        status: "idle",
-        progress: 0,
-    },
+    execution: initialExecutionState,
 };

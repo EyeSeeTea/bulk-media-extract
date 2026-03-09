@@ -6,6 +6,13 @@ export type StorageConnectionConfig = {
     password: string;
 };
 
+export type StorageUploadRequest = {
+    connection: StorageConnectionConfig;
+    targetPath: string;
+    file: Blob;
+};
+
 export interface StorageRepository {
     validateConnection(config: StorageConnectionConfig): FutureData<void>;
+    uploadFile(request: StorageUploadRequest): FutureData<void>;
 }

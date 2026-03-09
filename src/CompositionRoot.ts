@@ -12,6 +12,7 @@ import { GetCurrentUserUseCase } from "./domain/usecases/GetCurrentUserUseCase";
 import { GetOrganisationUnitsUseCase } from "./domain/usecases/GetOrganisationUnitsUseCase";
 import { GetProgramEventsPreviewUseCase } from "./domain/usecases/GetProgramEventsPreviewUseCase";
 import { GetProgramFilePropertiesUseCase } from "./domain/usecases/GetProgramFilePropertiesUseCase";
+import { UploadFileToStorageUseCase } from "./domain/usecases/UploadFileToStorageUseCase";
 import { ValidateStorageConnectionUseCase } from "./domain/usecases/ValidateStorageConnectionUseCase";
 import { D2Api } from "./types/d2-api";
 
@@ -36,6 +37,7 @@ function getCompositionRoot(repositories: Repositories) {
         },
         storage: {
             validateConnection: new ValidateStorageConnectionUseCase(repositories),
+            uploadFile: new UploadFileToStorageUseCase(repositories),
         },
     };
 }

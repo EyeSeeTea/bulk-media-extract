@@ -2,6 +2,7 @@ import React from "react";
 import { StorageConnectionConfig } from "$/domain/repositories/StorageRepository";
 import {
     getStepValidationError,
+    initialExecutionState,
     initialWizardState,
     validateTemplate,
     WizardStepDefinition,
@@ -32,7 +33,11 @@ type WizardContextValue = {
     setStep: (step: number) => void;
     goNext: () => boolean;
     goBack: () => void;
-    setExecution: (state: WizardState["execution"]) => void;
+    setExecution: (
+        state:
+            | WizardState["execution"]
+            | ((previous: WizardState["execution"]) => WizardState["execution"])
+    ) => void;
 };
 
 const WizardContext = React.createContext<WizardContextValue | null>(null);
@@ -76,10 +81,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
                 dateTo: isProgramChange ? "" : values.dateTo ?? previous.dateTo,
                 selectedFileDataValueIds: isProgramChange ? [] : previous.selectedFileDataValueIds,
                 mappingByFileKey: isProgramChange ? {} : previous.mappingByFileKey,
-                execution: {
-                    status: "idle",
-                    progress: 0,
-                },
+                execution: initialExecutionState,
             };
         });
     }, []);
@@ -93,6 +95,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
             },
             connectionStatus: "idle",
             connectionError: undefined,
+            execution: initialExecutionState,
         }));
     }, []);
 
@@ -129,6 +132,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
             ...previous,
             template,
             templateError: validateTemplate(template),
+            execution: initialExecutionState,
         }));
     }, []);
 
@@ -148,7 +152,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
                 execution: normalizedIdSet.size === previous.selectedFileDataValueIds.length &&
                     previous.selectedFileDataValueIds.every(fileKey => normalizedIdSet.has(fileKey))
                     ? previous.execution
-                    : { status: "idle", progress: 0 },
+                    : initialExecutionState,
             };
         });
     }, []);
@@ -160,6 +164,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
                 ...previous.mappingByFileKey,
                 [fileKey]: mapping,
             },
+            execution: initialExecutionState,
         }));
     }, []);
 
@@ -191,10 +196,13 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
         }));
     }, []);
 
-    const setExecution = React.useCallback((execution: WizardState["execution"]) => {
+    const setExecution = React.useCallback<
+        WizardContextValue["setExecution"]
+    >(execution => {
         setState(previous => ({
             ...previous,
-            execution,
+            execution:
+                typeof execution === "function" ? execution(previous.execution) : execution,
         }));
     }, []);
 

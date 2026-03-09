@@ -1,5 +1,5 @@
 import { ExportPreviewRow } from "$/webapp/pages/wizard/previewUtils";
-import { OrgUnitSelectionMode } from "$/webapp/pages/wizard/wizardConfig";
+import type { OrgUnitSelectionMode } from "$/webapp/pages/wizard/wizardConfig";
 
 export const EXPORT_EXECUTION_CONFIGURATION_VERSION = "1";
 

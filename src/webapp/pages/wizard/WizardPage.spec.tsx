@@ -28,6 +28,17 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+function mockSourceDownloads() {
+    return vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+        return new Response(new Blob(["file-content"], { type: "application/pdf" }), {
+            status: 200,
+            headers: {
+                "Content-Type": "application/pdf",
+            },
+        });
+    });
+}
+
 describe("WizardPage", () => {
     it("blocks next when program is not selected", () => {
         const page = getReactComponent(<WizardPage />);
@@ -73,6 +84,7 @@ describe("WizardPage", () => {
     });
 
     it("supports preview, storage validation, and successful execution", async () => {
+        mockSourceDownloads();
         const page = getReactComponent(<WizardPage />);
 
         const programSelect = await page.findByTestId("wizard-program-select");
@@ -139,6 +151,164 @@ describe("WizardPage", () => {
         await waitFor(() => {
             expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
         });
+        expect(page.getByTestId("wizard-execution-stats").textContent).toContain("1/1");
+        expect(page.getByText("Download result summary")).toBeInTheDocument();
+    });
+
+    it("shows partial failure state and retry action when uploads fail", async () => {
+        mockSourceDownloads();
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByTestId("wizard-file-select-de-file-b"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.change(page.getByTestId("wizard-template-input-de-file-b"), {
+            target: { value: "/exports/fail-{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByText("Start export"));
+
+        await waitFor(() => {
+            expect(page.getByText("Export completed with failures")).toBeInTheDocument();
+        });
+        expect(page.getByText("Execution finished with 1 failed transfers.")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-execution-stats").textContent).toContain("2/2");
+        expect(page.getByText("Retry export")).toBeInTheDocument();
+        expect(page.getByText("Download result summary")).toBeInTheDocument();
+    });
+
+    it("downloads the execution result summary after a completed run", async () => {
+        mockSourceDownloads();
+        const page = getReactComponent(<WizardPage />);
+        let downloadedBlob: Blob | undefined;
+        const createObjectURLSpy = vi.fn((blob: Blob | MediaSource) => {
+            downloadedBlob = blob as Blob;
+            return "blob:execution-report";
+        });
+        const revokeObjectURLSpy = vi.fn(() => undefined);
+        const originalCreateObjectURL = URL.createObjectURL;
+        const originalRevokeObjectURL = URL.revokeObjectURL;
+        Object.defineProperty(URL, "createObjectURL", {
+            configurable: true,
+            writable: true,
+            value: createObjectURLSpy,
+        });
+        Object.defineProperty(URL, "revokeObjectURL", {
+            configurable: true,
+            writable: true,
+            value: revokeObjectURLSpy,
+        });
+        const clickSpy = vi
+            .spyOn(HTMLAnchorElement.prototype, "click")
+            .mockImplementation(() => undefined);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByText("Start export"));
+
+        try {
+            await page.findByText("All files processed successfully.");
+            fireEvent.click(page.getByText("Download result summary"));
+
+            await waitFor(() => {
+                expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
+            });
+
+            expect(clickSpy).toHaveBeenCalledTimes(1);
+            expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:execution-report");
+            expect(downloadedBlob).toBeInstanceOf(Blob);
+            expect((downloadedBlob as Blob).type).toBe("application/json");
+        } finally {
+            Object.defineProperty(URL, "createObjectURL", {
+                configurable: true,
+                writable: true,
+                value: originalCreateObjectURL,
+            });
+            Object.defineProperty(URL, "revokeObjectURL", {
+                configurable: true,
+                writable: true,
+                value: originalRevokeObjectURL,
+            });
+        }
+    });
+
+    it("allows interrupting a running execution and preserves a partial summary", async () => {
+        mockSourceDownloads();
+        const context = getTestContext();
+        const uploadSpy = vi
+            .spyOn(context.compositionRoot.storage.uploadFile, "execute")
+            .mockImplementation(() =>
+                Future.fromComputation<Error, void>((resolve, _reject) => {
+                    const timeoutId = setTimeout(() => resolve(undefined), 200);
+                    return () => clearTimeout(timeoutId);
+                })
+            );
+        const page = getReactComponent(<WizardPage />, context);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByText("Start export"));
+        expect(await page.findByText("Interrupt export")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Interrupt export"));
+
+        await waitFor(() => {
+            expect(page.getByText("Export interrupted")).toBeInTheDocument();
+        });
+        expect(page.getByText("Execution was interrupted before all transfers completed.")).toBeInTheDocument();
+        expect(page.getByText("Download result summary")).toBeInTheDocument();
+        expect(uploadSpy).toHaveBeenCalledTimes(1);
     });
 
     it("shows WebDAV guidance and blocks storage progression before successful validation", async () => {

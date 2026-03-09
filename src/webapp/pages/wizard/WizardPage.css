@@ -152,6 +152,18 @@
     margin-top: 0;
 }
 
+.wizard-execution-actions {
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wizard-execution-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .wizard-preview-footer {
     display: flex;
     flex-direction: column;

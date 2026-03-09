@@ -1,5 +1,9 @@
 import { Future } from "$/domain/entities/generic/Future";
-import { StorageConnectionConfig, StorageRepository } from "$/domain/repositories/StorageRepository";
+import {
+    StorageConnectionConfig,
+    StorageRepository,
+    StorageUploadRequest,
+} from "$/domain/repositories/StorageRepository";
 import { FutureData } from "$/data/api-futures";
 
 export class StorageTestRepository implements StorageRepository {
@@ -15,6 +19,21 @@ export class StorageTestRepository implements StorageRepository {
                     "Connection validation failed. Ensure the WebDAV URL is correct, credentials are valid, and the server allows cross-origin requests from this app."
                 )
             );
+        }
+
+        return Future.success(undefined);
+    }
+
+    public uploadFile(request: StorageUploadRequest): FutureData<void> {
+        const { connection, targetPath } = request;
+        const shouldFail =
+            connection.url.includes("fail") ||
+            targetPath.includes("fail") ||
+            connection.username === "bad" ||
+            connection.password === "bad";
+
+        if (shouldFail) {
+            return Future.error(new Error(`Upload failed for ${targetPath}`));
         }
 
         return Future.success(undefined);

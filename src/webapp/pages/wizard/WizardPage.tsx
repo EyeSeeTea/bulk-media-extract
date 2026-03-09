@@ -7,6 +7,7 @@ import {
     ProgramFileProperty,
     ProgramFilePropertyGroup,
 } from "$/domain/entities/FileExportProgram";
+import { FutureData } from "$/data/api-futures";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { useAppContext } from "$/webapp/contexts/app-context";
@@ -26,9 +27,14 @@ import {
 import {
     buildExportExecutionConfiguration,
     buildExportExecutionConfigurationFilename,
-    downloadExportExecutionConfiguration,
     ExportExecutionConfigurationFileMapping,
+    downloadExportExecutionConfiguration,
 } from "$/webapp/pages/wizard/exportExecutionConfiguration";
+import {
+    downloadExecutionReport,
+    ExportExecutionReport,
+} from "$/webapp/pages/wizard/exportExecutionReport";
+import { ExecutionRunHandle, runExecutionPlan } from "$/webapp/pages/wizard/executionRunner";
 import { useWizardExportPreview } from "$/webapp/pages/wizard/useWizardExportPreview";
 import i18n from "$/utils/i18n";
 import { useWizardContext, WizardProvider } from "$/webapp/pages/wizard/WizardContext";
@@ -129,8 +135,39 @@ export const WizardPage: React.FC = React.memo(() => {
     );
 });
 
+function runFutureData<Data>(future: FutureData<Data>): { promise: Promise<Data>; cancel?: () => void } {
+    let futureCancel: (() => void) | undefined;
+    let rejectPromise: ((error: Error) => void) | undefined;
+    let settled = false;
+    const promise = new Promise<Data>((resolve, reject) => {
+        rejectPromise = reject;
+        futureCancel = future.run(
+            data => {
+                settled = true;
+                resolve(data);
+            },
+            error => {
+                settled = true;
+                reject(error);
+            }
+        );
+    });
+
+    return {
+        promise,
+        cancel: () => {
+            futureCancel?.();
+
+            if (!settled) {
+                settled = true;
+                rejectPromise?.(new Error("Execution interrupted by user."));
+            }
+        },
+    };
+}
+
 const WizardContent: React.FC = () => {
-    const { baseUrl } = useAppContext();
+    const { baseUrl, compositionRoot } = useAppContext();
     const {
         state,
         currentStepId,
@@ -148,6 +185,7 @@ const WizardContent: React.FC = () => {
     const { state: programsState } = useFileCapablePrograms();
     const { state: programDetailsState } = useProgramFileProperties(state.selectedProgramId);
     const { state: organisationUnitsState } = useOrganisationUnits();
+    const executionRunRef = React.useRef<ExecutionRunHandle | null>(null);
 
     const selectedProgram = React.useMemo(() => {
         if (programsState.status !== "success") {
@@ -222,7 +260,8 @@ const WizardContent: React.FC = () => {
         : "";
     const activeTemplateForPreview = firstSelectedTemplate || state.template;
     const isTemplateValid = !validateTemplate(activeTemplateForPreview);
-    const previewEnabled = currentStepId === "preview";
+    const previewEnabled =
+        currentStepId === "preview" || currentStepId === "storage" || currentStepId === "execution";
     const canPreviewFromTemplateStep = Boolean(
         currentStepId === "template" &&
             state.selectedProgramId &&
@@ -378,6 +417,30 @@ const WizardContent: React.FC = () => {
         state.selectedOrgUnitId,
     ]);
 
+    const executionConfiguration = React.useMemo(() => {
+        return buildExportExecutionConfiguration({
+            selectedProgramId: state.selectedProgramId,
+            selectedProgramName: selectedProgram?.name ?? state.selectedProgramId,
+            selectedOrgUnitId: state.selectedOrgUnitId,
+            selectedOrgUnitName,
+            orgUnitSelectionMode: state.orgUnitSelectionMode,
+            dateFrom: state.dateFrom,
+            dateTo: state.dateTo,
+            selectedFileMappings: exportConfigurationFileMappings,
+            previewRows: exportPreviewRows,
+        });
+    }, [
+        exportConfigurationFileMappings,
+        exportPreviewRows,
+        selectedOrgUnitName,
+        selectedProgram?.name,
+        state.dateFrom,
+        state.dateTo,
+        state.orgUnitSelectionMode,
+        state.selectedOrgUnitId,
+        state.selectedProgramId,
+    ]);
+
     const getValidationErrorForStep = React.useCallback(
         (stepId: WizardStepId): string | undefined => {
             const baseError = getStepValidationError(state, stepId);
@@ -409,30 +472,91 @@ const WizardContent: React.FC = () => {
     const currentStepError = getValidationErrorForStep(currentStepId);
 
     const onRunExecution = React.useCallback(async () => {
-        setExecution({ status: "running", progress: 0 });
+        executionRunRef.current?.cancel();
 
-        const chunks = Math.max(exportPreviewRows.length, 3);
-        for (let index = 1; index <= chunks; index += 1) {
-            await new Promise(resolve => {
-                setTimeout(resolve, 180);
-            });
-            setExecution({
-                status: "running",
-                progress: Math.round((index / chunks) * 100),
-            });
+        const handle = runExecutionPlan({
+            configuration: executionConfiguration,
+            storage: state.storage,
+            downloadSourceFile: async (url, signal) => {
+                const response = await fetch(url, {
+                    method: "GET",
+                    credentials: "include",
+                    signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Source download failed with status ${response.status}.`);
+                }
+
+                return response.blob();
+            },
+            uploadToStorage: params =>
+                runFutureData(
+                    compositionRoot.storage.uploadFile.execute({
+                        connection: params.connection,
+                        targetPath: params.targetPath,
+                        file: params.file,
+                    })
+                ),
+            onProgress: snapshot => {
+                setExecution(previous => ({
+                    ...previous,
+                    status: "running",
+                    progress: snapshot.percentage,
+                    processed: snapshot.processed,
+                    total: snapshot.total,
+                    successCount: snapshot.successCount,
+                    failureCount: snapshot.failureCount,
+                    currentTargetPath: snapshot.currentTargetPath,
+                    error: undefined,
+                }));
+            },
+            onStateChange: (status, report) => {
+                setExecution(previous => ({
+                    ...previous,
+                    status,
+                    progress:
+                        report?.summary.totalOperations && report.summary.totalOperations > 0
+                            ? Math.round(
+                                  (report.summary.attemptedOperations / report.summary.totalOperations) * 100
+                              )
+                            : previous.progress,
+                    processed: report?.summary.attemptedOperations ?? previous.processed,
+                    total: report?.summary.totalOperations ?? executionConfiguration.operations.length,
+                    successCount: report?.summary.successCount ?? previous.successCount,
+                    failureCount: report?.summary.failureCount ?? previous.failureCount,
+                    report,
+                    error: getExecutionStatusMessage(status, report),
+                }));
+            },
+        });
+
+        executionRunRef.current = handle;
+
+        try {
+            await handle.done;
+        } finally {
+            if (executionRunRef.current === handle) {
+                executionRunRef.current = null;
+            }
         }
+    }, [compositionRoot.storage.uploadFile, executionConfiguration, setExecution, state.storage]);
 
-        if (state.storage.url.includes("fail")) {
-            setExecution({
-                status: "error",
-                progress: 0,
-                error: "Export failed. Update storage configuration and retry.",
-            });
-            return;
+    const onInterruptExecution = React.useCallback(() => {
+        executionRunRef.current?.cancel();
+    }, []);
+
+    const onDownloadExecutionReport = React.useCallback(() => {
+        if (state.execution.report) {
+            downloadExecutionReport(state.execution.report);
         }
+    }, [state.execution.report]);
 
-        setExecution({ status: "success", progress: 100 });
-    }, [exportPreviewRows.length, setExecution, state.storage.url]);
+    React.useEffect(() => {
+        return () => {
+            executionRunRef.current?.cancel();
+        };
+    }, []);
 
     const onNext = React.useCallback(() => {
         const error = getValidationErrorForStep(currentStepId);
@@ -443,8 +567,14 @@ const WizardContent: React.FC = () => {
         setStep(state.currentStep + 1);
     }, [currentStepId, getValidationErrorForStep, setStep, state.currentStep]);
 
+    const isExecutionRunning = state.execution.status === "running";
+
     const canNavigateToStep = React.useCallback(
         (targetIndex: number): boolean => {
+            if (isExecutionRunning && targetIndex !== state.currentStep) {
+                return false;
+            }
+
             if (targetIndex <= state.currentStep) {
                 return true;
             }
@@ -461,7 +591,7 @@ const WizardContent: React.FC = () => {
 
             return true;
         },
-        [getValidationErrorForStep, state.currentStep]
+        [getValidationErrorForStep, isExecutionRunning, state.currentStep]
     );
 
     const renderStep = (stepId: WizardStepId) => {
@@ -558,6 +688,8 @@ const WizardContent: React.FC = () => {
                         onRetry={() => {
                             void onRunExecution();
                         }}
+                        onInterrupt={onInterruptExecution}
+                        onDownloadReport={onDownloadExecutionReport}
                     />
                 );
             default:
@@ -610,7 +742,7 @@ const WizardContent: React.FC = () => {
             ) : null}
 
             <div className="actions-row wizard-actions">
-                <Button disabled={state.currentStep === 0} onClick={goBack}>
+                <Button disabled={state.currentStep === 0 || isExecutionRunning} onClick={goBack}>
                     {i18n.t("Back")}
                 </Button>
                 {state.currentStep < WIZARD_STEPS.length - 1 ? (
@@ -1476,37 +1608,131 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
 
 type ExecutionStepProps = {
     executionState: {
-        status: "idle" | "running" | "success" | "error";
+        status: "idle" | "running" | "success" | "partial-failure" | "failed" | "interrupted";
         progress: number;
+        processed: number;
+        total: number;
+        successCount: number;
+        failureCount: number;
+        currentTargetPath?: string;
         error?: string;
+        report?: ExportExecutionReport;
     };
     onRun: () => void;
     onRetry: () => void;
+    onInterrupt: () => void;
+    onDownloadReport: () => void;
 };
 
-const ExecutionStep: React.FC<ExecutionStepProps> = ({ executionState, onRun, onRetry }) => {
+function getExecutionStatusMessage(
+    status: ExecutionStepProps["executionState"]["status"],
+    report?: ExportExecutionReport
+): string | undefined {
+    if (!report) {
+        return undefined;
+    }
+
+    if (status === "success") {
+        return "All files processed successfully.";
+    }
+
+    if (status === "partial-failure") {
+        return `Execution finished with ${report.summary.failureCount} failed transfers.`;
+    }
+
+    if (status === "failed") {
+        return "Execution failed for all attempted transfers.";
+    }
+
+    if (status === "interrupted") {
+        return "Execution was interrupted before all transfers completed.";
+    }
+
+    return undefined;
+}
+
+const ExecutionStep: React.FC<ExecutionStepProps> = ({
+    executionState,
+    onRun,
+    onRetry,
+    onInterrupt,
+    onDownloadReport,
+}) => {
+    const hasReport = Boolean(executionState.report);
+
     return (
         <div className="wizard-step-content" aria-label="wizard-step-execution">
             <h3>{i18n.t("Run export")}</h3>
             <p>
                 {i18n.t(
-                    "Start export to upload files using the configured storage and mapping template."
+                    "Start export to process the reviewed file list using the validated WebDAV configuration."
                 )}
             </p>
-            {executionState.status !== "running" ? (
-                <Button primary onClick={executionState.status === "error" ? onRetry : onRun}>
-                    {executionState.status === "error" ? i18n.t("Retry export") : i18n.t("Start export")}
-                </Button>
-            ) : null}
+            <div className="wizard-preview-stats" data-testid="wizard-execution-stats">
+                <div className="wizard-preview-stat">
+                    <span>{i18n.t("Processed")}</span>
+                    <strong>{`${executionState.processed}/${executionState.total}`}</strong>
+                </div>
+                <div className="wizard-preview-stat">
+                    <span>{i18n.t("Successes")}</span>
+                    <strong>{String(executionState.successCount)}</strong>
+                </div>
+                <div className="wizard-preview-stat">
+                    <span>{i18n.t("Failures")}</span>
+                    <strong>{String(executionState.failureCount)}</strong>
+                </div>
+                <div className="wizard-preview-stat">
+                    <span>{i18n.t("Progress")}</span>
+                    <strong>{`${executionState.progress}%`}</strong>
+                </div>
+            </div>
+
+            <div className="actions-row wizard-execution-actions">
+                {executionState.status !== "running" ? (
+                    <Button
+                        primary
+                        onClick={
+                            executionState.status === "failed" ||
+                            executionState.status === "partial-failure" ||
+                            executionState.status === "interrupted"
+                                ? onRetry
+                                : onRun
+                        }
+                    >
+                        {executionState.status === "failed" ||
+                        executionState.status === "partial-failure" ||
+                        executionState.status === "interrupted"
+                            ? i18n.t("Retry export")
+                            : i18n.t("Start export")}
+                    </Button>
+                ) : (
+                    <Button secondary onClick={onInterrupt}>
+                        {i18n.t("Interrupt export")}
+                    </Button>
+                )}
+
+                {hasReport ? (
+                    <Button onClick={onDownloadReport}>{i18n.t("Download result summary")}</Button>
+                ) : null}
+            </div>
 
             {executionState.status === "running" ? (
-                <div>
+                <div className="wizard-execution-progress">
                     <CircularLoader small />
                     <p>
-                        {i18n.t("Export in progress: {{progress}}%", {
+                        {i18n.t("Export in progress: {{processed}} of {{total}} files processed ({{progress}}%).", {
+                            processed: String(executionState.processed),
+                            total: String(executionState.total),
                             progress: String(executionState.progress),
                         })}
                     </p>
+                    {executionState.currentTargetPath ? (
+                        <p className="wizard-helper-text">
+                            {i18n.t("Latest target path: {{path}}", {
+                                path: executionState.currentTargetPath,
+                            })}
+                        </p>
+                    ) : null}
                 </div>
             ) : null}
 
@@ -1516,8 +1742,18 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({ executionState, onRun, on
                 </NoticeBox>
             ) : null}
 
-            {executionState.status === "error" ? (
+            {executionState.status === "partial-failure" ? (
+                <NoticeBox warning title={i18n.t("Export completed with failures")}>
+                    {executionState.error}
+                </NoticeBox>
+            ) : null}
+
+            {executionState.status === "failed" ? (
                 <NoticeBox error title={i18n.t("Export failed")}>{executionState.error}</NoticeBox>
+            ) : null}
+
+            {executionState.status === "interrupted" ? (
+                <NoticeBox warning title={i18n.t("Export interrupted")}>{executionState.error}</NoticeBox>
             ) : null}
         </div>
     );
