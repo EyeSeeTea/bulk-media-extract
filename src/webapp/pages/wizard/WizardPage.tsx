@@ -49,6 +49,7 @@ import i18n from "$/utils/i18n";
 import { useWizardContext, WizardProvider } from "$/webapp/pages/wizard/WizardContext";
 import {
     OrgUnitSelectionMode,
+    WizardExecutionLogEntry,
     WizardStepId,
     getStepValidationError,
     validateTemplate,
@@ -481,6 +482,18 @@ const WizardContent: React.FC = () => {
 
     const onRunExecution = React.useCallback(async () => {
         executionRunRef.current?.cancel();
+        setExecution({
+            status: "idle",
+            progress: 0,
+            processed: 0,
+            total: executionConfiguration.operations.length,
+            successCount: 0,
+            failureCount: 0,
+            currentTargetPath: undefined,
+            error: undefined,
+            report: undefined,
+            logEntries: [],
+        });
 
         const handle = runExecutionPlan({
             configuration: executionConfiguration,
@@ -517,6 +530,21 @@ const WizardContent: React.FC = () => {
                     failureCount: snapshot.failureCount,
                     currentTargetPath: snapshot.currentTargetPath,
                     error: undefined,
+                }));
+            },
+            onLog: entry => {
+                setExecution(previous => ({
+                    ...previous,
+                    logEntries: [
+                        ...previous.logEntries,
+                        {
+                            id: `${entry.timestamp}-${previous.logEntries.length + 1}`,
+                            timestamp: entry.timestamp,
+                            status: entry.status,
+                            message: entry.message,
+                            targetPath: entry.targetPath,
+                        },
+                    ],
                 }));
             },
             onStateChange: (status, report) => {
@@ -559,6 +587,8 @@ const WizardContent: React.FC = () => {
             downloadExecutionReport(state.execution.report);
         }
     }, [state.execution.report]);
+
+    const onFinish = React.useCallback(() => undefined, []);
 
     React.useEffect(() => {
         return () => {
@@ -786,7 +816,15 @@ const WizardContent: React.FC = () => {
                     <Button primary onClick={onNext}>
                         {i18n.t("Next")}
                     </Button>
-                ) : null}
+                ) : (
+                    <Button
+                        primary
+                        disabled={isExecutionRunning}
+                        onClick={onFinish}
+                    >
+                        {i18n.t("Finish")}
+                    </Button>
+                )}
             </div>
         </div>
     );
@@ -1822,6 +1860,7 @@ type ExecutionStepProps = {
         currentTargetPath?: string;
         error?: string;
         report?: ExportExecutionReport;
+        logEntries: WizardExecutionLogEntry[];
     };
     onRun: () => void;
     onRetry: () => void;
@@ -1856,6 +1895,35 @@ function getExecutionStatusMessage(
     return undefined;
 }
 
+function getExecutionLogEntryLabel(entry: WizardExecutionLogEntry): string {
+    if (entry.status === "success") {
+        return i18n.t("Success");
+    }
+
+    if (entry.status === "failure") {
+        return i18n.t("Failure");
+    }
+
+    if (entry.status === "warning") {
+        return i18n.t("Warning");
+    }
+
+    return i18n.t("Info");
+}
+
+function formatExecutionLogTimestamp(timestamp: string): string {
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+        return timestamp;
+    }
+
+    return parsed.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
 const ExecutionStep: React.FC<ExecutionStepProps> = ({
     executionState,
     onRun,
@@ -1864,86 +1932,194 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
     onDownloadReport,
 }) => {
     const hasReport = Boolean(executionState.report);
+    const hasStartedExecution =
+        executionState.status !== "idle" || executionState.logEntries.length > 0;
+    const latestLogEntry = executionState.logEntries[executionState.logEntries.length - 1];
+    const progressWidth = `${Math.max(0, Math.min(executionState.progress, 100))}%`;
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-execution">
             <StepIntro
                 title={i18n.t("Run the export")}
-                description={i18n.t(
-                    "Process the reviewed file list using the validated WebDAV configuration and monitor progress from this step."
-                )}
+                description={i18n.t("Transfer the reviewed files to the configured destination.")}
             />
-            <div className="wizard-preview-stats" data-testid="wizard-execution-stats">
-                <div className="wizard-preview-stat">
-                    <span>{i18n.t("Processed")}</span>
-                    <strong>{`${executionState.processed}/${executionState.total}`}</strong>
+            <div
+                className="wizard-execution-status-panel"
+                data-testid="wizard-execution-status-panel"
+            >
+                <div className="wizard-execution-stat-groups" data-testid="wizard-execution-stats">
+                    <div
+                        className="wizard-execution-stat-pair"
+                        data-testid="wizard-execution-stat-pair-throughput"
+                    >
+                        <div className="wizard-preview-stat wizard-execution-stat">
+                            <span>{i18n.t("Processed")}</span>
+                            <strong>{`${executionState.processed}/${executionState.total}`}</strong>
+                        </div>
+                        <div className="wizard-preview-stat wizard-execution-stat">
+                            <span>{i18n.t("Progress")}</span>
+                            <strong>{`${executionState.progress}%`}</strong>
+                        </div>
+                    </div>
+                    <div
+                        className="wizard-execution-stat-pair"
+                        data-testid="wizard-execution-stat-pair-outcome"
+                    >
+                        <div className="wizard-preview-stat wizard-execution-stat">
+                            <span>{i18n.t("Successes")}</span>
+                            <strong>{String(executionState.successCount)}</strong>
+                        </div>
+                        <div className="wizard-preview-stat wizard-execution-stat">
+                            <span>{i18n.t("Failures")}</span>
+                            <strong>{String(executionState.failureCount)}</strong>
+                        </div>
+                    </div>
                 </div>
-                <div className="wizard-preview-stat">
-                    <span>{i18n.t("Successes")}</span>
-                    <strong>{String(executionState.successCount)}</strong>
-                </div>
-                <div className="wizard-preview-stat">
-                    <span>{i18n.t("Failures")}</span>
-                    <strong>{String(executionState.failureCount)}</strong>
-                </div>
-                <div className="wizard-preview-stat">
-                    <span>{i18n.t("Progress")}</span>
-                    <strong>{`${executionState.progress}%`}</strong>
-                </div>
-            </div>
 
-            <div className="actions-row wizard-execution-actions">
-                {executionState.status !== "running" ? (
-                    <Button
-                        primary
-                        onClick={
-                            executionState.status === "failed" ||
+                <div className="actions-row wizard-execution-actions">
+                    {executionState.status !== "running" ? (
+                        <Button
+                            primary
+                            onClick={
+                                executionState.status === "failed" ||
+                                executionState.status === "partial-failure" ||
+                                executionState.status === "interrupted"
+                                    ? onRetry
+                                    : onRun
+                            }
+                        >
+                            {executionState.status === "failed" ||
                             executionState.status === "partial-failure" ||
                             executionState.status === "interrupted"
-                                ? onRetry
-                                : onRun
-                        }
-                    >
-                        {executionState.status === "failed" ||
-                        executionState.status === "partial-failure" ||
-                        executionState.status === "interrupted"
-                            ? i18n.t("Retry export")
-                            : i18n.t("Start export")}
-                    </Button>
-                ) : (
-                    <Button secondary onClick={onInterrupt}>
-                        {i18n.t("Interrupt export")}
-                    </Button>
-                )}
+                                ? i18n.t("Retry export")
+                                : i18n.t("Start export")}
+                        </Button>
+                    ) : (
+                        <Button secondary onClick={onInterrupt}>
+                            {i18n.t("Interrupt export")}
+                        </Button>
+                    )}
 
-                {hasReport ? (
-                    <Button onClick={onDownloadReport}>{i18n.t("Download result summary")}</Button>
+                    {hasReport && executionState.status !== "success" ? (
+                        <Button onClick={onDownloadReport}>
+                            {i18n.t("Download result summary")}
+                        </Button>
+                    ) : null}
+
+                </div>
+
+                {hasStartedExecution ? (
+                    <div
+                        className={`wizard-execution-progress-panel ${
+                            executionState.status === "running" ? "is-running" : ""
+                        }`}
+                        data-testid="wizard-execution-progress-panel"
+                    >
+                        <div className="wizard-execution-progress-header">
+                            <div className="wizard-execution-progress-copy">
+                                <p className="wizard-execution-progress-title">
+                                    {executionState.status === "running"
+                                        ? i18n.t("Export in progress")
+                                        : i18n.t("Latest execution progress")}
+                                </p>
+                                <p className="wizard-execution-progress-description">
+                                    {i18n.t(
+                                        "Processed {{processed}} of {{total}} files ({{progress}}%).",
+                                        {
+                                            processed: String(executionState.processed),
+                                            total: String(executionState.total),
+                                            progress: String(executionState.progress),
+                                        }
+                                    )}
+                                </p>
+                            </div>
+                            {executionState.status === "running" ? <CircularLoader small /> : null}
+                        </div>
+                        <div
+                            className="wizard-execution-progress-track"
+                            data-testid="wizard-execution-progress-bar"
+                            aria-label={i18n.t("Execution progress")}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={executionState.progress}
+                            role="progressbar"
+                        >
+                            <div
+                                className={`wizard-execution-progress-fill ${
+                                    executionState.status === "running" ? "is-running" : ""
+                                }`}
+                                style={{ width: progressWidth }}
+                            />
+                        </div>
+                        {(executionState.status !== "success" &&
+                            (executionState.currentTargetPath || latestLogEntry?.targetPath)) ? (
+                            <p className="wizard-helper-text">
+                                {i18n.t("Latest target path: {{path}}", {
+                                    path:
+                                        executionState.currentTargetPath ??
+                                        latestLogEntry?.targetPath ??
+                                        "",
+                                })}
+                            </p>
+                        ) : null}
+                    </div>
+                ) : null}
+
+                {hasStartedExecution ? (
+                    <details
+                        className="wizard-execution-log"
+                        data-testid="wizard-execution-log"
+                    >
+                        <summary
+                            className="wizard-execution-log-summary"
+                            data-testid="wizard-execution-log-toggle"
+                        >
+                            <span>{i18n.t("Execution log")}</span>
+                            <span className="wizard-execution-log-meta">
+                                {i18n.t("{{count}} entries", {
+                                    count: String(executionState.logEntries.length),
+                                })}
+                            </span>
+                        </summary>
+                        <div className="wizard-execution-log-list">
+                            {executionState.logEntries.map(entry => (
+                                <div
+                                    key={entry.id}
+                                    className={`wizard-execution-log-entry is-${entry.status}`}
+                                >
+                                    <div className="wizard-execution-log-entry-meta">
+                                        <span className="wizard-execution-log-entry-label">
+                                            {getExecutionLogEntryLabel(entry)}
+                                        </span>
+                                        <span>{formatExecutionLogTimestamp(entry.timestamp)}</span>
+                                    </div>
+                                    <p className="wizard-execution-log-entry-message">
+                                        {entry.message}
+                                    </p>
+                                    {entry.targetPath ? (
+                                        <code className="wizard-execution-log-entry-path">
+                                            {entry.targetPath}
+                                        </code>
+                                    ) : null}
+                                </div>
+                            ))}
+                        </div>
+                    </details>
                 ) : null}
             </div>
 
-            {executionState.status === "running" ? (
-                <div className="wizard-execution-progress">
-                    <CircularLoader small />
-                    <p>
-                        {i18n.t("Export in progress: {{processed}} of {{total}} files processed ({{progress}}%).", {
-                            processed: String(executionState.processed),
-                            total: String(executionState.total),
-                            progress: String(executionState.progress),
-                        })}
-                    </p>
-                    {executionState.currentTargetPath ? (
-                        <p className="wizard-helper-text">
-                            {i18n.t("Latest target path: {{path}}", {
-                                path: executionState.currentTargetPath,
-                            })}
-                        </p>
-                    ) : null}
-                </div>
-            ) : null}
-
             {executionState.status === "success" ? (
-                <NoticeBox title={i18n.t("Export completed")}>
-                    {i18n.t("All files processed successfully.")}
+                <NoticeBox valid title={i18n.t("Export completed")}>
+                    <div className="wizard-execution-success-notice">
+                        <p className="wizard-execution-success-copy">
+                            {i18n.t("All files processed successfully.")}
+                        </p>
+                        {hasReport ? (
+                            <Button small onClick={onDownloadReport}>
+                                {i18n.t("Download result summary")}
+                            </Button>
+                        ) : null}
+                    </div>
                 </NoticeBox>
             ) : null}
 

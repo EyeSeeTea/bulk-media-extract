@@ -12,6 +12,14 @@ export type OrgUnitSelectionMode = "selected" | "descendants";
 
 export type WizardConnectionStatus = "idle" | "validating" | "valid" | "invalid";
 
+export type WizardExecutionLogEntry = {
+    id: string;
+    timestamp: string;
+    status: "info" | "success" | "failure" | "warning";
+    message: string;
+    targetPath?: string;
+};
+
 export type WizardExecutionState = {
     status: "idle" | "running" | "success" | "partial-failure" | "failed" | "interrupted";
     progress: number;
@@ -22,6 +30,7 @@ export type WizardExecutionState = {
     currentTargetPath?: string;
     error?: string;
     report?: ExportExecutionReport;
+    logEntries: WizardExecutionLogEntry[];
 };
 
 export type WizardState = {
@@ -145,6 +154,7 @@ export const initialExecutionState: WizardExecutionState = {
     total: 0,
     successCount: 0,
     failureCount: 0,
+    logEntries: [],
 };
 
 export const initialWizardState: WizardState = {

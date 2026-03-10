@@ -16,6 +16,13 @@ type ProgressSnapshot = {
     currentTargetPath?: string;
 };
 
+export type ExecutionLogSnapshot = {
+    timestamp: string;
+    status: "info" | "success" | "failure" | "warning";
+    message: string;
+    targetPath?: string;
+};
+
 type RunExecutionParams = {
     configuration: ExportExecutionConfiguration;
     storage: StorageConnectionConfig;
@@ -26,6 +33,7 @@ type RunExecutionParams = {
         file: Blob;
     }) => { promise: Promise<void>; cancel?: () => void };
     onProgress: (snapshot: ProgressSnapshot) => void;
+    onLog: (entry: ExecutionLogSnapshot) => void;
     onStateChange: (status: ExportExecutionRunStatus, report?: ExportExecutionReport) => void;
 };
 
@@ -45,6 +53,14 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
         const total = params.configuration.operations.length;
 
         params.onStateChange("running");
+        params.onLog({
+            timestamp: startedAt,
+            status: "info",
+            message:
+                total === 0
+                    ? "Export started with no operations to process."
+                    : `Export started with ${total} file${total === 1 ? "" : "s"} to process.`,
+        });
         params.onProgress({
             processed: 0,
             total,
@@ -78,6 +94,12 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
                     status: "success",
                     completedAt: new Date().toISOString(),
                 });
+                params.onLog({
+                    timestamp: results[results.length - 1]?.completedAt ?? new Date().toISOString(),
+                    status: "success",
+                    message: "File synced successfully.",
+                    targetPath: operation.target.path,
+                });
             } catch (error: unknown) {
                 currentUploadCancel = undefined;
                 if (abortController.signal.aborted) {
@@ -92,6 +114,12 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
                     status: "failure",
                     completedAt: new Date().toISOString(),
                     error: error instanceof Error ? error.message : "Unknown execution error",
+                });
+                params.onLog({
+                    timestamp: results[results.length - 1]?.completedAt ?? new Date().toISOString(),
+                    status: "failure",
+                    message: error instanceof Error ? error.message : "Unknown execution error",
+                    targetPath: operation.target.path,
                 });
             }
 
@@ -113,6 +141,16 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
             total,
             results,
         });
+        params.onLog({
+            timestamp: finishedAt,
+            status:
+                finalStatus === "interrupted"
+                    ? "warning"
+                    : finalStatus === "success"
+                      ? "success"
+                      : "failure",
+            message: getFinalLogMessage(finalStatus, results.length, total),
+        });
         const report = buildExecutionReport({
             configuration: params.configuration,
             startedAt,
@@ -133,6 +171,30 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
         },
         done,
     };
+}
+
+function getFinalLogMessage(
+    status: ExportExecutionRunStatus,
+    attemptedOperations: number,
+    totalOperations: number
+): string {
+    if (status === "interrupted") {
+        return `Export interrupted after ${attemptedOperations} of ${totalOperations} file${totalOperations === 1 ? "" : "s"}.`;
+    }
+
+    if (status === "success") {
+        return `Export completed successfully for ${attemptedOperations} file${attemptedOperations === 1 ? "" : "s"}.`;
+    }
+
+    if (status === "failed") {
+        return "Export failed for all attempted transfers.";
+    }
+
+    if (status === "partial-failure") {
+        return "Export completed with some failed transfers.";
+    }
+
+    return "Export status updated.";
 }
 
 function resolveFinalStatus(params: {

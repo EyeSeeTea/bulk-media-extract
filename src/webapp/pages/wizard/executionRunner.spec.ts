@@ -68,6 +68,11 @@ describe("executionRunner", () => {
             currentTargetPath?: string;
         }> = [];
         const stateChanges: string[] = [];
+        const logEntries: Array<{
+            status: string;
+            message: string;
+            targetPath?: string;
+        }> = [];
         const uploads = new Map([
             ["/exports/one.pdf", Promise.resolve()],
             ["/exports/two.pdf", Promise.reject(new Error("Upload failed"))],
@@ -87,6 +92,13 @@ describe("executionRunner", () => {
             }),
             onProgress: snapshot => {
                 progressSnapshots.push(snapshot);
+            },
+            onLog: entry => {
+                logEntries.push({
+                    status: entry.status,
+                    message: entry.message,
+                    targetPath: entry.targetPath,
+                });
             },
             onStateChange: status => {
                 stateChanges.push(status);
@@ -136,12 +148,38 @@ describe("executionRunner", () => {
             successCount: 2,
             failureCount: 1,
         });
+        expect(logEntries).toEqual([
+            {
+                status: "info",
+                message: "Export started with 3 files to process.",
+            },
+            {
+                status: "success",
+                message: "File synced successfully.",
+                targetPath: "/exports/one.pdf",
+            },
+            {
+                status: "failure",
+                message: "Upload failed",
+                targetPath: "/exports/two.pdf",
+            },
+            {
+                status: "success",
+                message: "File synced successfully.",
+                targetPath: "/exports/three.pdf",
+            },
+            {
+                status: "failure",
+                message: "Export completed with some failed transfers.",
+            },
+        ]);
     });
 
     it("marks interrupted runs and preserves completed work", async () => {
         let cancelCurrentUpload: (() => void) | undefined;
         const onProgress = vi.fn();
         const onStateChange = vi.fn();
+        const onLog = vi.fn();
 
         const run = runExecutionPlan({
             configuration,
@@ -166,6 +204,7 @@ describe("executionRunner", () => {
                 };
             },
             onProgress,
+            onLog,
             onStateChange,
         });
 
@@ -178,6 +217,12 @@ describe("executionRunner", () => {
         expect(onStateChange).toHaveBeenLastCalledWith("interrupted", expect.objectContaining({
             interrupted: true,
         }));
+        expect(onLog).toHaveBeenCalledWith(
+            expect.objectContaining({
+                status: "warning",
+                message: "Export interrupted after 1 of 3 files.",
+            })
+        );
         expect(report.status).toBe("interrupted");
         expect(report.interrupted).toBe(true);
         expect(report.summary).toEqual({

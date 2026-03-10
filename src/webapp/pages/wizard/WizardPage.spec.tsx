@@ -180,13 +180,33 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expectCurrentStep(page, "execution");
+        expect(page.getByText("Finish")).toBeInTheDocument();
+        expect(page.getByText("Finish")).toBeEnabled();
+        expect(page.queryByTestId("wizard-execution-progress-panel")).not.toBeInTheDocument();
+        expect(page.queryByTestId("wizard-execution-log")).not.toBeInTheDocument();
         fireEvent.click(page.getByText("Start export"));
 
         await waitFor(() => {
             expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
         });
+        expect(page.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Processed");
+        expect(page.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Progress");
+        expect(page.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Successes");
+        expect(page.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Failures");
         expect(page.getByTestId("wizard-execution-stats").textContent).toContain("1/1");
+        expect(page.getByTestId("wizard-execution-progress-panel")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-execution-progress-bar")).toHaveAttribute("aria-valuenow", "100");
+        const executionLog = page.getByTestId("wizard-execution-log");
+        expect(executionLog).not.toHaveAttribute("open");
+        expect(within(executionLog).getByText("3 entries")).toBeInTheDocument();
+        fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
+        expect(executionLog).toHaveAttribute("open");
+        expect(page.getByTestId("wizard-execution-log").querySelector(".wizard-execution-log-list")).not.toBeNull();
+        expect(within(executionLog).getByText("Export started with 1 file to process.")).toBeInTheDocument();
+        expect(within(executionLog).getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
+        expect(page.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")).not.toBeInTheDocument();
         expect(page.getByText("Download result summary")).toBeInTheDocument();
+        expect(page.getByText("Finish")).toBeEnabled();
     });
 
     it("shows partial failure state and retry action when uploads fail", async () => {
@@ -218,14 +238,18 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         fireEvent.click(page.getByText("Start export"));
+        expect(page.getByText("Finish")).toBeDisabled();
 
         await waitFor(() => {
             expect(page.getByText("Export completed with failures")).toBeInTheDocument();
         });
         expect(page.getByText("Execution finished with 1 failed transfers.")).toBeInTheDocument();
         expect(page.getByTestId("wizard-execution-stats").textContent).toContain("2/2");
+        fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
+        expect(page.getByText("Upload failed for /exports/fail-consent-form.pdf")).toBeInTheDocument();
         expect(page.getByText("Retry export")).toBeInTheDocument();
         expect(page.getByText("Download result summary")).toBeInTheDocument();
+        expect(page.getByText("Finish")).toBeEnabled();
     });
 
     it("downloads the execution result summary after a completed run", async () => {
@@ -341,7 +365,12 @@ describe("WizardPage", () => {
             expect(page.getByText("Export interrupted")).toBeInTheDocument();
         });
         expect(page.getByText("Execution was interrupted before all transfers completed.")).toBeInTheDocument();
+        const executionLog = page.getByTestId("wizard-execution-log");
+        expect(executionLog).not.toHaveAttribute("open");
+        fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
+        expect(within(executionLog).getByText("Export interrupted after 0 of 1 file.")).toBeInTheDocument();
         expect(page.getByText("Download result summary")).toBeInTheDocument();
+        expect(page.getByText("Finish")).toBeEnabled();
         expect(uploadSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -818,5 +847,11 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByTestId("wizard-step-intro").textContent).toContain("Run the export");
+        expect(page.getByTestId("wizard-step-intro").textContent).toContain(
+            "Transfer the reviewed files to the configured destination."
+        );
+        const footer = page.getByTestId("wizard-footer-actions");
+        expect(within(footer).getByText("Finish")).toBeInTheDocument();
+        expect(within(footer).queryByText("Next")).not.toBeInTheDocument();
     });
 });
