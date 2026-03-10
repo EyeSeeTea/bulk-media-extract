@@ -1,3 +1,7 @@
+## Tracker File Bridge
+
+Export DHIS2 Tracker files to external storage with metadata-driven paths.
+
 ## Setup
 
 ```
@@ -68,7 +72,7 @@ $ yarn localize
 
 ### Scripts
 
-Check the example script, entry `"script-example"`in `package.json`->scripts and `src/scripts/example.ts`.
+Check the sample utility script, entry `"script-example"` in `package.json` -> `scripts` and `src/scripts/example.ts`.
 
 ### Misc Notes
 

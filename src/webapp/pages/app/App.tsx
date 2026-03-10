@@ -37,7 +37,7 @@ function App_(props: AppProps) {
 
     return (
         <SnackbarProvider>
-            <HeaderBar appName="Skeleton App" />
+            <HeaderBar appName="Tracker File Bridge" />
 
             {appConfig.feedback && appContext && (
                 <Feedback options={appConfig.feedback} username={appContext.currentUser.username} />

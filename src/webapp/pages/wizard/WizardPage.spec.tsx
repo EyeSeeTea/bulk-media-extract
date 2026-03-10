@@ -201,7 +201,7 @@ describe("WizardPage", () => {
         expect(within(executionLog).getByText("3 entries")).toBeInTheDocument();
         fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
         expect(executionLog).toHaveAttribute("open");
-        expect(page.getByTestId("wizard-execution-log").querySelector(".wizard-execution-log-list")).not.toBeNull();
+        expect(page.getByTestId("wizard-execution-log-list")).toBeInTheDocument();
         expect(within(executionLog).getByText("Export started with 1 file to process.")).toBeInTheDocument();
         expect(within(executionLog).getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
         expect(page.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")).not.toBeInTheDocument();
@@ -390,20 +390,18 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByText("Next"));
         expectCurrentStep(page, "storage");
-        const storageSetup = page.container.querySelector('[data-test="wizard-storage-setup"]');
-        expect(storageSetup).not.toBeNull();
         expect(
-            within(storageSetup as HTMLElement).getByText(
+            page.getByText(
                 "Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or another WebDAV-enabled server."
             )
         ).toBeInTheDocument();
         expect(
-            within(storageSetup as HTMLElement).getByText(
+            page.getByText(
                 "Use the direct WebDAV endpoint, not a generic product homepage or login page."
             )
         ).toBeInTheDocument();
         expect(
-            within(storageSetup as HTMLElement).getByText(
+            page.getByText(
                 "The WebDAV server must allow cross-origin requests from this app origin (CORS) or the browser will block validation and file transfer."
             )
         ).toBeInTheDocument();

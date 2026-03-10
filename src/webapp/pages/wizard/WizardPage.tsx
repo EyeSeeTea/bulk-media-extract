@@ -692,7 +692,6 @@ const WizardContent: React.FC = () => {
                         dateFrom={state.dateFrom}
                         dateTo={state.dateTo}
                         previewState={exportPreviewState}
-                        filteredPreview={filteredExportPreview}
                         previewRows={exportPreviewRows}
                         previewSummary={exportPreviewSummary}
                         onRetry={() => {
@@ -892,6 +891,10 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
         );
     }, [fileDataElements]);
     const selectedCount = selectedFileDataValueIds.length;
+    const selectedSummary = {
+        count: String(selectedCount),
+        total: String(fileDataElements.length),
+    };
     const showProgramSummary = Boolean(selectedProgramId);
 
     const onToggleFileSelection = React.useCallback(
@@ -993,8 +996,9 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
                             <>
                                 <div className="wizard-program-step-selection-summary">
                                     {i18n.t("Selected: {{count}} of {{total}}", {
-                                        count: String(selectedCount),
-                                        total: String(fileDataElements.length),
+                                        count: selectedSummary.count,
+                                        total: selectedSummary.total,
+                                        nsSeparator: false,
                                     })}
                                 </div>
                                 <div
@@ -1280,7 +1284,8 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                                     />
                                     <p className="wizard-helper-text template-editor-hint">
                                         {i18n.t(
-                                            "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}."
+                                            "Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, {dataElement:FileName}.",
+                                            { nsSeparator: false }
                                         )}
                                     </p>
                                     {templateError ? (
@@ -1300,7 +1305,9 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
                                             data-testid={`wizard-template-preview-${fileProperty.id}`}
                                         >
                                             <p className="template-preview-inline-title">
-                                                {i18n.t("Valid template. Preview:")}
+                                                {i18n.t("Valid template. Preview:", {
+                                                    nsSeparator: false,
+                                                })}
                                             </p>
                                             {!hasPreviewScope ? (
                                                 <p className="template-editor-feedback template-editor-feedback-muted">
@@ -1570,7 +1577,6 @@ type PreviewStepProps = {
     dateFrom: string;
     dateTo: string;
     previewState: AsyncData<ProgramEventsPreviewResult>;
-    filteredPreview: ProgramEventPreview[];
     previewRows: ExportPreviewRow[];
     previewSummary: {
         totalFiles: number;
@@ -1592,12 +1598,17 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
     dateFrom,
     dateTo,
     previewState,
-    filteredPreview,
     previewRows,
     previewSummary,
     onRetry,
 }) => {
     const hasScope = Boolean(selectedProgramId && selectedOrgUnitId);
+    const previewTotal =
+        previewState.status === "success"
+            ? String(previewState.data.total ?? previewRows.length)
+            : "";
+    const previewPages =
+        previewState.status === "success" ? String(previewState.data.pageCount ?? 1) : "";
     const [exportConfigStatus, setExportConfigStatus] = React.useState<"idle" | "downloaded">(
         "idle"
     );
@@ -1806,8 +1817,9 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
                         <div className="wizard-preview-footer-meta">
                             <p className="wizard-preview-meta-text">
                                 {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
-                                    total: String(previewState.data.total ?? filteredPreview.length),
-                                    pages: String(previewState.data.pageCount ?? 1),
+                                    total: previewTotal,
+                                    pages: previewPages,
+                                    nsSeparator: false,
                                 })}
                             </p>
                             <div className="wizard-preview-stats" data-testid="wizard-preview-stats">
@@ -1935,6 +1947,8 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
     const hasStartedExecution =
         executionState.status !== "idle" || executionState.logEntries.length > 0;
     const latestLogEntry = executionState.logEntries[executionState.logEntries.length - 1];
+    const latestTargetPath =
+        executionState.currentTargetPath ?? latestLogEntry?.targetPath ?? "";
     const progressWidth = `${Math.max(0, Math.min(executionState.progress, 100))}%`;
 
     return (
@@ -2051,14 +2065,11 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
                                 style={{ width: progressWidth }}
                             />
                         </div>
-                        {(executionState.status !== "success" &&
-                            (executionState.currentTargetPath || latestLogEntry?.targetPath)) ? (
+                        {executionState.status !== "success" && latestTargetPath ? (
                             <p className="wizard-helper-text">
                                 {i18n.t("Latest target path: {{path}}", {
-                                    path:
-                                        executionState.currentTargetPath ??
-                                        latestLogEntry?.targetPath ??
-                                        "",
+                                    path: latestTargetPath,
+                                    nsSeparator: false,
                                 })}
                             </p>
                         ) : null}
@@ -2081,7 +2092,10 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
                                 })}
                             </span>
                         </summary>
-                        <div className="wizard-execution-log-list">
+                        <div
+                            className="wizard-execution-log-list"
+                            data-testid="wizard-execution-log-list"
+                        >
                             {executionState.logEntries.map(entry => (
                                 <div
                                     key={entry.id}

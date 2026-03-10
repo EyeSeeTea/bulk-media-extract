@@ -1,6 +1,7 @@
 {
-    "short_name": "DHIS2 Skeleton App",
-    "name": "DHIS2 Skeleton App",
+    "short_name": "Tracker File Bridge",
+    "name": "Tracker File Bridge",
+    "description": "Export DHIS2 Tracker files to external storage with metadata-driven paths.",
     "icons": [
         {
             "src": "favicon.ico",

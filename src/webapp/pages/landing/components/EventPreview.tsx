@@ -27,6 +27,13 @@ export const EventPreview: React.FC<Props> = React.memo(
         previewState,
         onRetryPreview,
     }) => {
+        const previewTotal =
+            previewState.status === "success"
+                ? String(previewState.data.total ?? previewState.data.events.length)
+                : "";
+        const previewPages =
+            previewState.status === "success" ? String(previewState.data.pageCount ?? 1) : "";
+
         return (
             <section className="panel" aria-label="org-unit-preview">
                 <h3>{i18n.t("Event preview")}</h3>
@@ -79,8 +86,9 @@ export const EventPreview: React.FC<Props> = React.memo(
                     <>
                         <p>
                             {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
-                                total: String(previewState.data.total ?? previewState.data.events.length),
-                                pages: String(previewState.data.pageCount ?? 1),
+                                total: previewTotal,
+                                pages: previewPages,
+                                nsSeparator: false,
                             })}
                         </p>
                         {previewState.data.events.length === 0 ? (
