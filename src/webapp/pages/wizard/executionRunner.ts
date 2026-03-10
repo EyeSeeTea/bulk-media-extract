@@ -1,4 +1,3 @@
-import { StorageConnectionConfig } from "$/domain/repositories/StorageRepository";
 import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
 import {
     buildExecutionReport,
@@ -25,12 +24,11 @@ export type ExecutionLogSnapshot = {
 
 type RunExecutionParams = {
     configuration: ExportExecutionConfiguration;
-    storage: StorageConnectionConfig;
-    downloadSourceFile: (url: string, signal: AbortSignal) => Promise<Blob>;
-    uploadToStorage: (params: {
-        connection: StorageConnectionConfig;
+    downloadSourceFile: (url: string, signal: AbortSignal) => Promise<Response>;
+    writeTargetFile: (params: {
         targetPath: string;
-        file: Blob;
+        response: Response;
+        signal: AbortSignal;
     }) => { promise: Promise<void>; cancel?: () => void };
     onProgress: (snapshot: ProgressSnapshot) => void;
     onLog: (entry: ExecutionLogSnapshot) => void;
@@ -44,7 +42,7 @@ export type ExecutionRunHandle = {
 
 export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle {
     const abortController = new AbortController();
-    let currentUploadCancel: (() => void) | undefined;
+    let currentWriteCancel: (() => void) | undefined;
     let interrupted = false;
 
     const done = (async () => {
@@ -76,16 +74,16 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
             }
 
             try {
-                const file = await params.downloadSourceFile(operation.source.url, abortController.signal);
-                const upload = params.uploadToStorage({
-                    connection: params.storage,
+                const response = await params.downloadSourceFile(operation.source.url, abortController.signal);
+                const writeTarget = params.writeTargetFile({
                     targetPath: operation.target.path,
-                    file,
+                    response,
+                    signal: abortController.signal,
                 });
 
-                currentUploadCancel = upload.cancel;
-                await upload.promise;
-                currentUploadCancel = undefined;
+                currentWriteCancel = writeTarget.cancel;
+                await writeTarget.promise;
+                currentWriteCancel = undefined;
 
                 results.push({
                     operationIndex: index,
@@ -101,7 +99,7 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
                     targetPath: operation.target.path,
                 });
             } catch (error: unknown) {
-                currentUploadCancel = undefined;
+                currentWriteCancel = undefined;
                 if (abortController.signal.aborted) {
                     interrupted = true;
                     break;
@@ -167,7 +165,7 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
     return {
         cancel: () => {
             abortController.abort();
-            currentUploadCancel?.();
+            currentWriteCancel?.();
         },
         done,
     };

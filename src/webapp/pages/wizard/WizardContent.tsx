@@ -23,8 +23,11 @@ export const WizardContent: React.FC = () => {
         state,
         currentStepId,
         setScope,
-        setStorage,
-        validateStorageConnection,
+        setStorageMethod,
+        setWebDAVStorage,
+        validateWebDAVConnection,
+        chooseLocalDirectory,
+        validateLocalDirectory,
         setSelectedFileDataValueIds,
         setFileMapping,
         setStep,
@@ -252,16 +255,21 @@ export const WizardContent: React.FC = () => {
             case "storage":
                 return (
                     <StorageStep
-                        url={state.storage.url}
-                        username={state.storage.username}
-                        password={state.storage.password}
-                        connectionStatus={state.connectionStatus}
-                        connectionError={state.connectionError}
-                        onUrlChange={url => setStorage({ url })}
-                        onUsernameChange={username => setStorage({ username })}
-                        onPasswordChange={password => setStorage({ password })}
-                        onValidate={() => {
-                            void validateStorageConnection();
+                        selectedMethod={state.storage.selectedMethod}
+                        webdav={state.storage.webdav}
+                        localDirectory={state.storage.localDirectory}
+                        onMethodChange={setStorageMethod}
+                        onUrlChange={url => setWebDAVStorage({ url })}
+                        onUsernameChange={username => setWebDAVStorage({ username })}
+                        onPasswordChange={password => setWebDAVStorage({ password })}
+                        onValidateWebDAV={() => {
+                            void validateWebDAVConnection();
+                        }}
+                        onChooseLocalDirectory={() => {
+                            void chooseLocalDirectory();
+                        }}
+                        onValidateLocalDirectory={() => {
+                            void validateLocalDirectory();
                         }}
                     />
                 );

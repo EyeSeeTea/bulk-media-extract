@@ -2,15 +2,32 @@ import type { ExportExecutionReport } from "$/webapp/pages/wizard/exportExecutio
 
 export type WizardStepId = "program" | "template" | "preview" | "storage" | "execution";
 
-export type WizardStorageConfig = {
+export type StorageMethod = "webdav" | "local-directory";
+
+export type WizardStorageValidationStatus = "idle" | "validating" | "valid" | "invalid";
+
+export type WizardWebDAVStorageConfig = {
     url: string;
     username: string;
     password: string;
+    status: WizardStorageValidationStatus;
+    error?: string;
 };
 
 export type OrgUnitSelectionMode = "selected" | "descendants";
 
-export type WizardConnectionStatus = "idle" | "validating" | "valid" | "invalid";
+export type WizardLocalDirectoryStorageConfig = {
+    directoryHandle?: FileSystemDirectoryHandle;
+    directoryName: string;
+    status: WizardStorageValidationStatus;
+    error?: string;
+};
+
+export type WizardStorageConfig = {
+    selectedMethod: StorageMethod;
+    webdav: WizardWebDAVStorageConfig;
+    localDirectory: WizardLocalDirectoryStorageConfig;
+};
 
 export type WizardExecutionLogEntry = {
     id: string;
@@ -42,8 +59,6 @@ export type WizardState = {
     dateFrom: string;
     dateTo: string;
     storage: WizardStorageConfig;
-    connectionStatus: WizardConnectionStatus;
-    connectionError?: string;
     template: string;
     templateError?: string;
     selectedFileDataValueIds: string[];
@@ -130,17 +145,95 @@ export function getStepValidationError(state: WizardState, stepId: WizardStepId)
     }
 
     if (stepId === "storage") {
-        if (!state.storage.url || !state.storage.username || !state.storage.password) {
-            return "Storage URL, username, and password are required.";
+        if (!state.storage.selectedMethod) {
+            return "Select a storage method before continuing.";
         }
-        if (state.connectionStatus !== "valid") {
-            return "Test the WebDAV connection successfully before continuing.";
+
+        if (state.storage.selectedMethod === "webdav") {
+            if (
+                !state.storage.webdav.url ||
+                !state.storage.webdav.username ||
+                !state.storage.webdav.password
+            ) {
+                return "Storage URL, username, and password are required.";
+            }
+            if (state.storage.webdav.status !== "valid") {
+                return "Test the WebDAV connection successfully before continuing.";
+            }
+        }
+
+        if (state.storage.selectedMethod === "local-directory") {
+            if (!state.storage.localDirectory.directoryHandle) {
+                return "Select a local directory before continuing.";
+            }
+
+            if (state.storage.localDirectory.status !== "valid") {
+                return "Validate the selected local directory before continuing.";
+            }
         }
     }
 
     if (stepId === "preview") {
         if (!state.selectedProgramId || !state.selectedOrgUnitId) {
             return "Program and organisation unit are required before preview.";
+        }
+    }
+
+    return undefined;
+}
+
+export function isStorageMethodReady(storage: WizardStorageConfig): boolean {
+    if (storage.selectedMethod === "webdav") {
+        return storage.webdav.status === "valid";
+    }
+
+    if (storage.selectedMethod === "local-directory") {
+        return storage.localDirectory.status === "valid";
+    }
+
+    return false;
+}
+
+export function getStorageMethodError(storage: WizardStorageConfig): string | undefined {
+    if (storage.selectedMethod === "webdav") {
+        return storage.webdav.error;
+    }
+
+    if (storage.selectedMethod === "local-directory") {
+        return storage.localDirectory.error;
+    }
+
+    return undefined;
+}
+
+export function getStorageMethodStatus(storage: WizardStorageConfig): WizardStorageValidationStatus {
+    if (storage.selectedMethod === "webdav") {
+        return storage.webdav.status;
+    }
+
+    if (storage.selectedMethod === "local-directory") {
+        return storage.localDirectory.status;
+    }
+
+    return "idle";
+}
+
+export function getStorageValidationError(state: WizardState): string | undefined {
+    if (state.storage.selectedMethod === "webdav") {
+        if (!state.storage.webdav.url || !state.storage.webdav.username || !state.storage.webdav.password) {
+            return "Storage URL, username, and password are required.";
+        }
+        if (state.storage.webdav.status !== "valid") {
+            return "Test the WebDAV connection successfully before continuing.";
+        }
+    }
+
+    if (state.storage.selectedMethod === "local-directory") {
+        if (!state.storage.localDirectory.directoryHandle) {
+            return "Select a local directory before continuing.";
+        }
+        if (state.storage.localDirectory.status !== "valid") {
+            return "Validate the selected local directory before continuing.";
         }
     }
 
@@ -166,11 +259,18 @@ export const initialWizardState: WizardState = {
     dateFrom: "",
     dateTo: "",
     storage: {
-        url: "",
-        username: "",
-        password: "",
+        selectedMethod: "webdav",
+        webdav: {
+            url: "",
+            username: "",
+            password: "",
+            status: "idle",
+        },
+        localDirectory: {
+            directoryName: "",
+            status: "idle",
+        },
     },
-    connectionStatus: "idle",
     template: "/{orgUnitName}/{enrollmentDate}/{dataElement:file}.pdf",
     selectedFileDataValueIds: [],
     mappingByFileKey: {},

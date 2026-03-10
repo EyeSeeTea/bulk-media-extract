@@ -1,14 +1,19 @@
 import React from "react";
 import { StorageConnectionConfig } from "$/domain/repositories/StorageRepository";
 import {
+    selectLocalDirectory,
+    validateLocalDirectoryAccess,
+} from "$/webapp/pages/wizard/localDirectoryStorage";
+import {
     getStepValidationError,
     initialExecutionState,
     initialWizardState,
     validateTemplate,
+    StorageMethod,
     WizardStepDefinition,
+    WizardWebDAVStorageConfig,
     WizardState,
     WIZARD_STEPS,
-    WizardStorageConfig,
 } from "$/webapp/pages/wizard/wizardConfig";
 
 type WizardContextValue = {
@@ -25,8 +30,11 @@ type WizardContextValue = {
             >
         >
     ) => void;
-    setStorage: (values: Partial<WizardStorageConfig>) => void;
-    validateStorageConnection: () => Promise<void>;
+    setStorageMethod: (method: StorageMethod) => void;
+    setWebDAVStorage: (values: Partial<WizardWebDAVStorageConfig>) => void;
+    validateWebDAVConnection: () => Promise<void>;
+    chooseLocalDirectory: () => Promise<void>;
+    validateLocalDirectory: () => Promise<void>;
     setTemplate: (template: string) => void;
     setSelectedFileDataValueIds: (selectedFileDataValueIds: string[]) => void;
     setFileMapping: (fileKey: string, mapping: string) => void;
@@ -86,46 +94,161 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
         });
     }, []);
 
-    const setStorage: WizardContextValue["setStorage"] = React.useCallback(values => {
+    const setStorageMethod = React.useCallback((method: StorageMethod) => {
         setState(previous => ({
             ...previous,
             storage: {
                 ...previous.storage,
-                ...values,
+                selectedMethod: method,
             },
-            connectionStatus: "idle",
-            connectionError: undefined,
             execution: initialExecutionState,
         }));
     }, []);
 
-    const validateStorageConnection = React.useCallback(async () => {
-        const config = state.storage;
+    const setWebDAVStorage: WizardContextValue["setWebDAVStorage"] = React.useCallback(values => {
+        setState(previous => ({
+            ...previous,
+            storage: {
+                ...previous.storage,
+                webdav: {
+                    ...previous.storage.webdav,
+                    ...values,
+                    status: "idle",
+                    error: undefined,
+                },
+            },
+            execution: initialExecutionState,
+        }));
+    }, []);
+
+    const validateWebDAVConnection = React.useCallback(async () => {
+        const config: StorageConnectionConfig = {
+            url: state.storage.webdav.url,
+            username: state.storage.webdav.username,
+            password: state.storage.webdav.password,
+        };
 
         setState(previous => ({
             ...previous,
-            connectionStatus: "validating",
-            connectionError: undefined,
+            storage: {
+                ...previous.storage,
+                webdav: {
+                    ...previous.storage.webdav,
+                    status: "validating",
+                    error: undefined,
+                },
+            },
         }));
 
         try {
             await validateStorageConnectionRequest(config);
             setState(previous => ({
                 ...previous,
-                connectionStatus: "valid",
-                connectionError: undefined,
+                storage: {
+                    ...previous.storage,
+                    webdav: {
+                        ...previous.storage.webdav,
+                        status: "valid",
+                        error: undefined,
+                    },
+                },
             }));
         } catch (error: unknown) {
             setState(previous => ({
                 ...previous,
-                connectionStatus: "invalid",
-                connectionError:
-                    error instanceof Error
-                        ? error.message
-                        : "Connection validation failed. Ensure the WebDAV URL is correct, credentials are valid, and the server allows cross-origin requests from this app.",
+                storage: {
+                    ...previous.storage,
+                    webdav: {
+                        ...previous.storage.webdav,
+                        status: "invalid",
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : "Connection validation failed. Ensure the WebDAV URL is correct, credentials are valid, and the server allows cross-origin requests from this app.",
+                    },
+                },
             }));
         }
-    }, [state.storage, validateStorageConnectionRequest]);
+    }, [state.storage.webdav, validateStorageConnectionRequest]);
+
+    const chooseLocalDirectory = React.useCallback(async () => {
+        try {
+            const directoryHandle = await selectLocalDirectory();
+            setState(previous => ({
+                ...previous,
+                storage: {
+                    ...previous.storage,
+                    localDirectory: {
+                        directoryHandle,
+                        directoryName: directoryHandle.name,
+                        status: "idle",
+                        error: undefined,
+                    },
+                },
+                execution: initialExecutionState,
+            }));
+        } catch (error: unknown) {
+            setState(previous => ({
+                ...previous,
+                storage: {
+                    ...previous.storage,
+                    localDirectory: {
+                        ...previous.storage.localDirectory,
+                        status: "invalid",
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : "Could not open the local directory picker.",
+                    },
+                },
+                execution: initialExecutionState,
+            }));
+        }
+    }, []);
+
+    const validateLocalDirectory = React.useCallback(async () => {
+        setState(previous => ({
+            ...previous,
+            storage: {
+                ...previous.storage,
+                localDirectory: {
+                    ...previous.storage.localDirectory,
+                    status: "validating",
+                    error: undefined,
+                },
+            },
+        }));
+
+        try {
+            await validateLocalDirectoryAccess(state.storage.localDirectory.directoryHandle);
+            setState(previous => ({
+                ...previous,
+                storage: {
+                    ...previous.storage,
+                    localDirectory: {
+                        ...previous.storage.localDirectory,
+                        status: "valid",
+                        error: undefined,
+                    },
+                },
+            }));
+        } catch (error: unknown) {
+            setState(previous => ({
+                ...previous,
+                storage: {
+                    ...previous.storage,
+                    localDirectory: {
+                        ...previous.storage.localDirectory,
+                        status: "invalid",
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : "Local directory validation failed.",
+                    },
+                },
+            }));
+        }
+    }, [state.storage.localDirectory.directoryHandle]);
 
     const setTemplate = React.useCallback((template: string) => {
         setState(previous => ({
@@ -213,8 +336,11 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
             currentStepTitle: currentStep.title,
             currentStepError,
             setScope,
-            setStorage,
-            validateStorageConnection,
+            setStorageMethod,
+            setWebDAVStorage,
+            validateWebDAVConnection,
+            chooseLocalDirectory,
+            validateLocalDirectory,
             setTemplate,
             setSelectedFileDataValueIds,
             setFileMapping,
@@ -227,17 +353,20 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
             currentStep.id,
             currentStep.title,
             currentStepError,
+            chooseLocalDirectory,
             goBack,
             goNext,
             setExecution,
             setScope,
-            setStorage,
+            setStorageMethod,
+            setWebDAVStorage,
             setTemplate,
             setSelectedFileDataValueIds,
             setFileMapping,
             setStep,
             state,
-            validateStorageConnection,
+            validateLocalDirectory,
+            validateWebDAVConnection,
         ]
     );
 

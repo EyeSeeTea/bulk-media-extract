@@ -51,6 +51,7 @@ vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
 });
 
 function mockSourceDownloads() {
@@ -64,125 +65,167 @@ function mockSourceDownloads() {
     });
 }
 
+function createMockDirectoryHandle(name = "Exports") {
+    const writes: BlobPart[] = [];
+    const writable = {
+        write: vi.fn(async (chunk?: BlobPart) => {
+            if (chunk !== undefined) {
+                writes.push(chunk);
+            }
+        }),
+        close: vi.fn(async () => undefined),
+        abort: vi.fn(async () => undefined),
+    };
+    const fileHandle = {
+        kind: "file" as const,
+        name: "output.pdf",
+        createWritable: vi.fn(async () => writable),
+    };
+    const nestedDirectoryHandle: FileSystemDirectoryHandle = {
+        kind: "directory" as const,
+        name,
+        getDirectoryHandle: vi.fn(async (): Promise<FileSystemDirectoryHandle> => nestedDirectoryHandle),
+        getFileHandle: vi.fn(async () => fileHandle),
+        queryPermission: vi.fn(async () => "granted" as const),
+        requestPermission: vi.fn(async () => "granted" as const),
+    } as unknown as FileSystemDirectoryHandle;
+
+    return {
+        handle: nestedDirectoryHandle,
+        writable,
+        writes,
+    };
+}
+
+function mockLocalDirectorySelection(handle?: FileSystemDirectoryHandle) {
+    const directory = handle ?? createMockDirectoryHandle().handle;
+    const picker = vi.fn(async () => directory);
+    vi.stubGlobal("showDirectoryPicker", picker);
+    return { picker, handle: directory };
+}
+
 function expectCurrentStep(page: ReturnType<typeof getReactComponent>, stepId: string) {
     expect(page.getByTestId(`wizard-step-tab-${stepId}`)).toHaveAttribute("aria-current", "step");
 }
 
 async function renderWizardPage(context = getTestContext()) {
-    let page!: ReturnType<typeof getReactComponent>;
+    let view!: ReturnType<typeof getReactComponent>;
     await act(async () => {
-        page = getReactComponent(<WizardPage />, context);
-        await Promise.resolve();
+        view = getReactComponent(<WizardPage />, context);
     });
-    await page.findByTestId("wizard-program-select");
-    return page;
+    await view.findByTestId("wizard-program-select");
+    return view;
 }
 
 async function clickAndFlush(element: Element) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(async () => {
         fireEvent.click(element);
+        await Promise.resolve();
     });
 }
 
 async function changeAndFlush(element: Element, value: Record<string, unknown>) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(async () => {
         fireEvent.change(element, { target: value });
+        await Promise.resolve();
     });
 }
 
 describe("WizardPage", () => {
     it("blocks next when program is not selected", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        await clickAndFlush(page.getByText("Next"));
+        await clickAndFlush(view.getByText("Next"));
 
-        expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Program is required.")).toBeInTheDocument();
-        expectCurrentStep(page, "program");
-        expect(page.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
+        expect(view.getByText("Validation required")).toBeInTheDocument();
+        expect(view.getByText("Program is required.")).toBeInTheDocument();
+        expectCurrentStep(view, "program");
+        expect(view.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
     });
 
     it("renders the redesigned program step hierarchy and summary", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        expectCurrentStep(page, "program");
-        expect(page.getByText("Choose a program and the files to export")).toBeInTheDocument();
+        expectCurrentStep(view, "program");
+        expect(view.getByText("Choose a program and the files to export")).toBeInTheDocument();
         expect(
-            page.getByText(
+            view.getByText(
                 "Start by selecting the tracker program. Then confirm which file data values should move forward to template setup and preview."
             )
         ).toBeInTheDocument();
-        expect(page.queryByText("Program summary")).not.toBeInTheDocument();
+        expect(view.queryByText("Program summary")).not.toBeInTheDocument();
 
-        const programSelect = page.getByTestId("wizard-program-select");
+        const programSelect = view.getByTestId("wizard-program-select");
         await changeAndFlush(programSelect, { value: "prog-a" });
 
-        expect(await page.findByText("Program summary")).toBeInTheDocument();
-        expect(await page.findByTestId("wizard-program-summary")).toBeInTheDocument();
-        expect(page.getByText("Tracker Program")).toBeInTheDocument();
-        expect(page.getByText("Selected: 0 of 2")).toBeInTheDocument();
+        expect(await view.findByText("Program summary")).toBeInTheDocument();
+        expect(await view.findByTestId("wizard-program-summary")).toBeInTheDocument();
+        expect(view.getByText("Tracker Program")).toBeInTheDocument();
+        expect(view.getByText("Selected: 0 of 2")).toBeInTheDocument();
 
-        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(view.getByTestId("wizard-file-select-de-file"));
 
-        expect(page.getByText("Selected: 1 of 2")).toBeInTheDocument();
-        expect(page.getByText("Visit Form")).toBeInTheDocument();
-        expect(page.getAllByText("Main Stage").length).toBeGreaterThan(0);
-        expect(page.getByTestId("wizard-step-number-program").textContent).toContain("1");
+        expect(view.getByText("Selected: 1 of 2")).toBeInTheDocument();
+        expect(view.getByText("Visit Form")).toBeInTheDocument();
+        expect(view.getAllByText("Main Stage").length).toBeGreaterThan(0);
+        expect(view.getByTestId("wizard-step-number-program").textContent).toContain("1");
     });
 
     it("preserves template step filters when navigating back from preview", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        const programSelect = page.getByTestId("wizard-program-select");
+        const programSelect = view.getByTestId("wizard-program-select");
         await changeAndFlush(programSelect, { value: "prog-a" });
-        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(await view.findByTestId("wizard-file-select-de-file"));
 
-        await clickAndFlush(page.getByText("Next"));
-        expectCurrentStep(page, "template");
-        expect(page.getByText("Path and filename template - Visit Form")).toBeInTheDocument();
+        await clickAndFlush(view.getByText("Next"));
+        expectCurrentStep(view, "template");
+        expect(view.getByText("Path and filename template - Visit Form")).toBeInTheDocument();
 
-        await clickAndFlush(page.getByTestId("org-unit-tree-picker"));
-        await changeAndFlush(page.getByTestId("wizard-org-unit-mode"), { value: "selected" });
-        await changeAndFlush(page.getByTestId("wizard-date-from"), { value: "2026-01-01" });
-        await changeAndFlush(page.getByTestId("wizard-date-to"), { value: "2026-01-31" });
-        await changeAndFlush(page.getByTestId("wizard-template-input"), {
+        await clickAndFlush(view.getByTestId("org-unit-tree-picker"));
+        await changeAndFlush(view.getByTestId("wizard-org-unit-mode"), { value: "selected" });
+        await changeAndFlush(view.getByTestId("wizard-date-from"), { value: "2026-01-01" });
+        await changeAndFlush(view.getByTestId("wizard-date-to"), { value: "2026-01-31" });
+        await changeAndFlush(view.getByTestId("wizard-template-input"), {
             value: "/exports/{fileName}",
         });
 
-        await clickAndFlush(page.getByText("Next"));
-        expectCurrentStep(page, "preview");
+        await clickAndFlush(view.getByText("Next"));
+        expectCurrentStep(view, "preview");
 
-        await clickAndFlush(page.getByText("Back"));
-        expectCurrentStep(page, "template");
-        expect(page.getByTestId("org-unit-tree-picker")).toBeInTheDocument();
-        expect((page.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe("selected");
-        expect((page.getByTestId("wizard-date-from") as HTMLInputElement).value).toBe("2026-01-01");
-        expect((page.getByTestId("wizard-date-to") as HTMLInputElement).value).toBe("2026-01-31");
-        expect((page.getByTestId("wizard-template-input") as HTMLTextAreaElement).value).toBe(
+        await clickAndFlush(view.getByText("Back"));
+        expectCurrentStep(view, "template");
+        expect(view.getByTestId("org-unit-tree-picker")).toBeInTheDocument();
+        expect((view.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe("selected");
+        expect((view.getByTestId("wizard-date-from") as HTMLInputElement).value).toBe("2026-01-01");
+        expect((view.getByTestId("wizard-date-to") as HTMLInputElement).value).toBe("2026-01-31");
+        expect((view.getByTestId("wizard-template-input") as HTMLTextAreaElement).value).toBe(
             "/exports/{fileName}"
         );
     });
 
     it("supports preview, storage validation, and successful execution", async () => {
         mockSourceDownloads();
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        const programSelect = page.getByTestId("wizard-program-select");
+        const programSelect = view.getByTestId("wizard-program-select");
         await changeAndFlush(programSelect, { value: "prog-a" });
-        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
-        await clickAndFlush(page.getByText("Next"));
+        await clickAndFlush(await view.findByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(view.getByText("Next"));
 
-        await clickAndFlush(page.getByTestId("org-unit-tree-picker"));
-        await changeAndFlush(page.getByTestId("wizard-date-from"), { value: "2026-01-01" });
-        await changeAndFlush(page.getByTestId("wizard-date-to"), { value: "2026-01-31" });
-        await changeAndFlush(page.getByTestId("wizard-template-input"), {
+        await clickAndFlush(view.getByTestId("org-unit-tree-picker"));
+        await changeAndFlush(view.getByTestId("wizard-date-from"), { value: "2026-01-01" });
+        await changeAndFlush(view.getByTestId("wizard-date-to"), { value: "2026-01-31" });
+        await changeAndFlush(view.getByTestId("wizard-template-input"), {
             value: "/exports/{orgUnitName}/{fileName}",
         });
-        await clickAndFlush(page.getByText("Next"));
+        await clickAndFlush(view.getByText("Next"));
 
-        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
-        expectCurrentStep(page, "preview");
-        const summary = page.getByTestId("wizard-preview-summary");
+        expect(await view.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        expectCurrentStep(view, "preview");
+        const summary = view.getByTestId("wizard-preview-summary");
         expect(summary.textContent).toContain("Program");
         expect(summary.textContent).toContain("Antenatal Visit");
         expect(summary.textContent).toContain("Selected file data elements");
@@ -199,65 +242,65 @@ describe("WizardPage", () => {
         expect(mappingText.compareDocumentPosition(orgUnitText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(orgUnitText.compareDocumentPosition(modeText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 
-        const table = page.getByTestId("wizard-preview-table");
+        const table = view.getByTestId("wizard-preview-table");
         expect(within(table).queryByText("Date")).not.toBeInTheDocument();
         expect(within(table).queryByText("Target filepath")).not.toBeInTheDocument();
-        expect(page.getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
-        const eventLink = page.getByRole("link", { name: "evt-1" }) as HTMLAnchorElement;
+        expect(view.getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
+        const eventLink = view.getByRole("link", { name: "evt-1" }) as HTMLAnchorElement;
         expect(eventLink).toHaveClass("wizard-preview-event-link");
         expect(eventLink.href).toContain(
             "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-a"
         );
-        const originalFileLink = page.getByRole("link", { name: "Original file" }) as HTMLAnchorElement;
+        const originalFileLink = view.getByRole("link", { name: "Original file" }) as HTMLAnchorElement;
         expect(originalFileLink.href).toContain(
             "/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file"
         );
-        const footer = page.getByTestId("wizard-preview-footer");
+        const footer = view.getByTestId("wizard-preview-footer");
         expect(table.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-        expect(page.getByText("Files")).toBeInTheDocument();
-        expect(page.getAllByText("1.0 KB").length).toBeGreaterThan(0);
+        expect(view.getByText("Files")).toBeInTheDocument();
+        expect(view.getAllByText("1.0 KB").length).toBeGreaterThan(0);
 
-        await clickAndFlush(page.getByText("Next"));
-        expectCurrentStep(page, "storage");
+        await clickAndFlush(view.getByText("Next"));
+        expectCurrentStep(view, "storage");
 
-        await changeAndFlush(page.getByTestId("wizard-storage-url"), {
+        await changeAndFlush(view.getByTestId("wizard-storage-url"), {
             value: "https://dav.example.org/remote.php/dav",
         });
-        await changeAndFlush(page.getByTestId("wizard-storage-username"), { value: "demo" });
-        await changeAndFlush(page.getByTestId("wizard-storage-password"), { value: "secret" });
-        await clickAndFlush(page.getByText("Test connection"));
+        await changeAndFlush(view.getByTestId("wizard-storage-username"), { value: "demo" });
+        await changeAndFlush(view.getByTestId("wizard-storage-password"), { value: "secret" });
+        await clickAndFlush(view.getByText("Test connection"));
 
-        await page.findByText("WebDAV connection validated. You can continue to execution.");
-        await clickAndFlush(page.getByText("Next"));
+        await view.findByText("WebDAV connection validated. You can continue to execution.");
+        await clickAndFlush(view.getByText("Next"));
 
-        expectCurrentStep(page, "execution");
-        expect(page.getByText("Finish")).toBeInTheDocument();
-        expect(page.getByText("Finish")).toBeEnabled();
-        expect(page.queryByTestId("wizard-execution-progress-panel")).not.toBeInTheDocument();
-        expect(page.queryByTestId("wizard-execution-log")).not.toBeInTheDocument();
-        await clickAndFlush(page.getByText("Start export"));
+        expectCurrentStep(view, "execution");
+        expect(view.getByText("Finish")).toBeInTheDocument();
+        expect(view.getByText("Finish")).toBeEnabled();
+        expect(view.queryByTestId("wizard-execution-progress-panel")).not.toBeInTheDocument();
+        expect(view.queryByTestId("wizard-execution-log")).not.toBeInTheDocument();
+        await clickAndFlush(view.getByText("Start export"));
 
         await waitFor(() => {
-            expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
+            expect(view.getByText("All files processed successfully.")).toBeInTheDocument();
         });
-        expect(page.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Processed");
-        expect(page.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Progress");
-        expect(page.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Successes");
-        expect(page.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Failures");
-        expect(page.getByTestId("wizard-execution-stats").textContent).toContain("1/1");
-        expect(page.getByTestId("wizard-execution-progress-panel")).toBeInTheDocument();
-        expect(page.getByTestId("wizard-execution-progress-bar")).toHaveAttribute("aria-valuenow", "100");
-        const executionLog = page.getByTestId("wizard-execution-log");
+        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Processed");
+        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Progress");
+        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Successes");
+        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Failures");
+        expect(view.getByTestId("wizard-execution-stats").textContent).toContain("1/1");
+        expect(view.getByTestId("wizard-execution-progress-panel")).toBeInTheDocument();
+        expect(view.getByTestId("wizard-execution-progress-bar")).toHaveAttribute("aria-valuenow", "100");
+        const executionLog = view.getByTestId("wizard-execution-log");
         expect(executionLog).not.toHaveAttribute("open");
         expect(within(executionLog).getByText("3 entries")).toBeInTheDocument();
-        await clickAndFlush(page.getByTestId("wizard-execution-log-toggle"));
+        await clickAndFlush(view.getByTestId("wizard-execution-log-toggle"));
         expect(executionLog).toHaveAttribute("open");
-        expect(page.getByTestId("wizard-execution-log-list")).toBeInTheDocument();
+        expect(view.getByTestId("wizard-execution-log-list")).toBeInTheDocument();
         expect(within(executionLog).getByText("Export started with 1 file to process.")).toBeInTheDocument();
         expect(within(executionLog).getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
-        expect(page.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")).not.toBeInTheDocument();
-        expect(page.getByText("Download result summary")).toBeInTheDocument();
-        expect(page.getByText("Finish")).toBeEnabled();
+        expect(view.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")).not.toBeInTheDocument();
+        expect(view.getByText("Download result summary")).toBeInTheDocument();
+        expect(view.getByText("Finish")).toBeEnabled();
     });
 
     it("shows partial failure state and retry action when uploads fail", async () => {
@@ -379,7 +422,7 @@ describe("WizardPage", () => {
         mockSourceDownloads();
         const context = getTestContext();
         const uploadSpy = vi
-            .spyOn(context.compositionRoot.storage.uploadFile, "execute")
+            .spyOn(context.compositionRoot.storage.webdav.uploadFile, "execute")
             .mockImplementation(() =>
                 Future.fromComputation<Error, void>((resolve, _reject) => {
                     const timeoutId = setTimeout(() => resolve(undefined), 200);
@@ -483,6 +526,48 @@ describe("WizardPage", () => {
         expectCurrentStep(page, "storage");
     });
 
+    it("lets the user switch to local directory and requires directory validation before continuing", async () => {
+        const { handle } = mockLocalDirectorySelection();
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByTestId("wizard-storage-method-local-directory"));
+        expect(page.queryByTestId("wizard-storage-url")).not.toBeInTheDocument();
+        expect(page.getByText("Choose folder")).toBeInTheDocument();
+        expect(
+            page.getByText(
+                "Local directory export writes files directly into a folder on this computer instead of sending them to a remote server."
+            )
+        ).toBeInTheDocument();
+
+        fireEvent.click(page.getByText("Next"));
+        expect(page.getByText("Select a local directory before continuing.")).toBeInTheDocument();
+
+        fireEvent.click(page.getByText("Choose folder"));
+        await page.findByText("Selected folder: Exports");
+        expect(handle).toBeDefined();
+
+        fireEvent.click(page.getByText("Next"));
+        expect(page.getByText("Validate the selected local directory before continuing.")).toBeInTheDocument();
+
+        fireEvent.click(page.getByText("Validate directory"));
+        await page.findByText("Local directory validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+
+        expectCurrentStep(page, "execution");
+    });
+
     it("requires retesting after editing validated storage credentials", async () => {
         const page = getReactComponent(<WizardPage />);
 
@@ -519,10 +604,45 @@ describe("WizardPage", () => {
         expectCurrentStep(page, "storage");
     });
 
+    it("runs execution against a validated local directory destination", async () => {
+        mockSourceDownloads();
+        const mockDirectory = createMockDirectoryHandle();
+        mockLocalDirectorySelection(mockDirectory.handle);
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByTestId("wizard-storage-method-local-directory"));
+        fireEvent.click(page.getByText("Choose folder"));
+        await page.findByText("Selected folder: Exports");
+        fireEvent.click(page.getByText("Validate directory"));
+        await page.findByText("Local directory validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+
+        fireEvent.click(page.getByText("Start export"));
+        await waitFor(() => {
+            expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
+        });
+
+        expect(mockDirectory.writable.write).toHaveBeenCalled();
+        expect(mockDirectory.writable.close).toHaveBeenCalled();
+        expect(page.getByText("Download result summary")).toBeInTheDocument();
+    });
+
     it("invokes storage validation use case with current credentials and keeps step blocked on failure", async () => {
         const context = getTestContext();
         const validateConnectionSpy = vi
-            .spyOn(context.compositionRoot.storage.validateConnection, "execute")
+            .spyOn(context.compositionRoot.storage.webdav.validateConnection, "execute")
             .mockReturnValue(Future.error(new Error("WebDAV server rejected the credentials.")));
         const page = getReactComponent(<WizardPage />, context);
 
@@ -680,17 +800,17 @@ describe("WizardPage", () => {
     });
 
     it("inserts selected property token into template at cursor", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        const programSelect = page.getByTestId("wizard-program-select");
+        const programSelect = view.getByTestId("wizard-program-select");
         await changeAndFlush(programSelect, { value: "prog-a" });
-        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
-        await clickAndFlush(page.getByText("Next"));
+        await clickAndFlush(await view.findByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(view.getByText("Next"));
 
-        const input = page.getByTestId("wizard-template-input") as HTMLTextAreaElement;
+        const input = view.getByTestId("wizard-template-input") as HTMLTextAreaElement;
         input.focus();
         input.setSelectionRange(0, 0);
-        await clickAndFlush(await page.findByTestId("wizard-token-orgUnitName"));
+        await clickAndFlush(await view.findByTestId("wizard-token-orgUnitName"));
 
         expect(input.value.startsWith("{orgUnitName}")).toBe(true);
     });
@@ -821,15 +941,15 @@ describe("WizardPage", () => {
     });
 
     it("blocks next when no file data value is selected", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        const programSelect = page.getByTestId("wizard-program-select");
+        const programSelect = view.getByTestId("wizard-program-select");
         await changeAndFlush(programSelect, { value: "prog-a" });
-        await clickAndFlush(page.getByText("Next"));
+        await clickAndFlush(view.getByText("Next"));
 
-        expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Select at least one file data value to sync.")).toBeInTheDocument();
-        expectCurrentStep(page, "program");
+        expect(view.getByText("Validation required")).toBeInTheDocument();
+        expect(view.getByText("Select at least one file data value to sync.")).toBeInTheDocument();
+        expectCurrentStep(view, "program");
     });
 
     it("blocks template step progression when any selected file has no mapping", async () => {
@@ -848,15 +968,15 @@ describe("WizardPage", () => {
     });
 
     it("renders numbered step tabs and a dedicated footer action bar", async () => {
-        const page = await renderWizardPage();
+        const view = await renderWizardPage();
 
-        expect(page.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
-        expect(page.getByTestId("wizard-step-number-program").textContent).toContain("1");
-        expect(page.getByTestId("wizard-step-number-template").textContent).toContain("2");
-        expect(page.getByTestId("wizard-step-tab-preview")).toBeDisabled();
-        expect(page.getByTestId("wizard-footer-actions")).toBeInTheDocument();
-        expect(page.getByTestId("wizard-footer-actions").textContent).toContain("Back");
-        expect(page.getByTestId("wizard-footer-actions").textContent).toContain("Next");
+        expect(view.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
+        expect(view.getByTestId("wizard-step-number-program").textContent).toContain("1");
+        expect(view.getByTestId("wizard-step-number-template").textContent).toContain("2");
+        expect(view.getByTestId("wizard-step-tab-preview")).toBeDisabled();
+        expect(view.getByTestId("wizard-footer-actions")).toBeInTheDocument();
+        expect(view.getByTestId("wizard-footer-actions").textContent).toContain("Back");
+        expect(view.getByTestId("wizard-footer-actions").textContent).toContain("Next");
     });
 
     it("uses a shared step intro on template, preview, storage, and execution steps", async () => {
@@ -885,7 +1005,7 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByText("Next"));
         expect(page.getByTestId("wizard-step-intro").textContent).toContain(
-            "Validate the WebDAV destination"
+            "Choose the export destination"
         );
 
         fireEvent.change(page.getByTestId("wizard-storage-url"), {

@@ -81,13 +81,9 @@ describe("executionRunner", () => {
 
         const run = runExecutionPlan({
             configuration,
-            storage: {
-                url: "https://dav.example.org/remote.php/dav",
-                username: "demo",
-                password: "secret",
-            },
-            downloadSourceFile: async () => new Blob(["file"], { type: "application/pdf" }),
-            uploadToStorage: ({ targetPath }) => ({
+            downloadSourceFile: async () =>
+                new Response(new Blob(["file"], { type: "application/pdf" }), { status: 200 }),
+            writeTargetFile: ({ targetPath }) => ({
                 promise: uploads.get(targetPath) ?? Promise.resolve(),
             }),
             onProgress: snapshot => {
@@ -183,13 +179,9 @@ describe("executionRunner", () => {
 
         const run = runExecutionPlan({
             configuration,
-            storage: {
-                url: "https://dav.example.org/remote.php/dav",
-                username: "demo",
-                password: "secret",
-            },
-            downloadSourceFile: async () => new Blob(["file"], { type: "application/pdf" }),
-            uploadToStorage: ({ targetPath }) => {
+            downloadSourceFile: async () =>
+                new Response(new Blob(["file"], { type: "application/pdf" }), { status: 200 }),
+            writeTargetFile: ({ targetPath }) => {
                 if (targetPath === "/exports/one.pdf") {
                     return { promise: Promise.resolve() };
                 }

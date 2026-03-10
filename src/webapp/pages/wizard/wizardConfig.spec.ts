@@ -3,17 +3,33 @@ import {
     getStepValidationError,
     initialWizardState,
     validateTemplate,
+    WizardStorageConfig,
     WIZARD_STEPS,
     WizardState,
 } from "$/webapp/pages/wizard/wizardConfig";
 
-function buildState(overrides: Partial<WizardState>): WizardState {
+type WizardStateOverrides = Partial<Omit<WizardState, "storage">> & {
+    storage?: Partial<WizardStorageConfig> & {
+        webdav?: Partial<WizardStorageConfig["webdav"]>;
+        localDirectory?: Partial<WizardStorageConfig["localDirectory"]>;
+    };
+};
+
+function buildState(overrides: WizardStateOverrides): WizardState {
     return {
         ...initialWizardState,
         ...overrides,
         storage: {
             ...initialWizardState.storage,
             ...(overrides.storage ?? {}),
+            webdav: {
+                ...initialWizardState.storage.webdav,
+                ...(overrides.storage?.webdav ?? {}),
+            },
+            localDirectory: {
+                ...initialWizardState.storage.localDirectory,
+                ...(overrides.storage?.localDirectory ?? {}),
+            },
         },
         execution: {
             ...initialWizardState.execution,
@@ -69,15 +85,36 @@ describe("wizardConfig", () => {
     it("requires validated storage connection before proceeding", () => {
         const state = buildState({
             storage: {
-                url: "https://dav.example.org",
-                username: "demo",
-                password: "secret",
+                selectedMethod: "webdav",
+                webdav: {
+                    url: "https://dav.example.org",
+                    username: "demo",
+                    password: "secret",
+                    status: "idle",
+                },
             },
-            connectionStatus: "idle",
         });
 
         expect(getStepValidationError(state, "storage")).toBe(
             "Test the WebDAV connection successfully before continuing."
+        );
+    });
+
+    it("requires a selected local directory to be validated before proceeding", () => {
+        const state = buildState({
+            storage: {
+                selectedMethod: "local-directory",
+                webdav: initialWizardState.storage.webdav,
+                localDirectory: {
+                    directoryHandle: {} as FileSystemDirectoryHandle,
+                    directoryName: "Exports",
+                    status: "idle",
+                },
+            },
+        });
+
+        expect(getStepValidationError(state, "storage")).toBe(
+            "Validate the selected local directory before continuing."
         );
     });
 

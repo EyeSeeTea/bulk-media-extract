@@ -36,8 +36,10 @@ function getCompositionRoot(repositories: Repositories) {
             getOrganisationUnits: new GetOrganisationUnitsUseCase(repositories),
         },
         storage: {
-            validateConnection: new ValidateStorageConnectionUseCase(repositories),
-            uploadFile: new UploadFileToStorageUseCase(repositories),
+            webdav: {
+                validateConnection: new ValidateStorageConnectionUseCase(repositories),
+                uploadFile: new UploadFileToStorageUseCase(repositories),
+            },
         },
     };
 }

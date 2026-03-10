@@ -56,9 +56,7 @@ describe("useCachedAsyncData", () => {
             expect(asyncFunction).toHaveBeenCalledTimes(1);
         });
 
-        await act(async () => {
-            rerender({ keyValue: "key-b" });
-        });
+        rerender({ keyValue: "key-b" });
 
         await waitFor(() => {
             expect(asyncFunction).toHaveBeenCalledTimes(2);

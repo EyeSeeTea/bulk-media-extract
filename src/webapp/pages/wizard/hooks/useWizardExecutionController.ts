@@ -7,6 +7,7 @@ import {
 import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
 import { downloadExecutionReport } from "$/webapp/pages/wizard/exportExecutionReport";
 import { ExecutionRunHandle, runExecutionPlan } from "$/webapp/pages/wizard/executionRunner";
+import { writeResponseToLocalDirectory } from "$/webapp/pages/wizard/localDirectoryStorage";
 import {
     initialExecutionState,
     WizardExecutionState,
@@ -43,7 +44,6 @@ export function useWizardExecutionController({
 
         const handle = runExecutionPlan({
             configuration: executionConfiguration,
-            storage,
             downloadSourceFile: async (url, signal) => {
                 const response = await fetch(url, {
                     method: "GET",
@@ -55,16 +55,52 @@ export function useWizardExecutionController({
                     throw new Error(`Source download failed with status ${response.status}.`);
                 }
 
-                return response.blob();
+                return response;
             },
-            uploadToStorage: params =>
-                runFutureData(
-                    compositionRoot.storage.uploadFile.execute({
-                        connection: params.connection,
+            writeTargetFile: params => {
+                if (storage.selectedMethod === "webdav") {
+                    let uploadHandle: { promise: Promise<void>; cancel?: () => void } | undefined;
+
+                    return {
+                        promise: params.response.blob().then(file => {
+                            uploadHandle = runFutureData(
+                                compositionRoot.storage.webdav.uploadFile.execute({
+                                    connection: {
+                                        url: storage.webdav.url,
+                                        username: storage.webdav.username,
+                                        password: storage.webdav.password,
+                                    },
+                                    targetPath: params.targetPath,
+                                    file,
+                                })
+                            );
+
+                            return uploadHandle.promise;
+                        }),
+                        cancel: () => {
+                            uploadHandle?.cancel?.();
+                        },
+                    };
+                }
+
+                const directoryHandle = storage.localDirectory.directoryHandle;
+                if (!directoryHandle) {
+                    return {
+                        promise: Promise.reject(
+                            new Error("Local directory export is not ready. Select and validate a directory.")
+                        ),
+                    };
+                }
+
+                return {
+                    promise: writeResponseToLocalDirectory({
+                        rootDirectory: directoryHandle,
                         targetPath: params.targetPath,
-                        file: params.file,
-                    })
-                ),
+                        response: params.response,
+                        signal: params.signal,
+                    }),
+                };
+            },
             onProgress: snapshot => {
                 setExecution(previous => ({
                     ...previous,
@@ -123,7 +159,7 @@ export function useWizardExecutionController({
                 executionRunRef.current = null;
             }
         }
-    }, [compositionRoot.storage.uploadFile, executionConfiguration, setExecution, storage]);
+    }, [compositionRoot.storage.webdav.uploadFile, executionConfiguration, setExecution, storage]);
 
     const onInterruptExecution = React.useCallback(() => {
         executionRunRef.current?.cancel();

@@ -10,7 +10,7 @@ export const WizardPage: React.FC = React.memo(() => {
     return (
         <WizardProvider
             validateStorageConnectionRequest={config =>
-                compositionRoot.storage.validateConnection.execute(config).toPromise()
+                compositionRoot.storage.webdav.validateConnection.execute(config).toPromise()
             }
         >
             <WizardContent />
