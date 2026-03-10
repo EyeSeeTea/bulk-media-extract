@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useCachedAsyncData } from "$/webapp/hooks/useCachedAsyncData";
 
@@ -34,7 +34,9 @@ describe("useCachedAsyncData", () => {
             expect(result.current.state).toEqual({ status: "success", data: "value" });
         });
 
-        await result.current.execute();
+        await act(async () => {
+            await result.current.execute();
+        });
 
         expect(asyncFunction).toHaveBeenCalledTimes(1);
         expect(result.current.state).toEqual({ status: "success", data: "value" });
@@ -54,7 +56,9 @@ describe("useCachedAsyncData", () => {
             expect(asyncFunction).toHaveBeenCalledTimes(1);
         });
 
-        rerender({ keyValue: "key-b" });
+        await act(async () => {
+            rerender({ keyValue: "key-b" });
+        });
 
         await waitFor(() => {
             expect(asyncFunction).toHaveBeenCalledTimes(2);

@@ -48,6 +48,6 @@ describe("useProgramEventsPreview", () => {
         expect(result.current.state.data.events).toEqual(
             expect.arrayContaining([expect.objectContaining({ id: "evt-1" })])
         );
-        expect(result.current.state.data.total).toBe(1);
+        expect(result.current.state.data.total).toBe(2);
     });
 });

@@ -1,8 +1,33 @@
-import { fireEvent, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, waitFor, within } from "@testing-library/react";
 import { Future } from "$/domain/entities/generic/Future";
 import { getReactComponent, getTestContext } from "$/utils/tests";
 import { WizardPage } from "$/webapp/pages/wizard/WizardPage";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@dhis2/ui", async () => {
+    const actual = await vi.importActual<typeof import("@dhis2/ui")>("@dhis2/ui");
+
+    return {
+        ...actual,
+        SingleSelectField: (props: {
+            selected?: string;
+            onChange?: (payload: { selected: string }) => void;
+            children?: React.ReactNode;
+        }) => (
+            <select
+                data-testid="wizard-program-select-mock"
+                value={props.selected ?? ""}
+                onChange={event => props.onChange?.({ selected: event.target.value })}
+            >
+                <option value="" />
+                {props.children}
+            </select>
+        ),
+        SingleSelectOption: (props: { value: string; label?: string }) => (
+            <option value={props.value}>{props.label ?? props.value}</option>
+        ),
+    };
+});
 
 vi.mock("$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker", () => ({
     OrgUnitTreePicker: (props: {
@@ -43,11 +68,33 @@ function expectCurrentStep(page: ReturnType<typeof getReactComponent>, stepId: s
     expect(page.getByTestId(`wizard-step-tab-${stepId}`)).toHaveAttribute("aria-current", "step");
 }
 
-describe("WizardPage", () => {
-    it("blocks next when program is not selected", () => {
-        const page = getReactComponent(<WizardPage />);
+async function renderWizardPage(context = getTestContext()) {
+    let page!: ReturnType<typeof getReactComponent>;
+    await act(async () => {
+        page = getReactComponent(<WizardPage />, context);
+        await Promise.resolve();
+    });
+    await page.findByTestId("wizard-program-select");
+    return page;
+}
 
-        fireEvent.click(page.getByText("Next"));
+async function clickAndFlush(element: Element) {
+    await act(async () => {
+        fireEvent.click(element);
+    });
+}
+
+async function changeAndFlush(element: Element, value: Record<string, unknown>) {
+    await act(async () => {
+        fireEvent.change(element, { target: value });
+    });
+}
+
+describe("WizardPage", () => {
+    it("blocks next when program is not selected", async () => {
+        const page = await renderWizardPage();
+
+        await clickAndFlush(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Program is required.")).toBeInTheDocument();
@@ -56,7 +103,7 @@ describe("WizardPage", () => {
     });
 
     it("renders the redesigned program step hierarchy and summary", async () => {
-        const page = getReactComponent(<WizardPage />);
+        const page = await renderWizardPage();
 
         expectCurrentStep(page, "program");
         expect(page.getByText("Choose a program and the files to export")).toBeInTheDocument();
@@ -67,15 +114,15 @@ describe("WizardPage", () => {
         ).toBeInTheDocument();
         expect(page.queryByText("Program summary")).not.toBeInTheDocument();
 
-        const programSelect = await page.findByTestId("wizard-program-select");
-        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        const programSelect = page.getByTestId("wizard-program-select");
+        await changeAndFlush(programSelect, { value: "prog-a" });
 
         expect(await page.findByText("Program summary")).toBeInTheDocument();
         expect(await page.findByTestId("wizard-program-summary")).toBeInTheDocument();
         expect(page.getByText("Tracker Program")).toBeInTheDocument();
         expect(page.getByText("Selected: 0 of 2")).toBeInTheDocument();
 
-        fireEvent.click(page.getByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
 
         expect(page.getByText("Selected: 1 of 2")).toBeInTheDocument();
         expect(page.getByText("Visit Form")).toBeInTheDocument();
@@ -84,28 +131,28 @@ describe("WizardPage", () => {
     });
 
     it("preserves template step filters when navigating back from preview", async () => {
-        const page = getReactComponent(<WizardPage />);
+        const page = await renderWizardPage();
 
-        const programSelect = await page.findByTestId("wizard-program-select");
-        fireEvent.change(programSelect, { target: { value: "prog-a" } });
-        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        const programSelect = page.getByTestId("wizard-program-select");
+        await changeAndFlush(programSelect, { value: "prog-a" });
+        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
 
-        fireEvent.click(page.getByText("Next"));
+        await clickAndFlush(page.getByText("Next"));
         expectCurrentStep(page, "template");
         expect(page.getByText("Path and filename template - Visit Form")).toBeInTheDocument();
 
-        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
-        fireEvent.change(page.getByTestId("wizard-org-unit-mode"), { target: { value: "selected" } });
-        fireEvent.change(page.getByTestId("wizard-date-from"), { target: { value: "2026-01-01" } });
-        fireEvent.change(page.getByTestId("wizard-date-to"), { target: { value: "2026-01-31" } });
-        fireEvent.change(page.getByTestId("wizard-template-input"), {
-            target: { value: "/exports/{fileName}" },
+        await clickAndFlush(page.getByTestId("org-unit-tree-picker"));
+        await changeAndFlush(page.getByTestId("wizard-org-unit-mode"), { value: "selected" });
+        await changeAndFlush(page.getByTestId("wizard-date-from"), { value: "2026-01-01" });
+        await changeAndFlush(page.getByTestId("wizard-date-to"), { value: "2026-01-31" });
+        await changeAndFlush(page.getByTestId("wizard-template-input"), {
+            value: "/exports/{fileName}",
         });
 
-        fireEvent.click(page.getByText("Next"));
+        await clickAndFlush(page.getByText("Next"));
         expectCurrentStep(page, "preview");
 
-        fireEvent.click(page.getByText("Back"));
+        await clickAndFlush(page.getByText("Back"));
         expectCurrentStep(page, "template");
         expect(page.getByTestId("org-unit-tree-picker")).toBeInTheDocument();
         expect((page.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe("selected");
@@ -118,20 +165,20 @@ describe("WizardPage", () => {
 
     it("supports preview, storage validation, and successful execution", async () => {
         mockSourceDownloads();
-        const page = getReactComponent(<WizardPage />);
+        const page = await renderWizardPage();
 
-        const programSelect = await page.findByTestId("wizard-program-select");
-        fireEvent.change(programSelect, { target: { value: "prog-a" } });
-        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
-        fireEvent.click(page.getByText("Next"));
+        const programSelect = page.getByTestId("wizard-program-select");
+        await changeAndFlush(programSelect, { value: "prog-a" });
+        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(page.getByText("Next"));
 
-        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
-        fireEvent.change(page.getByTestId("wizard-date-from"), { target: { value: "2026-01-01" } });
-        fireEvent.change(page.getByTestId("wizard-date-to"), { target: { value: "2026-01-31" } });
-        fireEvent.change(page.getByTestId("wizard-template-input"), {
-            target: { value: "/exports/{orgUnitName}/{fileName}" },
+        await clickAndFlush(page.getByTestId("org-unit-tree-picker"));
+        await changeAndFlush(page.getByTestId("wizard-date-from"), { value: "2026-01-01" });
+        await changeAndFlush(page.getByTestId("wizard-date-to"), { value: "2026-01-31" });
+        await changeAndFlush(page.getByTestId("wizard-template-input"), {
+            value: "/exports/{orgUnitName}/{fileName}",
         });
-        fireEvent.click(page.getByText("Next"));
+        await clickAndFlush(page.getByText("Next"));
 
         expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
         expectCurrentStep(page, "preview");
@@ -166,25 +213,25 @@ describe("WizardPage", () => {
         expect(page.getByText("Files")).toBeInTheDocument();
         expect(page.getAllByText("1.0 KB").length).toBeGreaterThan(0);
 
-        fireEvent.click(page.getByText("Next"));
+        await clickAndFlush(page.getByText("Next"));
         expectCurrentStep(page, "storage");
 
-        fireEvent.change(page.getByTestId("wizard-storage-url"), {
-            target: { value: "https://dav.example.org/remote.php/dav" },
+        await changeAndFlush(page.getByTestId("wizard-storage-url"), {
+            value: "https://dav.example.org/remote.php/dav",
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
-        fireEvent.click(page.getByText("Test connection"));
+        await changeAndFlush(page.getByTestId("wizard-storage-username"), { value: "demo" });
+        await changeAndFlush(page.getByTestId("wizard-storage-password"), { value: "secret" });
+        await clickAndFlush(page.getByText("Test connection"));
 
         await page.findByText("WebDAV connection validated. You can continue to execution.");
-        fireEvent.click(page.getByText("Next"));
+        await clickAndFlush(page.getByText("Next"));
 
         expectCurrentStep(page, "execution");
         expect(page.getByText("Finish")).toBeInTheDocument();
         expect(page.getByText("Finish")).toBeEnabled();
         expect(page.queryByTestId("wizard-execution-progress-panel")).not.toBeInTheDocument();
         expect(page.queryByTestId("wizard-execution-log")).not.toBeInTheDocument();
-        fireEvent.click(page.getByText("Start export"));
+        await clickAndFlush(page.getByText("Start export"));
 
         await waitFor(() => {
             expect(page.getByText("All files processed successfully.")).toBeInTheDocument();
@@ -199,7 +246,7 @@ describe("WizardPage", () => {
         const executionLog = page.getByTestId("wizard-execution-log");
         expect(executionLog).not.toHaveAttribute("open");
         expect(within(executionLog).getByText("3 entries")).toBeInTheDocument();
-        fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
+        await clickAndFlush(page.getByTestId("wizard-execution-log-toggle"));
         expect(executionLog).toHaveAttribute("open");
         expect(page.getByTestId("wizard-execution-log-list")).toBeInTheDocument();
         expect(within(executionLog).getByText("Export started with 1 file to process.")).toBeInTheDocument();
@@ -627,17 +674,17 @@ describe("WizardPage", () => {
     });
 
     it("inserts selected property token into template at cursor", async () => {
-        const page = getReactComponent(<WizardPage />);
+        const page = await renderWizardPage();
 
-        const programSelect = await page.findByTestId("wizard-program-select");
-        fireEvent.change(programSelect, { target: { value: "prog-a" } });
-        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
-        fireEvent.click(page.getByText("Next"));
+        const programSelect = page.getByTestId("wizard-program-select");
+        await changeAndFlush(programSelect, { value: "prog-a" });
+        await clickAndFlush(page.getByTestId("wizard-file-select-de-file"));
+        await clickAndFlush(page.getByText("Next"));
 
         const input = page.getByTestId("wizard-template-input") as HTMLTextAreaElement;
         input.focus();
         input.setSelectionRange(0, 0);
-        fireEvent.click(await page.findByTestId("wizard-token-orgUnitName"));
+        await clickAndFlush(await page.findByTestId("wizard-token-orgUnitName"));
 
         expect(input.value.startsWith("{orgUnitName}")).toBe(true);
     });
@@ -768,11 +815,11 @@ describe("WizardPage", () => {
     });
 
     it("blocks next when no file data value is selected", async () => {
-        const page = getReactComponent(<WizardPage />);
+        const page = await renderWizardPage();
 
-        const programSelect = await page.findByTestId("wizard-program-select");
-        fireEvent.change(programSelect, { target: { value: "prog-a" } });
-        fireEvent.click(page.getByText("Next"));
+        const programSelect = page.getByTestId("wizard-program-select");
+        await changeAndFlush(programSelect, { value: "prog-a" });
+        await clickAndFlush(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Select at least one file data value to sync.")).toBeInTheDocument();
@@ -794,8 +841,8 @@ describe("WizardPage", () => {
         expectCurrentStep(page, "template");
     });
 
-    it("renders numbered step tabs and a dedicated footer action bar", () => {
-        const page = getReactComponent(<WizardPage />);
+    it("renders numbered step tabs and a dedicated footer action bar", async () => {
+        const page = await renderWizardPage();
 
         expect(page.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
         expect(page.getByTestId("wizard-step-number-program").textContent).toContain("1");
