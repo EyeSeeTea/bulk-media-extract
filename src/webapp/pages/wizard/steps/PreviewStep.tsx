@@ -229,6 +229,17 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                                                     <div className="wizard-preview-cell-primary">
                                                         {getPreviewCellValue(row.fileName)}
                                                     </div>
+                                                    {!row.isMissingFileResource && row.fileName ? (
+                                                        <div className="wizard-preview-cell-secondary">
+                                                            <a
+                                                                href={row.fileDataValueUrl}
+                                                                rel="noopener noreferrer"
+                                                                target="_blank"
+                                                            >
+                                                                {i18n.t("Original file")}
+                                                            </a>
+                                                        </div>
+                                                    ) : null}
                                                     {warning ? (
                                                         <div className="wizard-preview-warning-text">
                                                             {warning}

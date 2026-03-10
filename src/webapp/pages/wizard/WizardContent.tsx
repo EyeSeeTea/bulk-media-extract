@@ -18,7 +18,7 @@ import {
 } from "$/webapp/pages/wizard/wizardConfig";
 
 export const WizardContent: React.FC = () => {
-    const { baseUrl, compositionRoot } = useAppContext();
+    const { baseUrl, compositionRoot, dhis2Version } = useAppContext();
     const {
         state,
         currentStepId,
@@ -90,6 +90,7 @@ export const WizardContent: React.FC = () => {
         executionConfiguration,
     } = useWizardPreviewData({
         baseUrl,
+        dhis2Version,
         previewEnabled,
         selectedProgramId: state.selectedProgramId,
         selectedProgram,

@@ -3,6 +3,7 @@ import { getTestCompositionRoot } from "$/CompositionRoot";
 import { User } from "$/domain/entities/User";
 import { AppContext } from "$/webapp/contexts/app-context";
 import { useWizardProgramData } from "$/webapp/pages/wizard/hooks/useWizardProgramData";
+import { parseDhis2Version } from "$/webapp/utils/dhis2Version";
 import { describe, expect, it, vi } from "vitest";
 
 const context = {
@@ -15,6 +16,7 @@ const context = {
     }),
     compositionRoot: getTestCompositionRoot(),
     baseUrl: "http://localhost:8081/dhis2",
+    dhis2Version: parseDhis2Version("2.41.0"),
 };
 
 describe("useWizardProgramData", () => {

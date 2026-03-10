@@ -124,7 +124,8 @@ Once execution finishes successfully, the execution step MUST stop showing the `
 
 ### Requirement: Wizard preview step exposes export configuration action
 The system SHALL display an export configuration action in the preview step and MUST generate a JSON execution configuration from the current reviewed preview result when the user activates it.  
-The downloaded configuration MUST use the defined execution-configuration contract and MUST reflect the same reviewed preview rows and resolved targets currently visible in the preview step, excluding rows that are marked as skipped because they are missing `FileResource`.
+The downloaded configuration MUST use the defined execution-configuration contract and MUST reflect the same reviewed preview rows and resolved targets currently visible in the preview step, excluding rows that are marked as skipped because they are missing `FileResource`.  
+Each exported operation's source URL MUST match the upstream-file endpoint for the detected DHIS2 version so the saved execution plan remains runnable against the same server version that produced the preview.
 
 #### Scenario: Preview shows export configuration button
 - **WHEN** the user reaches the preview step
@@ -137,6 +138,10 @@ The downloaded configuration MUST use the defined execution-configuration contra
 #### Scenario: Export configuration excludes skipped rows
 - **WHEN** the current preview contains rows that are visible warnings because their `FileResource` could not be resolved
 - **THEN** the downloaded execution configuration omits those rows from its operations while preserving the reviewed exportable rows and skipped-row counts
+
+#### Scenario: Export configuration preserves DHIS2 2.40 source URLs
+- **WHEN** the current preview was generated against a DHIS2 2.40 server
+- **THEN** each exported operation references the legacy `api/40/events/files` source URL for its row instead of the 2.41 Tracker file route
 
 ### Requirement: Wizard storage step explains WebDAV scope and setup prerequisites
 The system SHALL present the storage step as a WebDAV configuration step.  

@@ -1,6 +1,7 @@
 import React from "react";
 import { ProgramEventsPreviewResult, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
+import { Dhis2Version } from "$/webapp/utils/dhis2Version";
 import {
     buildExportExecutionConfiguration,
     ExportExecutionConfigurationFileMapping,
@@ -15,6 +16,7 @@ import { filterEventsByDate, ProgramOption } from "$/webapp/pages/wizard/wizardS
 
 type UseWizardPreviewDataParams = {
     baseUrl: string;
+    dhis2Version: Dhis2Version;
     previewEnabled: boolean;
     selectedProgramId: string;
     selectedProgram?: ProgramOption;
@@ -31,6 +33,7 @@ type UseWizardPreviewDataParams = {
 
 export function useWizardPreviewData({
     baseUrl,
+    dhis2Version,
     previewEnabled,
     selectedProgramId,
     selectedProgram,
@@ -81,9 +84,10 @@ export function useWizardPreviewData({
             filteredExportPreview,
             selectedFileDataElements,
             mappingByFileKey,
-            baseUrl
+            baseUrl,
+            dhis2Version
         );
-    }, [baseUrl, filteredExportPreview, mappingByFileKey, selectedFileDataElements]);
+    }, [baseUrl, dhis2Version, filteredExportPreview, mappingByFileKey, selectedFileDataElements]);
 
     const exportPreviewSummary = React.useMemo(() => {
         return summarizeExportPreview(exportPreviewRows);

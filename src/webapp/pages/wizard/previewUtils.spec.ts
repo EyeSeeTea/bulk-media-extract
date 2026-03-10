@@ -8,6 +8,7 @@ import {
     getPreviewCellValue,
     summarizeExportPreview,
 } from "$/webapp/pages/wizard/previewUtils";
+import { parseDhis2Version } from "$/webapp/utils/dhis2Version";
 import { describe, expect, it } from "vitest";
 
 describe("previewUtils", () => {
@@ -36,7 +37,8 @@ describe("previewUtils", () => {
                 }),
             ],
             { "de-file": "/exports/{orgUnitName}/{fileName}" },
-            "http://localhost:8081/dhis2"
+            "http://localhost:8081/dhis2",
+            parseDhis2Version("2.41.4")
         );
 
         expect(rows).toEqual([
@@ -166,8 +168,37 @@ describe("previewUtils", () => {
     });
 
     it("builds data value urls", () => {
-        expect(buildEventDataValueUrl("evt-1", "de-file", "http://localhost:8081/dhis2")).toBe(
-            "http://localhost:8081/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file"
+        expect(
+            buildEventDataValueUrl(
+                "evt-1",
+                "de-file",
+                "http://localhost:8081/dhis2",
+                parseDhis2Version("2.41.0")
+            )
+        ).toBe("http://localhost:8081/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file");
+    });
+
+    it("builds legacy data value urls for DHIS2 2.40", () => {
+        expect(
+            buildEventDataValueUrl(
+                "evt-1",
+                "de-file",
+                "http://localhost:8081/dhis2",
+                parseDhis2Version("2.40.7")
+            )
+        ).toBe("http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1");
+    });
+
+    it("builds tracker data value urls for newer DHIS2 versions", () => {
+        expect(
+            buildEventDataValueUrl(
+                "evt-1",
+                "de-file",
+                "http://localhost:8081/dhis2",
+                parseDhis2Version("2.42.1")
+            )
+        ).toBe(
+            "http://localhost:8081/dhis2/api/42/tracker/events/evt-1/dataValues/de-file/file"
         );
     });
 

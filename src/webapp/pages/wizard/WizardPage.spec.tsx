@@ -208,6 +208,10 @@ describe("WizardPage", () => {
         expect(eventLink.href).toContain(
             "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-a"
         );
+        const originalFileLink = page.getByRole("link", { name: "Original file" }) as HTMLAnchorElement;
+        expect(originalFileLink.href).toContain(
+            "/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file"
+        );
         const footer = page.getByTestId("wizard-preview-footer");
         expect(table.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(page.getByText("Files")).toBeInTheDocument();
@@ -668,9 +672,11 @@ describe("WizardPage", () => {
         expect(page.getByTestId("wizard-preview-row-evt-2:de-file-b")).toHaveClass(
             "wizard-preview-row-warning"
         );
+        const warningRow = page.getByTestId("wizard-preview-row-evt-2:de-file-b");
         expect(page.getByText("Missing FileResource metadata for missing-resource-value")).toBeInTheDocument();
         expect(page.getByTestId("wizard-preview-stats").textContent).toContain("1");
         expect(page.getAllByText("-").length).toBeGreaterThan(0);
+        expect(within(warningRow).queryByRole("link", { name: "Original file" })).not.toBeInTheDocument();
     });
 
     it("inserts selected property token into template at cursor", async () => {

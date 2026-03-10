@@ -12,10 +12,11 @@ import "./App.css";
 type AppProps = {
     compositionRoot: CompositionRoot;
     baseUrl: string;
+    dhis2Version: AppContextState["dhis2Version"];
 };
 
 function App_(props: AppProps) {
-    const { compositionRoot, baseUrl } = props;
+    const { compositionRoot, baseUrl, dhis2Version } = props;
     const [showShareButton, setShowShareButton] = useState(false);
     const [loading, setLoading] = useState(true);
     const [appContext, setAppContext] = useState<AppContextState | null>(null);
@@ -26,12 +27,12 @@ function App_(props: AppProps) {
             const currentUser = await compositionRoot.users.getCurrent.execute().toPromise();
             if (!currentUser) throw new Error("User not logged in");
 
-            setAppContext({ currentUser, compositionRoot, baseUrl });
+            setAppContext({ currentUser, compositionRoot, baseUrl, dhis2Version });
             setShowShareButton(isShareButtonVisible);
             setLoading(false);
         }
         setup();
-    }, [baseUrl, compositionRoot]);
+    }, [baseUrl, compositionRoot, dhis2Version]);
 
     if (loading) return null;
 

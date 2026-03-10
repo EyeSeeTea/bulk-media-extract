@@ -1,4 +1,9 @@
 import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import {
+    DEFAULT_DHIS2_VERSION,
+    Dhis2Version,
+    usesLegacyEventFileEndpoint,
+} from "$/webapp/utils/dhis2Version";
 import { resolveTemplateForEvent } from "$/webapp/pages/wizard/templateBuilder";
 
 export type ExportPreviewRow = {
@@ -31,7 +36,8 @@ export function buildExportPreviewRows(
     events: ProgramEventPreview[],
     selectedFileDataElements: ProgramFileProperty[],
     mappingByFileKey: Record<string, string>,
-    baseUrl = getDhis2BaseUrl()
+    baseUrl = getDhis2BaseUrl(),
+    dhis2Version: Dhis2Version = DEFAULT_DHIS2_VERSION
 ): ExportPreviewRow[] {
     const rows = events.flatMap(event => {
         return selectedFileDataElements.flatMap(fileProperty => {
@@ -58,7 +64,12 @@ export function buildExportPreviewRows(
                     fileDataValue: event.dataValues[fileProperty.id] ?? event.fileValues[fileProperty.id] ?? "",
                     fileDataValueId: fileProperty.id,
                     fileDataValueName: fileProperty.name,
-                    fileDataValueUrl: buildEventDataValueUrl(event.id, fileProperty.id, baseUrl),
+                    fileDataValueUrl: buildEventDataValueUrl(
+                        event.id,
+                        fileProperty.id,
+                        baseUrl,
+                        dhis2Version
+                    ),
                     programStageId: fileProperty.sourceContainerId,
                     programStageName: fileProperty.sourceContainerName,
                     fileResourceId,
@@ -155,11 +166,21 @@ export function buildCaptureEventUrl(
 export function buildEventDataValueUrl(
     eventId: string,
     dataElementId: string,
-    baseUrl = getDhis2BaseUrl()
+    baseUrl = getDhis2BaseUrl(),
+    dhis2Version: Dhis2Version = DEFAULT_DHIS2_VERSION
 ): string {
     const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
 
-    return `${normalizedBaseUrl}/api/41/tracker/events/${eventId}/dataValues/${dataElementId}/file`;
+    if (usesLegacyEventFileEndpoint(dhis2Version)) {
+        const params = new URLSearchParams({
+            dataElementUid: dataElementId,
+            eventUid: eventId,
+        });
+
+        return `${normalizedBaseUrl}/api/40/events/files?${params.toString()}`;
+    }
+
+    return `${normalizedBaseUrl}/api/${dhis2Version.minor}/tracker/events/${eventId}/dataValues/${dataElementId}/file`;
 }
 
 function getDhis2BaseUrl(): string {

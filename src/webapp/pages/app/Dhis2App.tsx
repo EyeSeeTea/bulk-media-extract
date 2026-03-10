@@ -2,6 +2,7 @@ import React from "react";
 import i18n from "@dhis2/d2-i18n";
 import { Provider } from "@dhis2/app-runtime";
 import { D2Api } from "$/types/d2-api";
+import { Dhis2Version, loadDhis2Version } from "$/webapp/utils/dhis2Version";
 import { App } from "./App";
 import { CompositionRoot, getWebappCompositionRoot } from "$/CompositionRoot";
 
@@ -29,7 +30,7 @@ export function Dhis2App(_props: {}) {
             );
         }
         case "loaded": {
-            const { baseUrl, compositionRoot } = compositionRootRes.data;
+            const { baseUrl, compositionRoot, dhis2Version } = compositionRootRes.data;
             type ProviderProps = React.ComponentProps<typeof Provider>;
             const config: ProviderProps["config"] = { baseUrl, apiVersion: 30 };
 
@@ -40,7 +41,11 @@ export function Dhis2App(_props: {}) {
                     parentAlertsAdd={() => {}}
                     showAlertsInPlugin={false}
                 >
-                    <App compositionRoot={compositionRoot} baseUrl={baseUrl} />
+                    <App
+                        compositionRoot={compositionRoot}
+                        baseUrl={baseUrl}
+                        dhis2Version={dhis2Version}
+                    />
                 </Provider>
             );
         }
@@ -50,6 +55,7 @@ export function Dhis2App(_props: {}) {
 type Data = {
     compositionRoot: CompositionRoot;
     baseUrl: string;
+    dhis2Version: Dhis2Version;
 };
 
 async function getData(): Promise<CompositionRootResult> {
@@ -62,11 +68,14 @@ async function getData(): Promise<CompositionRootResult> {
         : new D2Api({ baseUrl: baseUrl });
     const compositionRoot = getWebappCompositionRoot(api);
 
-    const userSettings = await api.get<{ keyUiLocale: string }>("/userSettings").getData();
+    const [userSettings, dhis2Version] = await Promise.all([
+        api.get<{ keyUiLocale: string }>("/userSettings").getData(),
+        loadDhis2Version(api),
+    ]);
     configI18n(userSettings);
 
     try {
-        return { type: "loaded", data: { baseUrl, compositionRoot } };
+        return { type: "loaded", data: { baseUrl, compositionRoot, dhis2Version } };
     } catch (err) {
         return { type: "error", error: { baseUrl, error: err as Error } };
     }

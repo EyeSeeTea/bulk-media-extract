@@ -168,4 +168,41 @@ describe("exportExecutionConfiguration", () => {
             buildExportExecutionConfigurationFilename("prog-a", "2026-03-09T10:20:30.000Z")
         ).toBe("export-execution-configuration-prog-a-2026-03-09T10-20-30-000Z.json");
     });
+
+    it("preserves legacy DHIS2 2.40 source urls in exported operations", () => {
+        const configuration = buildExportExecutionConfiguration({
+            generatedAt: "2026-03-09T10:20:30.000Z",
+            selectedProgramId: "prog-a",
+            selectedProgramName: "Antenatal Visit",
+            selectedOrgUnitId: "ou-a",
+            selectedOrgUnitName: "Central Clinic",
+            orgUnitSelectionMode: "selected",
+            dateFrom: "",
+            dateTo: "",
+            selectedFileMappings: [],
+            previewRows: [
+                {
+                    id: "evt-1:de-file",
+                    eventId: "evt-1",
+                    eventOrgUnitId: "ou-a",
+                    eventOrgUnitName: "Central Clinic",
+                    fileDataValue: "file-123",
+                    fileDataValueId: "de-file",
+                    fileDataValueName: "Visit Form",
+                    fileDataValueUrl:
+                        "http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1",
+                    fileResourceId: "file-123",
+                    fileName: "visit-form.pdf",
+                    fileSize: 1024,
+                    resolvedTargetPath: "/exports/visit-form.pdf",
+                    hasDuplicateTargetPath: false,
+                    isMissingFileResource: false,
+                },
+            ] satisfies ExportPreviewRow[],
+        });
+
+        expect(configuration.operations[0]?.source.url).toBe(
+            "http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1"
+        );
+    });
 });
