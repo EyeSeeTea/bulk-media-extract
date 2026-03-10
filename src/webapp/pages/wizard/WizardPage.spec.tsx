@@ -50,6 +50,32 @@ describe("WizardPage", () => {
         expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
     });
 
+    it("renders the redesigned program step hierarchy and summary", async () => {
+        const page = getReactComponent(<WizardPage />);
+
+        expect(page.getByText("Choose a program and the files to export")).toBeInTheDocument();
+        expect(
+            page.getByText(
+                "Start by selecting the tracker program. Then confirm which file data values should move forward to template setup and preview."
+            )
+        ).toBeInTheDocument();
+        expect(page.queryByText("Program summary")).not.toBeInTheDocument();
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+
+        expect(await page.findByText("Program summary")).toBeInTheDocument();
+        expect(await page.findByTestId("wizard-program-summary")).toBeInTheDocument();
+        expect(page.getByText("Tracker Program")).toBeInTheDocument();
+        expect(page.getByText("Selected: 0 of 2")).toBeInTheDocument();
+
+        fireEvent.click(page.getByTestId("wizard-file-select-de-file"));
+
+        expect(page.getByText("Selected: 1 of 2")).toBeInTheDocument();
+        expect(page.getByText("Visit Form")).toBeInTheDocument();
+        expect(page.getAllByText("Main Stage").length).toBeGreaterThan(0);
+    });
+
     it("preserves template step filters when navigating back from preview", async () => {
         const page = getReactComponent(<WizardPage />);
 

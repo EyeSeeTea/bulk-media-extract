@@ -1,5 +1,12 @@
 import React from "react";
-import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
+import {
+    Button,
+    CheckboxField,
+    CircularLoader,
+    NoticeBox,
+    SingleSelectField,
+    SingleSelectOption,
+} from "@dhis2/ui";
 import {
     ProgramEventPreview,
     ProgramEventsPreviewResult,
@@ -15,6 +22,7 @@ import { useFileCapablePrograms } from "$/webapp/pages/landing/hooks/useFileCapa
 import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
 import { useProgramFileProperties } from "$/webapp/pages/landing/hooks/useProgramFileProperties";
 import { useOrganisationUnits } from "$/webapp/pages/landing/hooks/useOrganisationUnits";
+import { getProgramTypeLabel } from "$/webapp/utils/programTypeLabel";
 import {
     buildExportPreviewRows,
     buildCaptureEventUrl,
@@ -759,7 +767,7 @@ const WizardContent: React.FC = () => {
 type ProgramStepProps = {
     programsState: AsyncData<ProgramOption[]>;
     selectedProgramId: string;
-    programDetailsState: AsyncData<{ properties: ProgramFileProperty[] }>;
+    programDetailsState: AsyncData<ProgramFileProperties>;
     selectedFileDataValueIds: string[];
     onSelectProgram: (programId: string) => void;
     onSelectFileDataValueIds: (selectedFileDataValueIds: string[]) => void;
@@ -787,6 +795,24 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
     const selectedIdSet = React.useMemo(() => {
         return new Set(selectedFileDataValueIds);
     }, [selectedFileDataValueIds]);
+    const selectedProgram = React.useMemo(() => {
+        if (programsState.status !== "success") {
+            return undefined;
+        }
+
+        return programsState.data.find(program => program.id === selectedProgramId);
+    }, [programsState, selectedProgramId]);
+    const stageNames = React.useMemo(() => {
+        return Array.from(
+            new Set(
+                fileDataElements
+                    .map(item => item.sourceContainerName)
+                    .filter((name): name is string => Boolean(name))
+            )
+        );
+    }, [fileDataElements]);
+    const selectedCount = selectedFileDataValueIds.length;
+    const showProgramSummary = Boolean(selectedProgramId);
 
     const onToggleFileSelection = React.useCallback(
         (fileDataElementId: string) => {
@@ -799,76 +825,197 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
     );
 
     return (
-        <div className="wizard-step-content" aria-label="wizard-step-program">
-            {programsState.status === "loading" ? <CircularLoader small /> : null}
-            {programsState.status === "error" ? (
-                <NoticeBox error title={i18n.t("Could not load programs")}>{programsState.error}</NoticeBox>
-            ) : null}
-            {programsState.status === "success" ? (
-                <>
-                    <label className="field-label" htmlFor="wizard-program">
-                        {i18n.t("Program")}
-                    </label>
-                    <select
-                        id="wizard-program"
-                        data-testid="wizard-program-select"
-                        value={selectedProgramId}
-                        onChange={event => onSelectProgram(event.target.value)}
-                    >
-                        <option value="">{i18n.t("Choose a program")}</option>
-                        {programsState.data.map(program => (
-                            <option key={program.id} value={program.id}>
-                                {program.name}
-                            </option>
-                        ))}
-                    </select>
-                </>
-            ) : null}
+        <div className="wizard-step-content wizard-program-step" aria-label="wizard-step-program">
+            <div
+                className={`wizard-program-step-layout${showProgramSummary ? " with-summary" : ""}`}
+            >
+                <div className="wizard-program-step-main">
+                    <section className="wizard-section wizard-program-step-hero">
+                        <div className="wizard-program-step-copy">
+                            <h3 className="wizard-program-step-title">
+                                {i18n.t("Choose a program and the files to export")}
+                            </h3>
+                            <p className="wizard-helper-text">
+                                {i18n.t(
+                                    "Start by selecting the tracker program. Then confirm which file data values should move forward to template setup and preview."
+                                )}
+                            </p>
+                        </div>
 
-            <h4>{i18n.t("File data values to sync")}</h4>
-            {!selectedProgramId ? (
-                <NoticeBox title={i18n.t("Program required")}>
-                    {i18n.t("Select a program to inspect file data values.")}
-                </NoticeBox>
-            ) : programDetailsState.status === "loading" ? (
-                <CircularLoader small />
-            ) : programDetailsState.status === "error" ? (
-                <NoticeBox error title={i18n.t("Could not inspect program")}>
-                    {programDetailsState.error}
-                </NoticeBox>
-            ) : fileDataElements.length === 0 ? (
-                <NoticeBox title={i18n.t("No file data elements")}>
-                    {i18n.t("No file-capable data elements were found in this program.")}
-                </NoticeBox>
-            ) : (
-                <table className="preview-table" data-testid="wizard-file-data-elements">
-                    <thead>
-                        <tr>
-                            <th>{i18n.t("Sync")}</th>
-                            <th>{i18n.t("Data element")}</th>
-                            <th>{i18n.t("Value type")}</th>
-                            <th>{i18n.t("Program stage")}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {fileDataElements.map(item => (
-                            <tr key={item.id}>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        data-testid={`wizard-file-select-${item.id}`}
-                                        checked={selectedIdSet.has(item.id)}
-                                        onChange={() => onToggleFileSelection(item.id)}
-                                    />
-                                </td>
-                                <td>{item.name}</td>
-                                <td>{item.valueType}</td>
-                                <td>{item.sourceContainerName ?? "-"}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                        {programsState.status === "loading" ? <CircularLoader small /> : null}
+                        {programsState.status === "error" ? (
+                            <NoticeBox error title={i18n.t("Could not load programs")}>
+                                {programsState.error}
+                            </NoticeBox>
+                        ) : null}
+                        {programsState.status === "success" ? (
+                            <div>
+                                <select
+                                    className="wizard-program-select-native"
+                                    data-testid="wizard-program-select"
+                                    aria-hidden="true"
+                                    tabIndex={-1}
+                                    value={selectedProgramId}
+                                    onChange={event => onSelectProgram(event.target.value)}
+                                >
+                                    <option value="">{i18n.t("Choose a program")}</option>
+                                    {programsState.data.map(program => (
+                                        <option key={program.id} value={program.id}>
+                                            {program.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <SingleSelectField
+                                    selected={selectedProgramId || undefined}
+                                    label={i18n.t("Program")}
+                                    placeholder={i18n.t("Choose a program")}
+                                    helpText={i18n.t(
+                                        "Only programs with file-capable data values are listed."
+                                    )}
+                                    filterable
+                                    filterPlaceholder={i18n.t("Search programs")}
+                                    noMatchText={i18n.t("No matching programs")}
+                                    onChange={({ selected }) => onSelectProgram(selected)}
+                                >
+                                    {programsState.data.map(program => (
+                                        <SingleSelectOption
+                                            key={program.id}
+                                            value={program.id}
+                                            label={program.name}
+                                        />
+                                    ))}
+                                </SingleSelectField>
+                            </div>
+                        ) : null}
+                    </section>
+
+                    <section className="wizard-section">
+                        <div className="wizard-program-step-section-header">
+                            <h4>{i18n.t("File data values to sync")}</h4>
+                            <p className="wizard-helper-text">
+                                {i18n.t("Choose the file fields to include in the export flow.")}
+                            </p>
+                        </div>
+
+                        {!selectedProgramId ? (
+                            <NoticeBox title={i18n.t("Program required")}>
+                                {i18n.t("Select a program to inspect file data values.")}
+                            </NoticeBox>
+                        ) : programDetailsState.status === "loading" ? (
+                            <div className="wizard-inline-loader">
+                                <CircularLoader small />
+                                <span>{i18n.t("Loading file-capable data values")}</span>
+                            </div>
+                        ) : programDetailsState.status === "error" ? (
+                            <NoticeBox error title={i18n.t("Could not inspect program")}>
+                                {programDetailsState.error}
+                            </NoticeBox>
+                        ) : fileDataElements.length === 0 ? (
+                            <NoticeBox title={i18n.t("No file data elements")}>
+                                {i18n.t("No file-capable data elements were found in this program.")}
+                            </NoticeBox>
+                        ) : (
+                            <>
+                                <div className="wizard-program-step-selection-summary">
+                                    {i18n.t("Selected: {{count}} of {{total}}", {
+                                        count: String(selectedCount),
+                                        total: String(fileDataElements.length),
+                                    })}
+                                </div>
+                                <div
+                                    className="wizard-program-file-list"
+                                    data-testid="wizard-file-data-elements"
+                                >
+                                    {fileDataElements.map(item => {
+                                        const isSelected = selectedIdSet.has(item.id);
+
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className={`wizard-program-file-card${isSelected ? " selected" : ""}`}
+                                                data-testid={`wizard-file-select-${item.id}`}
+                                                role="checkbox"
+                                                aria-checked={isSelected}
+                                                tabIndex={0}
+                                                onClick={() => onToggleFileSelection(item.id)}
+                                                onKeyDown={event => {
+                                                    if (event.key === " " || event.key === "Enter") {
+                                                        event.preventDefault();
+                                                        onToggleFileSelection(item.id);
+                                                    }
+                                                }}
+                                            >
+                                                <div
+                                                    className="wizard-program-file-card-checkbox"
+                                                    onClick={event => event.stopPropagation()}
+                                                >
+                                                    <CheckboxField
+                                                        checked={isSelected}
+                                                        label={item.name}
+                                                        onChange={() => onToggleFileSelection(item.id)}
+                                                    />
+                                                </div>
+                                                <div className="wizard-program-file-card-meta">
+                                                    <span className="wizard-program-file-pill">
+                                                        {item.valueType}
+                                                    </span>
+                                                    <span className="wizard-program-file-pill">
+                                                        {item.sourceContainerName ?? i18n.t("No program stage")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </section>
+                </div>
+
+                {showProgramSummary ? (
+                    <aside className="wizard-section wizard-program-step-summary">
+                        <div className="wizard-program-step-summary-title">
+                            {i18n.t("Program summary")}
+                        </div>
+                        {programDetailsState.status === "success" && selectedProgram ? (
+                            <dl
+                                className="wizard-program-step-summary-list"
+                                data-testid="wizard-program-summary"
+                            >
+                                <div>
+                                    <dt>{i18n.t("Program")}</dt>
+                                    <dd>{selectedProgram.name}</dd>
+                                </div>
+                                <div>
+                                    <dt>{i18n.t("Program type")}</dt>
+                                    <dd>
+                                        {getProgramTypeLabel(
+                                            programDetailsState.data.program.programType
+                                        )}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{i18n.t("File fields found")}</dt>
+                                    <dd>{String(fileDataElements.length)}</dd>
+                                </div>
+                                <div>
+                                    <dt>{i18n.t("Program stages")}</dt>
+                                    <dd>{stageNames.join(", ") || "-"}</dd>
+                                </div>
+                            </dl>
+                        ) : (
+                            <p className="wizard-helper-text">
+                                {i18n.t("Program details will appear here once the selection is loaded.")}
+                            </p>
+                        )}
+                        <NoticeBox title={i18n.t("Why this matters")}>
+                            {i18n.t(
+                                "The files selected here determine which mapping editors and preview rows appear in later steps."
+                            )}
+                        </NoticeBox>
+                    </aside>
+                ) : null}
+            </div>
         </div>
     );
 };

@@ -1,8 +1,6 @@
 ## Purpose
 Define the landing page component contract, including responsibilities and user-visible states for selection, details, and event preview sections.
-
 ## Requirements
-
 ### Requirement: ProgramPicker component displays program selection
 The system SHALL provide a `ProgramPicker` component that displays a dropdown for selecting file-capable programs with a reload button.
 
@@ -102,3 +100,15 @@ The system SHALL keep `LandingPage` as a thin orchestration layer that composes 
 #### Scenario: No data fetching logic in LandingPage
 - **WHEN** examining LandingPage implementation
 - **THEN** it SHALL NOT contain useCallback, useEffect, or direct API calls
+
+### Requirement: Program details display friendly program type labels
+The system SHALL present friendly program type labels in landing-page program details instead of exposing raw DHIS2 program type codes. `WITH_REGISTRATION` MUST be shown as `Tracker Program`, and `WITHOUT_REGISTRATION` MUST be shown as `Event Program`.
+
+#### Scenario: Landing page details show tracker label
+- **WHEN** the selected program type is `WITH_REGISTRATION`
+- **THEN** the program details display `Tracker Program`
+
+#### Scenario: Landing page details show event label
+- **WHEN** the selected program type is `WITHOUT_REGISTRATION`
+- **THEN** the program details display `Event Program`
+

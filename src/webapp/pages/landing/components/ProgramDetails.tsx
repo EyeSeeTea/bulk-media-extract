@@ -2,6 +2,7 @@ import React from "react";
 import { CircularLoader, NoticeBox } from "@dhis2/ui";
 import { ProgramFileProperties } from "$/domain/entities/FileExportProgram";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
+import { getProgramTypeLabel } from "$/webapp/utils/programTypeLabel";
 import i18n from "$/utils/i18n";
 
 type Props = {
@@ -34,7 +35,7 @@ export const ProgramDetails: React.FC<Props> = React.memo(
                     <>
                         <p>
                             <strong>{i18n.t("Program type")}: </strong>
-                            {programDetailsState.data.program.programType}
+                            {getProgramTypeLabel(programDetailsState.data.program.programType)}
                         </p>
 
                         {programDetailsState.data.properties.length > 0 ? (

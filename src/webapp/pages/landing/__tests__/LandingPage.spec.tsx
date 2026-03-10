@@ -41,7 +41,7 @@ describe("LandingPage", () => {
         fireEvent.change(programSelect, { target: { value: "prog-a" } });
 
         expect(await page.findByText(/Program type/)).toBeInTheDocument();
-        expect(await page.findByText("WITH_REGISTRATION")).toBeInTheDocument();
+        expect(await page.findByText("Tracker Program")).toBeInTheDocument();
 
         const orgUnitTreeEnabled = await page.findByTestId("org-unit-tree-picker");
         expect(orgUnitTreeEnabled).toBeInTheDocument();

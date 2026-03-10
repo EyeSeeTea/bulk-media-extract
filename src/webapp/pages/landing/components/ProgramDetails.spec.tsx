@@ -42,7 +42,29 @@ describe("ProgramDetails", () => {
             />
         );
 
-        expect(view.getByText("WITH_REGISTRATION")).toBeInTheDocument();
+        expect(view.getByText("Tracker Program")).toBeInTheDocument();
         expect(view.getByText(/Upload/)).toBeInTheDocument();
+    });
+
+    it("renders event program label for without-registration programs", () => {
+        const details = ProgramFileProperties.create({
+            program: FileCapableProgram.create({
+                id: "prog-b",
+                name: "Program B",
+                programType: "WITHOUT_REGISTRATION",
+                organisationUnits: [],
+            }),
+            properties: [],
+            propertyGroups: [],
+        });
+
+        const view = render(
+            <ProgramDetails
+                selectedProgramId="prog-b"
+                programDetailsState={{ status: "success", data: details }}
+            />
+        );
+
+        expect(view.getByText("Event Program")).toBeInTheDocument();
     });
 });
