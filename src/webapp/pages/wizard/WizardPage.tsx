@@ -7,6 +7,7 @@ import {
     SingleSelectField,
     SingleSelectOption,
 } from "@dhis2/ui";
+import { IconCheckmark24 } from "@dhis2/ui-icons";
 import {
     ProgramEventPreview,
     ProgramEventsPreviewResult,
@@ -179,7 +180,6 @@ const WizardContent: React.FC = () => {
     const {
         state,
         currentStepId,
-        currentStepTitle,
         setScope,
         setStorage,
         validateStorageConnection,
@@ -707,27 +707,29 @@ const WizardContent: React.FC = () => {
 
     return (
         <div className="wizard-page">
-            <h2>{i18n.t("File Export Wizard")}</h2>
-            <p className="wizard-subtitle">
-                {i18n.t("Step {{step}} of {{total}}: {{title}}", {
-                    step: String(state.currentStep + 1),
-                    total: String(WIZARD_STEPS.length),
-                    title: currentStepTitle,
-                })}
-            </p>
-
             <ol className="wizard-steps" aria-label="wizard-steps">
                 {WIZARD_STEPS.map((step, index) => {
-                    const className =
-                        index === state.currentStep ? "active" : index < state.currentStep ? "done" : "";
                     const isAvailable = canNavigateToStep(index);
+                    const stateName =
+                        index === state.currentStep
+                            ? "active"
+                            : index < state.currentStep
+                              ? "done"
+                              : isAvailable
+                                ? "available"
+                                : "disabled";
                     return (
-                        <li key={step.id} className={className}>
+                        <li
+                            key={step.id}
+                            className={`wizard-step-item ${stateName}`}
+                            data-state={stateName}
+                        >
                             <button
                                 type="button"
                                 className="wizard-step-tab"
                                 disabled={!isAvailable}
                                 data-testid={`wizard-step-tab-${step.id}`}
+                                data-step-state={stateName}
                                 aria-current={index === state.currentStep ? "step" : undefined}
                                 onClick={() => {
                                     if (isAvailable) {
@@ -735,7 +737,29 @@ const WizardContent: React.FC = () => {
                                     }
                                 }}
                             >
-                                {step.title}
+                                <span className="wizard-step-tab-main">
+                                    <span
+                                        className="wizard-step-number"
+                                        aria-hidden="true"
+                                        data-testid={`wizard-step-number-${step.id}`}
+                                    >
+                                        {index < state.currentStep ? (
+                                            <span data-testid={`wizard-step-complete-${step.id}`}>
+                                                <IconCheckmark24 />
+                                            </span>
+                                        ) : (
+                                            String(index + 1)
+                                        )}
+                                    </span>
+                                    <span className="wizard-step-label-group">
+                                        <span className="wizard-step-label">
+                                            {i18n.t("Step {{number}}", {
+                                                number: String(index + 1),
+                                            })}
+                                        </span>
+                                        <span className="wizard-step-title">{step.title}</span>
+                                    </span>
+                                </span>
                             </button>
                         </li>
                     );
@@ -750,8 +774,12 @@ const WizardContent: React.FC = () => {
                 </NoticeBox>
             ) : null}
 
-            <div className="actions-row wizard-actions">
-                <Button disabled={state.currentStep === 0 || isExecutionRunning} onClick={goBack}>
+            <div className="wizard-footer-actions" data-testid="wizard-footer-actions">
+                <Button
+                    secondary
+                    disabled={state.currentStep === 0 || isExecutionRunning}
+                    onClick={goBack}
+                >
                     {i18n.t("Back")}
                 </Button>
                 {state.currentStep < WIZARD_STEPS.length - 1 ? (
@@ -760,6 +788,20 @@ const WizardContent: React.FC = () => {
                     </Button>
                 ) : null}
             </div>
+        </div>
+    );
+};
+
+type StepIntroProps = {
+    title: string;
+    description?: string;
+};
+
+const StepIntro: React.FC<StepIntroProps> = ({ title, description }) => {
+    return (
+        <div className="wizard-step-intro" data-testid="wizard-step-intro">
+            <h3 className="wizard-step-intro-title">{title}</h3>
+            {description ? <p className="wizard-step-intro-description">{description}</p> : null}
         </div>
     );
 };
@@ -826,22 +868,17 @@ const ProgramStep: React.FC<ProgramStepProps> = ({
 
     return (
         <div className="wizard-step-content wizard-program-step" aria-label="wizard-step-program">
+            <StepIntro
+                title={i18n.t("Choose a program and the files to export")}
+                description={i18n.t(
+                    "Start by selecting the tracker program. Then confirm which file data values should move forward to template setup and preview."
+                )}
+            />
             <div
                 className={`wizard-program-step-layout${showProgramSummary ? " with-summary" : ""}`}
             >
                 <div className="wizard-program-step-main">
                     <section className="wizard-section wizard-program-step-hero">
-                        <div className="wizard-program-step-copy">
-                            <h3 className="wizard-program-step-title">
-                                {i18n.t("Choose a program and the files to export")}
-                            </h3>
-                            <p className="wizard-helper-text">
-                                {i18n.t(
-                                    "Start by selecting the tracker program. Then confirm which file data values should move forward to template setup and preview."
-                                )}
-                            </p>
-                        </div>
-
                         {programsState.status === "loading" ? <CircularLoader small /> : null}
                         {programsState.status === "error" ? (
                             <NoticeBox error title={i18n.t("Could not load programs")}>
@@ -1090,6 +1127,12 @@ const TemplateStep: React.FC<TemplateStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-template">
+            <StepIntro
+                title={i18n.t("Define the export scope and filename templates")}
+                description={i18n.t(
+                    "Choose where to look for records, then define the destination path for each selected file field."
+                )}
+            />
             <section className="wizard-section">
                 <h4>{i18n.t("Filters")}</h4>
 
@@ -1360,6 +1403,12 @@ const StorageStep: React.FC<StorageStepProps> = ({
 
     return (
         <div className="wizard-step-content wizard-storage-step" aria-label="wizard-step-storage">
+            <StepIntro
+                title={i18n.t("Validate the WebDAV destination")}
+                description={i18n.t(
+                    "Confirm that the browser can reach the target WebDAV endpoint before running the export."
+                )}
+            />
             <div className="wizard-storage-header">
                 <div>
                     <p className="wizard-subtitle wizard-storage-subtitle">
@@ -1568,6 +1617,12 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-preview">
+            <StepIntro
+                title={i18n.t("Review the resolved export plan")}
+                description={i18n.t(
+                    "Inspect the final target paths and warnings before you unlock the storage and execution steps."
+                )}
+            />
             {!hasScope ? (
                 <NoticeBox title={i18n.t("Preview requirements")}>
                     {i18n.t("Select program and organisation unit filter before loading preview.")}
@@ -1831,11 +1886,12 @@ const ExecutionStep: React.FC<ExecutionStepProps> = ({
 
     return (
         <div className="wizard-step-content" aria-label="wizard-step-execution">
-            <p>
-                {i18n.t(
-                    "Start export to process the reviewed file list using the validated WebDAV configuration."
+            <StepIntro
+                title={i18n.t("Run the export")}
+                description={i18n.t(
+                    "Process the reviewed file list using the validated WebDAV configuration and monitor progress from this step."
                 )}
-            </p>
+            />
             <div className="wizard-preview-stats" data-testid="wizard-execution-stats">
                 <div className="wizard-preview-stat">
                     <span>{i18n.t("Processed")}</span>

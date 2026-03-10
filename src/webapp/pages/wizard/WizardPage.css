@@ -1,71 +1,144 @@
 .wizard-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 12px 16px 20px;
-}
-
-.wizard-subtitle {
-    margin: 0;
-    color: #4a5768;
+    gap: 20px;
+    padding: 12px 16px 40px;
 }
 
 .wizard-steps {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    gap: 12px;
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.wizard-steps li {
-    border: 1px solid #d8dee8;
-    border-radius: 10px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
-    overflow: hidden;
-    transition:
-        border-color 120ms ease,
-        box-shadow 120ms ease,
-        transform 120ms ease;
+.wizard-step-item {
+    min-width: 0;
 }
 
 .wizard-step-tab {
     width: 100%;
+    min-height: 88px;
     text-align: left;
-    border: 0;
-    background: transparent;
-    padding: 10px 12px;
-    font-weight: 500;
-    color: #4a5768;
+    border: 1px solid #d5deeb;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fafd 100%);
+    padding: 14px 16px;
+    color: #344054;
     cursor: pointer;
+    transition:
+        border-color 120ms ease,
+        box-shadow 120ms ease,
+        transform 120ms ease,
+        background-color 120ms ease;
+}
+
+.wizard-step-tab-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.wizard-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid #b8c7da;
+    background: #ffffff;
+    color: #2851a3;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.wizard-step-number svg {
+    width: 18px;
+    height: 18px;
+}
+
+.wizard-step-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.wizard-step-label {
+    color: #5f6f85;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.wizard-step-title {
+    color: #1f2937;
+    font-size: 15px;
+    font-weight: 600;
 }
 
 .wizard-step-tab[aria-current="step"] {
-    color: #004d40;
-    font-weight: 700;
+    border-color: #2c66c3;
+    background: linear-gradient(180deg, #eef4ff 0%, #e6f0ff 100%);
+    box-shadow: 0 0 0 3px rgba(44, 102, 195, 0.12);
+    transform: translateY(-1px);
 }
 
 .wizard-step-tab:not(:disabled):hover {
-    background: rgba(0, 105, 92, 0.05);
+    border-color: #9cb2d1;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
 }
 
 .wizard-step-tab:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
 }
 
-.wizard-steps li.active {
-    border-color: #00695c;
-    background: linear-gradient(180deg, #f1fbf8 0%, #e2f3ef 100%);
-    box-shadow: 0 0 0 2px rgba(0, 105, 92, 0.12);
-    transform: translateY(-1px);
+.wizard-step-item.active .wizard-step-number {
+    border-color: #2c66c3;
+    background: #2c66c3;
+    color: #ffffff;
 }
 
-.wizard-steps li.done {
-    border-color: #1b5e20;
-    color: #1b5e20;
-    background: #f1f8e9;
+.wizard-step-item.active .wizard-step-label,
+.wizard-step-item.active .wizard-step-title {
+    color: #0f3c91;
+}
+
+.wizard-step-item.done .wizard-step-tab {
+    border-color: #b9d7c0;
+    background: linear-gradient(180deg, #f5fbf6 0%, #eef8f0 100%);
+}
+
+.wizard-step-item.done .wizard-step-number {
+    border-color: #2f7d32;
+    background: #2f7d32;
+    color: #ffffff;
+}
+
+.wizard-step-item.available .wizard-step-tab {
+    border-color: #c6d2e1;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+}
+
+.wizard-step-item.disabled .wizard-step-tab {
+    border-color: #e1e7f0;
+    background: #f8fafc;
+    color: #7b8797;
+    opacity: 0.7;
+}
+
+.wizard-step-item.disabled .wizard-step-number {
+    border-color: #d8dee8;
+    background: #f3f6fa;
+    color: #7b8797;
 }
 
 .wizard-panel {
@@ -77,7 +150,32 @@
 .wizard-step-content {
     display: flex;
     flex-direction: column;
+    gap: 14px;
+}
+
+.wizard-step-intro {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    max-width: 760px;
+}
+
+.wizard-step-intro-title {
+    margin: 0;
+    color: #17212b;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.wizard-step-intro-description {
+    margin: 0;
+    color: #4a5768;
+    line-height: 1.5;
+}
+
+.wizard-subtitle {
+    margin: 0;
+    color: #4a5768;
 }
 
 .wizard-program-step {
@@ -103,20 +201,7 @@
 }
 
 .wizard-program-step-hero {
-    gap: 16px;
-}
-
-.wizard-program-step-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.wizard-program-step-title {
-    margin: 0;
-    color: #17212b;
-    font-size: 28px;
-    line-height: 1.15;
+    gap: 14px;
 }
 
 .wizard-program-select-native {
@@ -254,9 +339,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 14px;
-    border: 1px solid #d9e4ec;
-    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #d7e1ec;
+    border-radius: 14px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
@@ -330,6 +415,19 @@
 
 .wizard-actions {
     justify-content: space-between;
+}
+
+.wizard-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
+    padding: 18px 20px;
+    border: 1px solid #d7e1ec;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .wizard-preview-actions {
@@ -422,6 +520,10 @@
 }
 
 @media (max-width: 960px) {
+    .wizard-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .wizard-program-step-layout.with-summary {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -438,12 +540,33 @@
 }
 
 @media (max-width: 640px) {
-    .wizard-program-step-title {
-        font-size: 24px;
+    .wizard-page {
+        padding-bottom: 28px;
+    }
+
+    .wizard-steps {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wizard-step-tab {
+        min-height: auto;
+    }
+
+    .wizard-step-intro-title {
+        font-size: 21px;
     }
 
     .wizard-program-file-list {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wizard-footer-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .wizard-footer-actions > * {
+        width: 100%;
     }
 }
 

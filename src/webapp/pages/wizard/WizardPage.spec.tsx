@@ -39,6 +39,10 @@ function mockSourceDownloads() {
     });
 }
 
+function expectCurrentStep(page: ReturnType<typeof getReactComponent>, stepId: string) {
+    expect(page.getByTestId(`wizard-step-tab-${stepId}`)).toHaveAttribute("aria-current", "step");
+}
+
 describe("WizardPage", () => {
     it("blocks next when program is not selected", () => {
         const page = getReactComponent(<WizardPage />);
@@ -47,12 +51,14 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Program is required.")).toBeInTheDocument();
-        expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
+        expectCurrentStep(page, "program");
+        expect(page.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
     });
 
     it("renders the redesigned program step hierarchy and summary", async () => {
         const page = getReactComponent(<WizardPage />);
 
+        expectCurrentStep(page, "program");
         expect(page.getByText("Choose a program and the files to export")).toBeInTheDocument();
         expect(
             page.getByText(
@@ -74,6 +80,7 @@ describe("WizardPage", () => {
         expect(page.getByText("Selected: 1 of 2")).toBeInTheDocument();
         expect(page.getByText("Visit Form")).toBeInTheDocument();
         expect(page.getAllByText("Main Stage").length).toBeGreaterThan(0);
+        expect(page.getByTestId("wizard-step-number-program").textContent).toContain("1");
     });
 
     it("preserves template step filters when navigating back from preview", async () => {
@@ -84,7 +91,7 @@ describe("WizardPage", () => {
         fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
 
         fireEvent.click(page.getByText("Next"));
-        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expectCurrentStep(page, "template");
         expect(page.getByText("Path and filename template - Visit Form")).toBeInTheDocument();
 
         fireEvent.click(page.getByTestId("org-unit-tree-picker"));
@@ -96,10 +103,10 @@ describe("WizardPage", () => {
         });
 
         fireEvent.click(page.getByText("Next"));
-        expect(page.getByText("Step 3 of 5: Preview")).toBeInTheDocument();
+        expectCurrentStep(page, "preview");
 
         fireEvent.click(page.getByText("Back"));
-        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expectCurrentStep(page, "template");
         expect(page.getByTestId("org-unit-tree-picker")).toBeInTheDocument();
         expect((page.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe("selected");
         expect((page.getByTestId("wizard-date-from") as HTMLInputElement).value).toBe("2026-01-01");
@@ -127,6 +134,7 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        expectCurrentStep(page, "preview");
         const summary = page.getByTestId("wizard-preview-summary");
         expect(summary.textContent).toContain("Program");
         expect(summary.textContent).toContain("Antenatal Visit");
@@ -159,7 +167,7 @@ describe("WizardPage", () => {
         expect(page.getAllByText("1.0 KB").length).toBeGreaterThan(0);
 
         fireEvent.click(page.getByText("Next"));
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expectCurrentStep(page, "storage");
 
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
@@ -171,7 +179,7 @@ describe("WizardPage", () => {
         await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));
 
-        expect(page.getByText("Step 5 of 5: Execution")).toBeInTheDocument();
+        expectCurrentStep(page, "execution");
         fireEvent.click(page.getByText("Start export"));
 
         await waitFor(() => {
@@ -352,7 +360,7 @@ describe("WizardPage", () => {
         expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
 
         fireEvent.click(page.getByText("Next"));
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expectCurrentStep(page, "storage");
         expect(page.getByText("WebDAV is the only available export target for now.")).toBeInTheDocument();
         expect(
             page.getByText(
@@ -386,7 +394,7 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expectCurrentStep(page, "storage");
     });
 
     it("requires retesting after editing validated storage credentials", async () => {
@@ -422,7 +430,7 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expectCurrentStep(page, "storage");
     });
 
     it("invokes storage validation use case with current credentials and keeps step blocked on failure", async () => {
@@ -462,7 +470,7 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
+        expectCurrentStep(page, "storage");
     });
 
     it("blocks preview progression when duplicate target filepaths exist", async () => {
@@ -493,7 +501,7 @@ describe("WizardPage", () => {
                 "Duplicate target filepaths were found. Revise the template to make each export destination unique."
             )
         ).toBeInTheDocument();
-        expect(page.getByText("Step 3 of 5: Preview")).toBeInTheDocument();
+        expectCurrentStep(page, "preview");
     });
 
     it("downloads execution configuration json from preview", async () => {
@@ -687,7 +695,7 @@ describe("WizardPage", () => {
         fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
         fireEvent.click(page.getByText("Next"));
 
-        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expectCurrentStep(page, "template");
         expect(
             page.queryByRole("heading", {
                 level: 3,
@@ -714,13 +722,14 @@ describe("WizardPage", () => {
         const storageTab = page.getByTestId("wizard-step-tab-storage");
         expect(storageTab).toBeEnabled();
         fireEvent.click(storageTab);
-        expect(page.getByText("Step 4 of 5: Storage")).toBeInTheDocument();
-        expect(page.getByTestId("wizard-step-tab-storage")).toHaveAttribute("aria-current", "step");
+        expectCurrentStep(page, "storage");
         expect(page.getByTestId("wizard-step-tab-template")).not.toHaveAttribute("aria-current");
+        expect(page.getByTestId("wizard-step-complete-program")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-complete-template")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-tab-execution")).toBeDisabled();
 
         fireEvent.click(page.getByTestId("wizard-step-tab-program"));
-        expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
-        expect(page.getByTestId("wizard-step-tab-program")).toHaveAttribute("aria-current", "step");
+        expectCurrentStep(page, "program");
     });
 
     it("blocks next when no file data value is selected", async () => {
@@ -732,7 +741,7 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("Select at least one file data value to sync.")).toBeInTheDocument();
-        expect(page.getByText("Step 1 of 5: Program")).toBeInTheDocument();
+        expectCurrentStep(page, "program");
     });
 
     it("blocks template step progression when any selected file has no mapping", async () => {
@@ -747,6 +756,59 @@ describe("WizardPage", () => {
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
         expect(page.getByText("A mapping is required for each selected file.")).toBeInTheDocument();
-        expect(page.getByText("Step 2 of 5: Template")).toBeInTheDocument();
+        expectCurrentStep(page, "template");
+    });
+
+    it("renders numbered step tabs and a dedicated footer action bar", () => {
+        const page = getReactComponent(<WizardPage />);
+
+        expect(page.queryByText("Step 1 of 5: Program")).not.toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-number-program").textContent).toContain("1");
+        expect(page.getByTestId("wizard-step-number-template").textContent).toContain("2");
+        expect(page.getByTestId("wizard-step-tab-preview")).toBeDisabled();
+        expect(page.getByTestId("wizard-footer-actions")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-footer-actions").textContent).toContain("Back");
+        expect(page.getByTestId("wizard-footer-actions").textContent).toContain("Next");
+    });
+
+    it("uses a shared step intro on template, preview, storage, and execution steps", async () => {
+        mockSourceDownloads();
+        const page = getReactComponent(<WizardPage />);
+
+        const programSelect = await page.findByTestId("wizard-program-select");
+        fireEvent.change(programSelect, { target: { value: "prog-a" } });
+        fireEvent.click(await page.findByTestId("wizard-file-select-de-file"));
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByTestId("wizard-step-intro").textContent).toContain(
+            "Define the export scope and filename templates"
+        );
+
+        fireEvent.click(page.getByTestId("org-unit-tree-picker"));
+        fireEvent.change(page.getByTestId("wizard-template-input"), {
+            target: { value: "/exports/{fileName}" },
+        });
+        fireEvent.click(page.getByText("Next"));
+
+        expect(await page.findByTestId("wizard-preview-table")).toBeInTheDocument();
+        expect(page.getByTestId("wizard-step-intro").textContent).toContain(
+            "Review the resolved export plan"
+        );
+
+        fireEvent.click(page.getByText("Next"));
+        expect(page.getByTestId("wizard-step-intro").textContent).toContain(
+            "Validate the WebDAV destination"
+        );
+
+        fireEvent.change(page.getByTestId("wizard-storage-url"), {
+            target: { value: "https://dav.example.org/remote.php/dav" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.click(page.getByText("Test connection"));
+        await page.findByText("WebDAV connection validated. You can continue to execution.");
+        fireEvent.click(page.getByText("Next"));
+
+        expect(page.getByTestId("wizard-step-intro").textContent).toContain("Run the export");
     });
 });
