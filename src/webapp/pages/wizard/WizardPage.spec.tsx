@@ -361,19 +361,28 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByText("Next"));
         expectCurrentStep(page, "storage");
-        expect(page.getByText("WebDAV is the only available export target for now.")).toBeInTheDocument();
+        const storageSetup = page.container.querySelector('[data-test="wizard-storage-setup"]');
+        expect(storageSetup).not.toBeNull();
         expect(
-            page.getByText(
-                "You can use WebDAV-compatible storage such as ownCloud, Nextcloud, or another WebDAV-enabled server."
+            within(storageSetup as HTMLElement).getByText(
+                "Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or another WebDAV-enabled server."
             )
         ).toBeInTheDocument();
         expect(
-            within(page.getByTestId("wizard-storage-remarks")).getByText(
+            within(storageSetup as HTMLElement).getByText(
+                "Use the direct WebDAV endpoint, not a generic product homepage or login page."
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(storageSetup as HTMLElement).getByText(
                 "The WebDAV server must allow cross-origin requests from this app origin (CORS) or the browser will block validation and file transfer."
             )
         ).toBeInTheDocument();
+        expect(page.queryByText("WebDAV is the only available export target for now.")).not.toBeInTheDocument();
+        expect(page.queryByText("Compatible software")).not.toBeInTheDocument();
+        expect(page.queryByText("Before you test")).not.toBeInTheDocument();
+        expect(page.queryByText("Complete the connection details")).not.toBeInTheDocument();
 
-        expect(page.getByText("Complete the connection details")).toBeInTheDocument();
         expect(page.getByText("Test connection")).toBeDisabled();
 
         fireEvent.click(page.getByText("Next"));
@@ -387,7 +396,6 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
         fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
 
-        expect(page.getByText("Ready to test")).toBeInTheDocument();
         expect(page.getByText("Test connection")).toBeEnabled();
 
         fireEvent.click(page.getByText("Next"));
@@ -423,7 +431,7 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret-2" } });
 
         expect(page.queryByText("Connection valid")).not.toBeInTheDocument();
-        expect(page.getByText("Ready to test")).toBeInTheDocument();
+        expect(page.queryByText("Ready to test")).not.toBeInTheDocument();
         expect(page.getByText("Test connection")).toBeEnabled();
 
         fireEvent.click(page.getByText("Next"));

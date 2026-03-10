@@ -1409,19 +1409,6 @@ const StorageStep: React.FC<StorageStepProps> = ({
                     "Confirm that the browser can reach the target WebDAV endpoint before running the export."
                 )}
             />
-            <div className="wizard-storage-header">
-                <div>
-                    <p className="wizard-subtitle wizard-storage-subtitle">
-                        {i18n.t("WebDAV is the only available export target for now.")}
-                    </p>
-                </div>
-                <NoticeBox title={i18n.t("Compatible software")} dataTest="wizard-storage-compatible">
-                    {i18n.t(
-                        "You can use WebDAV-compatible storage such as ownCloud, Nextcloud, or another WebDAV-enabled server."
-                    )}
-                </NoticeBox>
-            </div>
-
             <div className="wizard-storage-grid">
                 <section className="wizard-section">
                     <h4>{i18n.t("Connection details")}</h4>
@@ -1478,8 +1465,12 @@ const StorageStep: React.FC<StorageStepProps> = ({
                     </div>
                 </section>
 
-                <section className="wizard-section" data-testid="wizard-storage-remarks">
-                    <h4>{i18n.t("Before you test")}</h4>
+                <NoticeBox title={i18n.t("Storage setup")} dataTest="wizard-storage-setup">
+                    <p>
+                        {i18n.t(
+                            "Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or another WebDAV-enabled server."
+                        )}
+                    </p>
                     <ul className="wizard-storage-checklist">
                         <li>
                             {i18n.t(
@@ -1497,19 +1488,9 @@ const StorageStep: React.FC<StorageStepProps> = ({
                             )}
                         </li>
                     </ul>
-                </section>
+                </NoticeBox>
             </div>
 
-            {!hasRequiredValues ? (
-                <NoticeBox title={i18n.t("Complete the connection details")}>
-                    {i18n.t("Enter the WebDAV URL, username, and password to enable connection testing.")}
-                </NoticeBox>
-            ) : null}
-            {connectionStatus === "idle" && hasRequiredValues ? (
-                <NoticeBox title={i18n.t("Ready to test")}>
-                    {i18n.t("Run the connection test to confirm these WebDAV credentials work from the browser.")}
-                </NoticeBox>
-            ) : null}
             {connectionStatus === "validating" ? (
                 <NoticeBox title={i18n.t("Testing connection")}>
                     <div className="wizard-inline-loader">
