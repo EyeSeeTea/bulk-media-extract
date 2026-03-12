@@ -330,3 +330,4 @@ The system SHALL present each wizard step with a consistent content hierarchy so
 #### Scenario: Page content ends with intentional breathing room
 - **WHEN** the user reaches the end of a step with a long content body
 - **THEN** the wizard layout keeps visible bottom padding below the final content and action area
+
