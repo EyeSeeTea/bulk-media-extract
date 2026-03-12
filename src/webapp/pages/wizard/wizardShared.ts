@@ -1,10 +1,8 @@
-import {
-    ProgramEventPreview,
-    ProgramFileProperties,
-    ProgramFileProperty,
-    ProgramFilePropertyGroup,
-} from "$/domain/entities/FileExportProgram";
-import { buildFileMetadataPropertyGroup } from "$/webapp/pages/wizard/templateBuilder";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
+import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
+import { buildFileMetadataPropertyGroup } from "$/application/export/TemplateBuilder";
 
 export type ProgramOption = {
     id: string;

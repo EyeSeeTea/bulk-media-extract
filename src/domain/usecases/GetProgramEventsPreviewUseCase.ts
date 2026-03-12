@@ -1,5 +1,6 @@
 import { FutureData } from "$/data/api-futures";
-import { ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
+import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
 
 const DEFAULT_PREVIEW_PAGE_SIZE = 10;
@@ -10,7 +11,7 @@ export class GetProgramEventsPreviewUseCase {
     public execute(
         programId: string,
         orgUnitId: string,
-        orgUnitMode: "selected" | "descendants" = "selected",
+        orgUnitMode: OrgUnitSelectionMode = "selected",
         programStageId?: string,
         fileDataElementId?: string,
         pageSize = DEFAULT_PREVIEW_PAGE_SIZE,

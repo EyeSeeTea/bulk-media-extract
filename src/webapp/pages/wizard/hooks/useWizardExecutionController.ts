@@ -1,13 +1,11 @@
 import React from "react";
+import { ExportExecutionConfiguration } from "$/application/export/ExportExecution";
+import { ExecutionRunHandle, runExecutionPlan } from "$/application/export/ExecutionRunner";
 import { CompositionRoot } from "$/CompositionRoot";
 import {
     getExecutionStatusMessage,
     runFutureData,
 } from "$/webapp/pages/wizard/executionSupport";
-import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
-import { downloadExecutionReport } from "$/webapp/pages/wizard/exportExecutionReport";
-import { ExecutionRunHandle, runExecutionPlan } from "$/webapp/pages/wizard/executionRunner";
-import { writeResponseToLocalDirectory } from "$/webapp/pages/wizard/localDirectoryStorage";
 import {
     initialExecutionState,
     WizardExecutionState,
@@ -44,19 +42,7 @@ export function useWizardExecutionController({
 
         const handle = runExecutionPlan({
             configuration: executionConfiguration,
-            downloadSourceFile: async (url, signal) => {
-                const response = await fetch(url, {
-                    method: "GET",
-                    credentials: "include",
-                    signal,
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Source download failed with status ${response.status}.`);
-                }
-
-                return response;
-            },
+            downloadSourceFile: (url, signal) => compositionRoot.sourceFiles.download(url, signal),
             writeTargetFile: params => {
                 if (storage.selectedMethod === "webdav") {
                     let uploadHandle: { promise: Promise<void>; cancel?: () => void } | undefined;
@@ -93,7 +79,7 @@ export function useWizardExecutionController({
                 }
 
                 return {
-                    promise: writeResponseToLocalDirectory({
+                    promise: compositionRoot.storage.localDirectory.writeResponse({
                         rootDirectory: directoryHandle,
                         targetPath: params.targetPath,
                         response: params.response,
@@ -159,7 +145,14 @@ export function useWizardExecutionController({
                 executionRunRef.current = null;
             }
         }
-    }, [compositionRoot.storage.webdav.uploadFile, executionConfiguration, setExecution, storage]);
+    }, [
+        compositionRoot.sourceFiles,
+        compositionRoot.storage.localDirectory,
+        compositionRoot.storage.webdav.uploadFile,
+        executionConfiguration,
+        setExecution,
+        storage,
+    ]);
 
     const onInterruptExecution = React.useCallback(() => {
         executionRunRef.current?.cancel();
@@ -167,9 +160,9 @@ export function useWizardExecutionController({
 
     const onDownloadExecutionReport = React.useCallback(() => {
         if (executionState.report) {
-            downloadExecutionReport(executionState.report);
+            compositionRoot.reports.downloadExecution(executionState.report);
         }
-    }, [executionState.report]);
+    }, [compositionRoot.reports, executionState.report]);
 
     React.useEffect(() => {
         return () => {

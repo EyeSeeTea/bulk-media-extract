@@ -1,7 +1,10 @@
+import { BrowserExecutionReportDownloader } from "./data/export/BrowserExecutionReportDownloader";
+import { BrowserSourceFileDownloader } from "./data/export/BrowserSourceFileDownloader";
 import { ProgramD2Repository } from "./data/repositories/ProgramD2Repository";
 import { ProgramTestRepository } from "./data/repositories/ProgramTestRepository";
 import { StorageTestRepository } from "./data/repositories/StorageTestRepository";
 import { StorageWebDAVRepository } from "./data/repositories/StorageWebDAVRepository";
+import { BrowserLocalDirectoryGateway } from "./data/storage/BrowserLocalDirectoryGateway";
 import { UserD2Repository } from "./data/repositories/UserD2Repository";
 import { UserTestRepository } from "./data/repositories/UserTestRepository";
 import { ProgramRepository } from "./domain/repositories/ProgramRepository";
@@ -15,6 +18,7 @@ import { GetProgramFilePropertiesUseCase } from "./domain/usecases/GetProgramFil
 import { UploadFileToStorageUseCase } from "./domain/usecases/UploadFileToStorageUseCase";
 import { ValidateStorageConnectionUseCase } from "./domain/usecases/ValidateStorageConnectionUseCase";
 import { D2Api } from "./types/d2-api";
+import { buildExecutionReportFilename } from "./application/export/ExportExecution";
 
 export type CompositionRoot = ReturnType<typeof getCompositionRoot>;
 
@@ -25,6 +29,12 @@ type Repositories = {
 };
 
 function getCompositionRoot(repositories: Repositories) {
+    const localDirectoryGateway = new BrowserLocalDirectoryGateway();
+    const sourceFileDownloader = new BrowserSourceFileDownloader();
+    const executionReportDownloader = new BrowserExecutionReportDownloader({
+        buildFilename: buildExecutionReportFilename,
+    });
+
     return {
         users: {
             getCurrent: new GetCurrentUserUseCase(repositories),
@@ -40,6 +50,25 @@ function getCompositionRoot(repositories: Repositories) {
                 validateConnection: new ValidateStorageConnectionUseCase(repositories),
                 uploadFile: new UploadFileToStorageUseCase(repositories),
             },
+            localDirectory: {
+                supportsSelection: () => localDirectoryGateway.supportsDirectorySelection(),
+                select: () => localDirectoryGateway.selectDirectory(),
+                validateAccess: (handle?: FileSystemDirectoryHandle) =>
+                    localDirectoryGateway.validateDirectoryAccess(handle),
+                writeResponse: (params: {
+                    rootDirectory: FileSystemDirectoryHandle;
+                    targetPath: string;
+                    response: Response;
+                    signal: AbortSignal;
+                }) => localDirectoryGateway.writeResponse(params),
+            },
+        },
+        sourceFiles: {
+            download: (url: string, signal: AbortSignal) => sourceFileDownloader.download(url, signal),
+        },
+        reports: {
+            downloadExecution: (report: Parameters<typeof executionReportDownloader.download>[0]) =>
+                executionReportDownloader.download(report),
         },
     };
 }

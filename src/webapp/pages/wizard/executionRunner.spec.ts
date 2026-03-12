@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { runExecutionPlan } from "$/webapp/pages/wizard/executionRunner";
-import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
+import { runExecutionPlan } from "$/application/export/ExecutionRunner";
+import { ExportExecutionConfiguration } from "$/application/export/ExportExecution";
 
 const configuration: ExportExecutionConfiguration = {
     version: "1",

@@ -1,13 +1,16 @@
-import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import {
     buildCaptureEventUrl,
     buildEventDataValueUrl,
     buildExportPreviewRows,
-    formatFileSize,
-    getPreviewFileWarning,
-    getPreviewCellValue,
     summarizeExportPreview,
-} from "$/webapp/pages/wizard/previewUtils";
+} from "$/application/export/PreviewBuilder";
+import {
+    formatFileSize,
+    getPreviewCellValue,
+    getPreviewFileWarning,
+} from "$/webapp/presenters/previewFormatting";
 import { parseDhis2Version } from "$/webapp/utils/dhis2Version";
 import { describe, expect, it } from "vitest";
 

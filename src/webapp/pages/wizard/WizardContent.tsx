@@ -1,9 +1,11 @@
 import React from "react";
 import { useAppContext } from "$/webapp/contexts/app-context";
-import { WizardShell } from "$/webapp/pages/wizard/components/WizardShell";
+import { WizardShell } from "$/webapp/components/wizard/WizardShell";
+import { useWizardDefaultScope } from "$/webapp/pages/wizard/hooks/useWizardDefaultScope";
 import { useWizardExecutionController } from "$/webapp/pages/wizard/hooks/useWizardExecutionController";
 import { useWizardPreviewData } from "$/webapp/pages/wizard/hooks/useWizardPreviewData";
 import { useWizardProgramData } from "$/webapp/pages/wizard/hooks/useWizardProgramData";
+import { useWizardStepController } from "$/webapp/pages/wizard/hooks/useWizardStepController";
 import { useWizardTemplatePreviewData } from "$/webapp/pages/wizard/hooks/useWizardTemplatePreviewData";
 import { ExecutionStep } from "$/webapp/pages/wizard/steps/ExecutionStep";
 import { PreviewStep } from "$/webapp/pages/wizard/steps/PreviewStep";
@@ -11,11 +13,7 @@ import { ProgramStep } from "$/webapp/pages/wizard/steps/ProgramStep";
 import { StorageStep } from "$/webapp/pages/wizard/steps/StorageStep";
 import { TemplateStep } from "$/webapp/pages/wizard/steps/TemplateStep";
 import { useWizardContext } from "$/webapp/pages/wizard/WizardContext";
-import {
-    getStepValidationError,
-    WizardStepId,
-    WIZARD_STEPS,
-} from "$/webapp/pages/wizard/wizardConfig";
+import { WIZARD_STEPS } from "$/webapp/pages/wizard/wizardConfig";
 
 export const WizardContent: React.FC = () => {
     const { baseUrl, compositionRoot, dhis2Version } = useAppContext();
@@ -48,22 +46,11 @@ export const WizardContent: React.FC = () => {
         onNormalizeSelectedFileDataValueIds: setSelectedFileDataValueIds,
     });
 
-    React.useEffect(() => {
-        if (!selectedProgram) {
-            return;
-        }
-        if (state.selectedOrgUnitId) {
-            return;
-        }
-
-        const firstRootOrgUnitId = selectedProgram.organisationUnits[0]?.id;
-        if (firstRootOrgUnitId) {
-            setScope({
-                selectedOrgUnitId: firstRootOrgUnitId,
-                orgUnitSelectionMode: "descendants",
-            });
-        }
-    }, [selectedProgram, setScope, state.selectedOrgUnitId]);
+    useWizardDefaultScope({
+        selectedProgram,
+        selectedOrgUnitId: state.selectedOrgUnitId,
+        setScope,
+    });
 
     const {
         previewEnabled,
@@ -120,70 +107,14 @@ export const WizardContent: React.FC = () => {
         setExecution,
     });
 
-    const getValidationErrorForStep = React.useCallback(
-        (stepId: WizardStepId): string | undefined => {
-            const baseError = getStepValidationError(state, stepId);
-            if (baseError) {
-                return baseError;
-            }
-
-            if (stepId !== "preview") {
-                return undefined;
-            }
-
-            if (exportPreviewState.status === "idle" || exportPreviewState.status === "loading") {
-                return "Preview results must finish loading before continuing.";
-            }
-
-            if (exportPreviewState.status === "error") {
-                return "Preview must load successfully before continuing.";
-            }
-
-            if (exportPreviewSummary.duplicateTargetPaths.length > 0) {
-                return "Duplicate target filepaths were found. Revise the template to make each export destination unique.";
-            }
-
-            return undefined;
-        },
-        [exportPreviewState.status, exportPreviewSummary.duplicateTargetPaths.length, state]
-    );
-
-    const currentStepError = getValidationErrorForStep(currentStepId);
-    const isExecutionRunning = state.execution.status === "running";
-
-    const onNext = React.useCallback(() => {
-        const error = getValidationErrorForStep(currentStepId);
-        if (error) {
-            return;
-        }
-
-        setStep(state.currentStep + 1);
-    }, [currentStepId, getValidationErrorForStep, setStep, state.currentStep]);
-
-    const canNavigateToStep = React.useCallback(
-        (targetIndex: number): boolean => {
-            if (isExecutionRunning && targetIndex !== state.currentStep) {
-                return false;
-            }
-
-            if (targetIndex <= state.currentStep) {
-                return true;
-            }
-
-            for (let index = 0; index < targetIndex; index += 1) {
-                const step = WIZARD_STEPS[index];
-                if (!step) {
-                    return false;
-                }
-                if (getValidationErrorForStep(step.id)) {
-                    return false;
-                }
-            }
-
-            return true;
-        },
-        [getValidationErrorForStep, isExecutionRunning, state.currentStep]
-    );
+    const { currentStepError, isExecutionRunning, onNext, canNavigateToStep } =
+        useWizardStepController({
+            state,
+            currentStepId,
+            exportPreviewState,
+            duplicateTargetPathCount: exportPreviewSummary.duplicateTargetPaths.length,
+            setStep,
+        });
 
     const renderStep = () => {
         switch (currentStepId) {

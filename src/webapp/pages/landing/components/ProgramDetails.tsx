@@ -1,8 +1,8 @@
 import React from "react";
 import { CircularLoader, NoticeBox } from "@dhis2/ui";
-import { ProgramFileProperties } from "$/domain/entities/FileExportProgram";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
-import { getProgramTypeLabel } from "$/webapp/utils/programTypeLabel";
+import { getProgramTypeLabel } from "$/webapp/presenters/programTypeLabel";
 import i18n from "$/utils/i18n";
 
 type Props = {

@@ -1,19 +1,16 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import {
-    ProgramEventsPreviewResult,
-    ProgramFileProperties,
-    ProgramFileProperty,
-} from "$/domain/entities/FileExportProgram";
+import type { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
-import { StepIntro } from "$/webapp/pages/wizard/components/StepIntro";
-import {
-    getPropertyTemplateToken,
-    insertAtCursor,
-} from "$/webapp/pages/wizard/templateBuilder";
+import { StepIntro } from "$/webapp/components/wizard/StepIntro";
+import { getPropertyTemplateToken } from "$/application/export/TemplateBuilder";
+import { insertAtCursor } from "$/webapp/pages/wizard/templateInputUtils";
 import { getVisiblePropertyGroupsForFile, ProgramOption, FILE_VALUE_TYPES } from "$/webapp/pages/wizard/wizardShared";
-import { OrgUnitSelectionMode, validateTemplate } from "$/webapp/pages/wizard/wizardConfig";
+import { validateTemplate } from "$/webapp/pages/wizard/wizardConfig";
 import i18n from "$/utils/i18n";
 
 type TemplateStepProps = {

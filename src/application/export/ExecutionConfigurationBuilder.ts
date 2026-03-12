@@ -1,52 +1,16 @@
-import { ExportPreviewRow } from "$/webapp/pages/wizard/previewUtils";
-import type { OrgUnitSelectionMode } from "$/webapp/pages/wizard/wizardConfig";
+import {
+    EXPORT_EXECUTION_CONFIGURATION_VERSION,
+    ExportExecutionConfiguration,
+    ExportExecutionConfigurationFileMapping,
+    ExportExecutionConfigurationOperation,
+} from "$/application/export/ExportExecution";
+import { ExportPreviewRow } from "$/application/export/ExportPreview";
+import type { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
 
-export const EXPORT_EXECUTION_CONFIGURATION_VERSION = "1";
-
-export type ExportExecutionConfigurationFileMapping = {
-    id: string;
-    name: string;
-    template: string;
-    programStageId?: string;
-    programStageName?: string;
-};
-
-export type ExportExecutionConfigurationOperation = {
-    source: {
-        url: string;
-        fileResourceId: string;
-        fileSize?: number;
-    };
-    target: {
-        path: string;
-    };
-};
-
-export type ExportExecutionConfiguration = {
-    version: string;
-    generatedAt: string;
-    scope: {
-        program: {
-            id: string;
-            name: string;
-        };
-        orgUnit: {
-            id: string;
-            name: string;
-            mode: OrgUnitSelectionMode;
-        };
-        dateRange: {
-            from?: string;
-            to?: string;
-        };
-        fileMappings: ExportExecutionConfigurationFileMapping[];
-    };
-    summary: {
-        totalPreviewRows: number;
-        exportableOperations: number;
-        skippedMissingFileResource: number;
-    };
-    operations: ExportExecutionConfigurationOperation[];
+export type {
+    ExportExecutionConfiguration,
+    ExportExecutionConfigurationFileMapping,
+    ExportExecutionConfigurationOperation,
 };
 
 type BuildExportExecutionConfigurationParams = {
@@ -119,27 +83,6 @@ export function buildExportExecutionConfigurationFilename(
 ): string {
     const normalizedTimestamp = generatedAt.replace(/[.:]/g, "-");
     return `export-execution-configuration-${selectedProgramId}-${normalizedTimestamp}.json`;
-}
-
-export function downloadExportExecutionConfiguration(
-    configuration: ExportExecutionConfiguration,
-    filename = buildExportExecutionConfigurationFilename(
-        configuration.scope.program.id,
-        configuration.generatedAt
-    )
-): void {
-    const json = JSON.stringify(configuration, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = filename;
-    link.rel = "noopener";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }
 
 function isExportablePreviewRow(

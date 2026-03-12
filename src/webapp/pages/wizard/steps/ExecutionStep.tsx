@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import { StepIntro } from "$/webapp/pages/wizard/components/StepIntro";
+import { StepIntro } from "$/webapp/components/wizard/StepIntro";
 import {
     formatExecutionLogTimestamp,
     getExecutionLogEntryLabel,

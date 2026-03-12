@@ -1,9 +1,7 @@
 import { render } from "@testing-library/react";
-import {
-    FileCapableProgram,
-    ProgramFileProperties,
-    ProgramFileProperty,
-} from "$/domain/entities/FileExportProgram";
+import { FileCapableProgram } from "$/domain/entities/FileCapableProgram";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { describe, expect, it } from "vitest";
 import { ProgramDetails } from "$/webapp/pages/landing/components/ProgramDetails";
 

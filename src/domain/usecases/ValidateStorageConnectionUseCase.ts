@@ -1,5 +1,6 @@
 import { FutureData } from "$/data/api-futures";
-import { StorageConnectionConfig, StorageRepository } from "$/domain/repositories/StorageRepository";
+import { StorageConnectionConfig } from "$/application/storage/StorageContracts";
+import { StorageRepository } from "$/domain/repositories/StorageRepository";
 
 export class ValidateStorageConnectionUseCase {
     constructor(private options: { storageRepository: StorageRepository }) {}

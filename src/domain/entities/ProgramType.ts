@@ -1,0 +1,1 @@
+export type ProgramType = "WITH_REGISTRATION" | "WITHOUT_REGISTRATION" | "UNKNOWN";

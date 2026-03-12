@@ -1,6 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { WizardShell } from "$/webapp/pages/wizard/components/WizardShell";
+import { WizardShell } from "$/webapp/components/wizard/WizardShell";
 import { WIZARD_STEPS } from "$/webapp/pages/wizard/wizardConfig";
 
 describe("WizardShell", () => {

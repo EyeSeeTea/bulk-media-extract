@@ -1,5 +1,6 @@
 import { FutureData } from "$/data/api-futures";
-import { StorageRepository, StorageUploadRequest } from "$/domain/repositories/StorageRepository";
+import { StorageUploadRequest } from "$/application/storage/StorageContracts";
+import { StorageRepository } from "$/domain/repositories/StorageRepository";
 
 export class UploadFileToStorageUseCase {
     constructor(private options: { storageRepository: StorageRepository }) {}

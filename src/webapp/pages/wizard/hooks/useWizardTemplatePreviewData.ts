@@ -1,7 +1,7 @@
 import React from "react";
-import { ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
-import { resolveTemplateForEvent } from "$/webapp/pages/wizard/templateBuilder";
+import { resolveTemplateForEvent } from "$/application/export/TemplateBuilder";
 import { filterEventsByDate } from "$/webapp/pages/wizard/wizardShared";
 import { validateTemplate, WizardStepId } from "$/webapp/pages/wizard/wizardConfig";
 

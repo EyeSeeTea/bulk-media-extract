@@ -6,10 +6,10 @@ import {
     SingleSelectField,
     SingleSelectOption,
 } from "@dhis2/ui";
-import { ProgramFileProperties } from "$/domain/entities/FileExportProgram";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
-import { getProgramTypeLabel } from "$/webapp/utils/programTypeLabel";
-import { StepIntro } from "$/webapp/pages/wizard/components/StepIntro";
+import { getProgramTypeLabel } from "$/webapp/presenters/programTypeLabel";
+import { StepIntro } from "$/webapp/components/wizard/StepIntro";
 import { FILE_VALUE_TYPES, ProgramOption } from "$/webapp/pages/wizard/wizardShared";
 import i18n from "$/utils/i18n";
 

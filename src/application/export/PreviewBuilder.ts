@@ -1,36 +1,14 @@
-import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import { ExportPreviewRow, ExportPreviewSummary } from "$/application/export/ExportPreview";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import {
     DEFAULT_DHIS2_VERSION,
     Dhis2Version,
     usesLegacyEventFileEndpoint,
 } from "$/webapp/utils/dhis2Version";
-import { resolveTemplateForEvent } from "$/webapp/pages/wizard/templateBuilder";
+import { resolveTemplateForEvent } from "$/application/export/TemplateBuilder";
 
-export type ExportPreviewRow = {
-    id: string;
-    eventId: string;
-    eventOrgUnitId: string;
-    eventOrgUnitName: string;
-    fileDataValue: string;
-    fileDataValueId: string;
-    fileDataValueName: string;
-    fileDataValueUrl: string;
-    programStageId?: string;
-    programStageName?: string;
-    fileResourceId?: string;
-    fileName?: string;
-    fileSize?: number;
-    resolvedTargetPath?: string;
-    hasDuplicateTargetPath: boolean;
-    isMissingFileResource: boolean;
-};
-
-export type ExportPreviewSummary = {
-    totalFiles: number;
-    totalSize: number;
-    duplicateTargetPaths: string[];
-    missingFileResourceCount: number;
-};
+export type { ExportPreviewRow, ExportPreviewSummary };
 
 export function buildExportPreviewRows(
     events: ProgramEventPreview[],
@@ -117,36 +95,6 @@ export function summarizeExportPreview(rows: ExportPreviewRow[]): ExportPreviewS
         duplicateTargetPaths,
         missingFileResourceCount: rows.filter(row => row.isMissingFileResource).length,
     };
-}
-
-export function formatFileSize(size?: number): string {
-    if (size === undefined) {
-        return "-";
-    }
-
-    if (size < 1024) {
-        return `${size} B`;
-    }
-
-    if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(1)} KB`;
-    }
-
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export function getPreviewCellValue(value?: string): string {
-    return value?.trim() ? value : "-";
-}
-
-export function getPreviewFileWarning(row: ExportPreviewRow): string | undefined {
-    if (!row.isMissingFileResource) {
-        return undefined;
-    }
-
-    return row.fileResourceId
-        ? `Missing FileResource metadata for ${row.fileResourceId}`
-        : "Missing FileResource";
 }
 
 export function buildCaptureEventUrl(

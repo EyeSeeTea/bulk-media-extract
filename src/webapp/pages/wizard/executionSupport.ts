@@ -1,5 +1,5 @@
 import { FutureData } from "$/data/api-futures";
-import { ExportExecutionReport } from "$/webapp/pages/wizard/exportExecutionReport";
+import { ExportExecutionReport } from "$/application/export/ExportExecution";
 import { WizardExecutionLogEntry, WizardExecutionState } from "$/webapp/pages/wizard/wizardConfig";
 import i18n from "$/utils/i18n";
 

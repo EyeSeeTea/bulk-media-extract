@@ -1,9 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
-import {
-    FileCapableProgram,
-    ProgramFileProperties,
-    ProgramFileProperty,
-} from "$/domain/entities/FileExportProgram";
+import { FileCapableProgram } from "$/domain/entities/FileCapableProgram";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { describe, expect, it, vi } from "vitest";
 import { ProgramStep } from "$/webapp/pages/wizard/steps/ProgramStep";
 

@@ -1,5 +1,5 @@
 import { FutureData } from "$/data/api-futures";
-import { ProgramFileProperties } from "$/domain/entities/FileExportProgram";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
 
 export class GetProgramFilePropertiesUseCase {

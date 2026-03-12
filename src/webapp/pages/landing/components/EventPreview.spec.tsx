@@ -1,5 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
-import { ProgramEventPreview, ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { describe, expect, it, vi } from "vitest";
 import { EventPreview } from "$/webapp/pages/landing/components/EventPreview";
 

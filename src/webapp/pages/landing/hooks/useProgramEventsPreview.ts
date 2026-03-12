@@ -1,5 +1,5 @@
 import React from "react";
-import { ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { useAppContext } from "$/webapp/contexts/app-context";
 import { useCachedAsyncData } from "$/webapp/hooks/useCachedAsyncData";
 

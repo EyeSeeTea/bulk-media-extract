@@ -1,10 +1,11 @@
-import { ProgramEventPreview, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import {
     buildFileMetadataPropertyGroup,
     getPropertyTemplateToken,
-    insertAtCursor,
     resolveTemplateForEvent,
-} from "$/webapp/pages/wizard/templateBuilder";
+} from "$/application/export/TemplateBuilder";
+import { insertAtCursor } from "$/webapp/pages/wizard/templateInputUtils";
 import { describe, expect, it } from "vitest";
 
 describe("templateBuilder", () => {

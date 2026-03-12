@@ -1,10 +1,12 @@
-import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
+import { ExportExecutionConfiguration } from "$/application/export/ExportExecution";
 import {
     buildExecutionReport,
+} from "$/application/export/ExecutionReportBuilder";
+import {
     ExportExecutionReport,
     ExportExecutionReportResult,
     ExportExecutionRunStatus,
-} from "$/webapp/pages/wizard/exportExecutionReport";
+} from "$/application/export/ExportExecution";
 
 type ProgressSnapshot = {
     processed: number;

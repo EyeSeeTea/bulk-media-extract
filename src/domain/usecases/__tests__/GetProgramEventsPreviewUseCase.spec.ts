@@ -1,10 +1,9 @@
 import { Future } from "$/domain/entities/generic/Future";
-import {
-    FileCapableProgram,
-    ProgramEventPreview,
-    ProgramEventsPreviewResult,
-    ProgramFileProperties,
-} from "$/domain/entities/FileExportProgram";
+import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { FileCapableProgram } from "$/domain/entities/FileCapableProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { NamedRef } from "$/domain/entities/Ref";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
 import { GetProgramEventsPreviewUseCase } from "$/domain/usecases/GetProgramEventsPreviewUseCase";
@@ -90,7 +89,7 @@ function buildProgramRepository(overrides: Partial<ProgramRepository>): ProgramR
         getProgramEventsPreview: (
             _programId: string,
             _orgUnitId: string,
-            _orgUnitMode: "selected" | "descendants",
+            _orgUnitMode: OrgUnitSelectionMode,
             _programStageId: string | undefined,
             _fileDataElementId: string | undefined,
             _pageSize: number,

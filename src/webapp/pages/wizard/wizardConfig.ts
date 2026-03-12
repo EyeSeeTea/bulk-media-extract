@@ -1,4 +1,5 @@
-import type { ExportExecutionReport } from "$/webapp/pages/wizard/exportExecutionReport";
+import type { ExportExecutionReport } from "$/application/export/ExportExecution";
+import type { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
 
 export type WizardStepId = "program" | "template" | "preview" | "storage" | "execution";
 
@@ -13,8 +14,6 @@ export type WizardWebDAVStorageConfig = {
     status: WizardStorageValidationStatus;
     error?: string;
 };
-
-export type OrgUnitSelectionMode = "selected" | "descendants";
 
 export type WizardLocalDirectoryStorageConfig = {
     directoryHandle?: FileSystemDirectoryHandle;

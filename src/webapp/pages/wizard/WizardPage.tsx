@@ -12,6 +12,10 @@ export const WizardPage: React.FC = React.memo(() => {
             validateStorageConnectionRequest={config =>
                 compositionRoot.storage.webdav.validateConnection.execute(config).toPromise()
             }
+            chooseLocalDirectoryRequest={() => compositionRoot.storage.localDirectory.select()}
+            validateLocalDirectoryRequest={handle =>
+                compositionRoot.storage.localDirectory.validateAccess(handle)
+            }
         >
             <WizardContent />
         </WizardProvider>

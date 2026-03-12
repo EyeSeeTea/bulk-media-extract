@@ -1,9 +1,5 @@
 import React from "react";
-import { StorageConnectionConfig } from "$/domain/repositories/StorageRepository";
-import {
-    selectLocalDirectory,
-    validateLocalDirectoryAccess,
-} from "$/webapp/pages/wizard/localDirectoryStorage";
+import { StorageConnectionConfig } from "$/application/storage/StorageContracts";
 import {
     getStepValidationError,
     initialExecutionState,
@@ -53,11 +49,15 @@ const DEFAULT_STEP: WizardStepDefinition = WIZARD_STEPS[0] ?? { id: "program", t
 
 type WizardProviderProps = React.PropsWithChildren<{
     validateStorageConnectionRequest: (config: StorageConnectionConfig) => Promise<void>;
+    chooseLocalDirectoryRequest: () => Promise<FileSystemDirectoryHandle>;
+    validateLocalDirectoryRequest: (handle?: FileSystemDirectoryHandle) => Promise<void>;
 }>;
 
 export const WizardProvider: React.FC<WizardProviderProps> = ({
     children,
     validateStorageConnectionRequest,
+    chooseLocalDirectoryRequest,
+    validateLocalDirectoryRequest,
 }) => {
     const [state, setState] = React.useState<WizardState>(initialWizardState);
 
@@ -173,7 +173,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
 
     const chooseLocalDirectory = React.useCallback(async () => {
         try {
-            const directoryHandle = await selectLocalDirectory();
+            const directoryHandle = await chooseLocalDirectoryRequest();
             setState(previous => ({
                 ...previous,
                 storage: {
@@ -204,7 +204,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
                 execution: initialExecutionState,
             }));
         }
-    }, []);
+    }, [chooseLocalDirectoryRequest]);
 
     const validateLocalDirectory = React.useCallback(async () => {
         setState(previous => ({
@@ -220,7 +220,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
         }));
 
         try {
-            await validateLocalDirectoryAccess(state.storage.localDirectory.directoryHandle);
+            await validateLocalDirectoryRequest(state.storage.localDirectory.directoryHandle);
             setState(previous => ({
                 ...previous,
                 storage: {
@@ -248,7 +248,7 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
                 },
             }));
         }
-    }, [state.storage.localDirectory.directoryHandle]);
+    }, [state.storage.localDirectory.directoryHandle, validateLocalDirectoryRequest]);
 
     const setTemplate = React.useCallback((template: string) => {
         setState(previous => ({

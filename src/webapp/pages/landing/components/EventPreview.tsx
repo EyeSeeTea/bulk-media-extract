@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import { ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { NamedRef } from "$/domain/entities/Ref";
 import { OrgUnitTreePicker } from "$/webapp/components/org-unit-tree-picker/OrgUnitTreePicker";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";

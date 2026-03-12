@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
     buildExportExecutionConfiguration,
     buildExportExecutionConfigurationFilename,
-} from "$/webapp/pages/wizard/exportExecutionConfiguration";
-import { ExportPreviewRow } from "$/webapp/pages/wizard/previewUtils";
+} from "$/application/export/ExecutionConfigurationBuilder";
+import { ExportPreviewRow } from "$/application/export/ExportPreview";
 
 describe("exportExecutionConfiguration", () => {
     it("builds execution configuration operations from exportable preview rows", () => {

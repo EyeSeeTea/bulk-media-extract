@@ -1,5 +1,7 @@
 import React from "react";
-import { ProgramEventPreview, ProgramEventsPreviewResult } from "$/domain/entities/FileExportProgram";
+import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { useAppContext } from "$/webapp/contexts/app-context";
 import { useCachedAsyncData } from "$/webapp/hooks/useCachedAsyncData";
 
@@ -13,13 +15,21 @@ type Options = {
     pageSize?: number;
 };
 
-export function useWizardExportPreview(
-    programId: string,
-    orgUnitId: string,
-    orgUnitMode: "selected" | "descendants",
-    selectedFileFilters: SelectedFileFilter[],
-    options?: Options
-) {
+type UseWizardExportPreviewParams = {
+    programId: string;
+    orgUnitId: string;
+    orgUnitMode: OrgUnitSelectionMode;
+    selectedFileFilters: SelectedFileFilter[];
+    options?: Options;
+};
+
+export function useWizardExportPreview({
+    programId,
+    orgUnitId,
+    orgUnitMode,
+    selectedFileFilters,
+    options,
+}: UseWizardExportPreviewParams) {
     const { compositionRoot } = useAppContext();
     const enabled = options?.enabled ?? true;
     const pageSize = options?.pageSize ?? 100;

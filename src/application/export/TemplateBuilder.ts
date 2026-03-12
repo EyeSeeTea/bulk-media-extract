@@ -1,8 +1,6 @@
-import {
-    ProgramEventPreview,
-    ProgramFileProperty,
-    ProgramFilePropertyGroup,
-} from "$/domain/entities/FileExportProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
+import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
 
 export function getPropertyTemplateToken(property: ProgramFileProperty): string {
     if (
@@ -22,18 +20,6 @@ export function getPropertyTemplateToken(property: ProgramFileProperty): string 
     }
 
     return `{dataElement:${sanitizeToken(property.id)}}`;
-}
-
-export function insertAtCursor(
-    text: string,
-    insertion: string,
-    selectionStart?: number | null,
-    selectionEnd?: number | null
-): { value: string; caret: number } {
-    const start = Math.max(0, selectionStart ?? text.length);
-    const end = Math.max(start, selectionEnd ?? start);
-    const value = `${text.slice(0, start)}${insertion}${text.slice(end)}`;
-    return { value, caret: start + insertion.length };
 }
 
 export function resolveTemplateForEvent(

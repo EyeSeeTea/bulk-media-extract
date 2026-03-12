@@ -1,17 +1,18 @@
 import React from "react";
-import { ProgramEventsPreviewResult, ProgramFileProperty } from "$/domain/entities/FileExportProgram";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { Dhis2Version } from "$/webapp/utils/dhis2Version";
 import {
     buildExportExecutionConfiguration,
     ExportExecutionConfigurationFileMapping,
-} from "$/webapp/pages/wizard/exportExecutionConfiguration";
+} from "$/application/export/ExecutionConfigurationBuilder";
 import {
     buildExportPreviewRows,
     ExportPreviewRow,
     summarizeExportPreview,
-} from "$/webapp/pages/wizard/previewUtils";
-import { useWizardExportPreview } from "$/webapp/pages/wizard/useWizardExportPreview";
+} from "$/application/export/PreviewBuilder";
+import { useWizardExportPreview } from "$/webapp/pages/wizard/hooks/useWizardExportPreview";
 import { filterEventsByDate, ProgramOption } from "$/webapp/pages/wizard/wizardShared";
 
 type UseWizardPreviewDataParams = {
@@ -47,19 +48,19 @@ export function useWizardPreviewData({
     organisationUnitsState,
     quickPreviewState,
 }: UseWizardPreviewDataParams) {
-    const { state: exportPreviewState, reload: reloadExportPreview } = useWizardExportPreview(
-        selectedProgramId,
-        selectedOrgUnitId,
-        orgUnitSelectionMode,
-        selectedFileDataElements.map(fileProperty => ({
+    const { state: exportPreviewState, reload: reloadExportPreview } = useWizardExportPreview({
+        programId: selectedProgramId,
+        orgUnitId: selectedOrgUnitId,
+        orgUnitMode: orgUnitSelectionMode,
+        selectedFileFilters: selectedFileDataElements.map(fileProperty => ({
             fileDataElementId: fileProperty.id,
             programStageId: fileProperty.sourceContainerId,
         })),
-        {
+        options: {
             enabled: previewEnabled,
             pageSize: 100,
-        }
-    );
+        },
+    });
 
     React.useEffect(() => {
         if (!previewEnabled) {

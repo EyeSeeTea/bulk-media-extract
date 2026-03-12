@@ -1,12 +1,11 @@
 import { Future } from "$/domain/entities/generic/Future";
-import {
-    FileCapableProgram,
-    ProgramEventPreview,
-    ProgramEventsPreviewResult,
-    ProgramFilePropertyGroup,
-    ProgramFileProperties,
-    ProgramFileProperty,
-} from "$/domain/entities/FileExportProgram";
+import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { FileCapableProgram } from "$/domain/entities/FileCapableProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
+import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { NamedRef } from "$/domain/entities/Ref";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
 import { FutureData } from "$/data/api-futures";
@@ -391,7 +390,7 @@ export class ProgramTestRepository implements ProgramRepository {
     public getProgramEventsPreview(
         programId: string,
         orgUnitId: string,
-        _orgUnitMode: "selected" | "descendants",
+        _orgUnitMode: OrgUnitSelectionMode,
         _programStageId: string | undefined,
         _fileDataElementId: string | undefined,
         pageSize: number,

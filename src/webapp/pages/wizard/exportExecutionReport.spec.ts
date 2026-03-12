@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-    buildExecutionReport,
-    buildExecutionReportFilename,
-} from "$/webapp/pages/wizard/exportExecutionReport";
-import { ExportExecutionConfiguration } from "$/webapp/pages/wizard/exportExecutionConfiguration";
+import { buildExecutionReportFilename, ExportExecutionConfiguration } from "$/application/export/ExportExecution";
+import { buildExecutionReport } from "$/application/export/ExecutionReportBuilder";
 
 const configuration: ExportExecutionConfiguration = {
     version: "1",

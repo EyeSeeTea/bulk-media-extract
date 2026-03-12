@@ -1,13 +1,12 @@
 import { apiToFuture, FutureData } from "$/data/api-futures";
-import {
-    FileCapableProgram,
-    ProgramEventPreview,
-    ProgramEventsPreviewResult,
-    ProgramFileProperties,
-    ProgramFilePropertyGroup,
-    ProgramFileProperty,
-    ProgramType,
-} from "$/domain/entities/FileExportProgram";
+import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
+import { FileCapableProgram } from "$/domain/entities/FileCapableProgram";
+import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
+import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
+import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
+import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
+import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
+import { ProgramType } from "$/domain/entities/ProgramType";
 import { Future } from "$/domain/entities/generic/Future";
 import { NamedRef } from "$/domain/entities/Ref";
 import { ProgramRepository } from "$/domain/repositories/ProgramRepository";
@@ -44,7 +43,7 @@ export class ProgramD2Repository implements ProgramRepository {
     public getProgramEventsPreview(
         programId: string,
         orgUnitId: string,
-        orgUnitMode: "selected" | "descendants",
+        orgUnitMode: OrgUnitSelectionMode,
         programStageId: string | undefined,
         fileDataElementId: string | undefined,
         pageSize: number,
