@@ -1,6 +1,6 @@
 import React from "react";
 import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
-import { useProgramEventsPreview } from "$/webapp/pages/landing/hooks/useProgramEventsPreview";
+import { useWizardExportPreview } from "$/webapp/pages/wizard/hooks/useWizardExportPreview";
 import { resolveTemplateForEvent } from "$/application/export/TemplateBuilder";
 import { filterEventsByDate } from "$/webapp/pages/wizard/wizardShared";
 import { validateTemplate, WizardStepId } from "$/webapp/pages/wizard/wizardConfig";
@@ -30,8 +30,6 @@ export function useWizardTemplatePreviewData({
     dateFrom,
     dateTo,
 }: UseWizardTemplatePreviewDataParams) {
-    const previewProgramStageId = selectedFileDataElements[0]?.sourceContainerId;
-    const previewFileDataElementId = selectedFileDataElements[0]?.id;
     const firstSelectedTemplate = selectedFileDataValueIds[0]
         ? mappingByFileKey[selectedFileDataValueIds[0]] ?? ""
         : "";
@@ -42,16 +40,24 @@ export function useWizardTemplatePreviewData({
         currentStepId === "template" && selectedProgramId && selectedOrgUnitId && isTemplateValid
     );
 
-    const { state: quickPreviewState, reload: reloadQuickPreview } = useProgramEventsPreview(
-        selectedProgramId,
-        selectedOrgUnitId,
-        orgUnitSelectionMode,
-        previewProgramStageId,
-        previewFileDataElementId,
-        {
-            enabled: previewEnabled || canPreviewFromTemplateStep,
-        }
+    const selectedFileFilters = React.useMemo(
+        () =>
+            selectedFileDataElements.map(fileProperty => ({
+                fileDataElementId: fileProperty.id,
+                programStageId: fileProperty.sourceContainerId,
+            })),
+        [selectedFileDataElements]
     );
+
+    const { state: quickPreviewState, reload: reloadQuickPreview } = useWizardExportPreview({
+        programId: selectedProgramId,
+        orgUnitId: selectedOrgUnitId,
+        orgUnitMode: orgUnitSelectionMode,
+        selectedFileFilters,
+        options: {
+            enabled: previewEnabled || canPreviewFromTemplateStep,
+        },
+    });
 
     React.useEffect(() => {
         if (!canPreviewFromTemplateStep) {
@@ -72,7 +78,6 @@ export function useWizardTemplatePreviewData({
     }, [dateFrom, dateTo, quickPreviewState]);
 
     const quickPreviewByFileKey = React.useMemo<Record<string, string[]>>(() => {
-        const previewSource = quickPreviewEvents.slice(0, 10);
         return selectedFileDataValueIds.reduce<Record<string, string[]>>((acc, fileKey) => {
             const template = mappingByFileKey[fileKey] ?? "";
             const selectedFileProperty = selectedFilePropertyById[fileKey];
@@ -81,7 +86,7 @@ export function useWizardTemplatePreviewData({
                 return acc;
             }
 
-            acc[fileKey] = previewSource
+            acc[fileKey] = quickPreviewEvents
                 .filter(event => {
                     if (!selectedFileProperty) {
                         return true;
@@ -89,6 +94,7 @@ export function useWizardTemplatePreviewData({
 
                     return Boolean(event.fileNames[selectedFileProperty.id]);
                 })
+                .slice(0, 10)
                 .map(event =>
                     resolveTemplateForEvent(template, event, selectedFileProperty)
                 )

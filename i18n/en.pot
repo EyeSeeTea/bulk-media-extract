@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-03-10T02:09:48.325Z\n"
-"PO-Revision-Date: 2026-03-10T02:09:48.326Z\n"
+"POT-Creation-Date: 2026-03-23T14:04:46.271Z\n"
+"PO-Revision-Date: 2026-03-23T14:04:46.272Z\n"
 
 msgid "Add new"
 msgstr ""
@@ -21,6 +21,18 @@ msgid "Help"
 msgstr ""
 
 msgid "Close"
+msgstr ""
+
+msgid "Step {{number}}"
+msgstr ""
+
+msgid "Validation required"
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "Finish"
 msgstr ""
 
 msgid "Unknown error"
@@ -116,297 +128,6 @@ msgstr ""
 msgid "Reload programs"
 msgstr ""
 
-msgid "Step {{number}}"
-msgstr ""
-
-msgid "Validation required"
-msgstr ""
-
-msgid "Next"
-msgstr ""
-
-msgid "Finish"
-msgstr ""
-
-msgid "Choose a program and the files to export"
-msgstr ""
-
-msgid ""
-"Start by selecting the tracker program. Then confirm which file data values "
-"should move forward to template setup and preview."
-msgstr ""
-
-msgid "Only programs with file-capable data values are listed."
-msgstr ""
-
-msgid "Search programs"
-msgstr ""
-
-msgid "No matching programs"
-msgstr ""
-
-msgid "File data values to sync"
-msgstr ""
-
-msgid "Choose the file fields to include in the export flow."
-msgstr ""
-
-msgid "Select a program to inspect file data values."
-msgstr ""
-
-msgid "Loading file-capable data values"
-msgstr ""
-
-msgid "No file data elements"
-msgstr ""
-
-msgid "No file-capable data elements were found in this program."
-msgstr ""
-
-msgid "No program stage"
-msgstr ""
-
-msgid "Program summary"
-msgstr ""
-
-msgid "File fields found"
-msgstr ""
-
-msgid "Program stages"
-msgstr ""
-
-msgid "Program details will appear here once the selection is loaded."
-msgstr ""
-
-msgid "Why this matters"
-msgstr ""
-
-msgid ""
-"The files selected here determine which mapping editors and preview rows "
-"appear in later steps."
-msgstr ""
-
-msgid "Define the export scope and filename templates"
-msgstr ""
-
-msgid ""
-"Choose where to look for records, then define the destination path for each "
-"selected file field."
-msgstr ""
-
-msgid "Filters"
-msgstr ""
-
-msgid "Organisation unit"
-msgstr ""
-
-msgid "Select a program first to filter by organisation unit."
-msgstr ""
-
-msgid "Include"
-msgstr ""
-
-msgid "Selected"
-msgstr ""
-
-msgid "Descendants"
-msgstr ""
-
-msgid "Date from (optional)"
-msgstr ""
-
-msgid "Date to (optional)"
-msgstr ""
-
-msgid "No selected files"
-msgstr ""
-
-msgid "Go back to step 1 and select at least one file data value to sync."
-msgstr ""
-
-msgid "Path and filename template - {{name}}"
-msgstr ""
-
-msgid ""
-"Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, "
-"{dataElement:FileName}."
-msgstr ""
-
-msgid "Required."
-msgstr ""
-
-msgid "Valid template. Preview:"
-msgstr ""
-
-msgid "Select program and organisation unit to load resolved values."
-msgstr ""
-
-msgid "Could not load resolved values."
-msgstr ""
-
-msgid "No resolved template values found for current filters."
-msgstr ""
-
-msgid "Available properties"
-msgstr ""
-
-msgid "Select a program to inspect available properties."
-msgstr ""
-
-msgid "Could not inspect program properties"
-msgstr ""
-
-msgid "No properties found"
-msgstr ""
-
-msgid "No resolvable properties were found for this program."
-msgstr ""
-
-msgid "Testing connection..."
-msgstr ""
-
-msgid "Retest connection"
-msgstr ""
-
-msgid "Test connection"
-msgstr ""
-
-msgid "Validate the WebDAV destination"
-msgstr ""
-
-msgid ""
-"Confirm that the browser can reach the target WebDAV endpoint before "
-"running the export."
-msgstr ""
-
-msgid "Connection details"
-msgstr ""
-
-msgid ""
-"Enter the WebDAV endpoint URL and credentials that the browser will use "
-"during export."
-msgstr ""
-
-msgid "WebDAV URL"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Password"
-msgstr ""
-
-msgid "You must pass this test before continuing to execution."
-msgstr ""
-
-msgid "Storage setup"
-msgstr ""
-
-msgid ""
-"Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or "
-"another WebDAV-enabled server."
-msgstr ""
-
-msgid ""
-"Use the direct WebDAV endpoint, not a generic product homepage or login "
-"page."
-msgstr ""
-
-msgid ""
-"The WebDAV server must allow cross-origin requests from this app origin "
-"(CORS) or the browser will block validation and file transfer."
-msgstr ""
-
-msgid ""
-"If your server sits behind a proxy or self-signed TLS setup, make sure the "
-"browser can reach it successfully from this environment."
-msgstr ""
-
-msgid "Testing connection"
-msgstr ""
-
-msgid ""
-"Checking whether this browser can reach the WebDAV endpoint with the "
-"provided credentials."
-msgstr ""
-
-msgid "Connection valid"
-msgstr ""
-
-msgid "WebDAV connection validated. You can continue to execution."
-msgstr ""
-
-msgid "Connection invalid"
-msgstr ""
-
-msgid "Review the setup remarks above and try again."
-msgstr ""
-
-msgid "Review the resolved export plan"
-msgstr ""
-
-msgid ""
-"Inspect the final target paths and warnings before you unlock the storage "
-"and execution steps."
-msgstr ""
-
-msgid "Select program and organisation unit filter before loading preview."
-msgstr ""
-
-msgid "Selected file data elements"
-msgstr ""
-
-msgid "Org unit mode"
-msgstr ""
-
-msgid "Preview the resolved export rows before continuing."
-msgstr ""
-
-msgid "No files found"
-msgstr ""
-
-msgid "No exportable files match the selected date filters."
-msgstr ""
-
-msgid "No exportable files match the current selection."
-msgstr ""
-
-msgid "File data value"
-msgstr ""
-
-msgid "Source filename"
-msgstr ""
-
-msgid "Size"
-msgstr ""
-
-msgid "Target"
-msgstr ""
-
-msgid "Duplicate target filepaths detected"
-msgstr ""
-
-msgid "Files will be skipped"
-msgstr ""
-
-msgid "Files"
-msgstr ""
-
-msgid "Total size"
-msgstr ""
-
-msgid "Export configuration"
-msgstr ""
-
-msgid "Download a JSON execution configuration for the current reviewed preview."
-msgstr ""
-
-msgid "Execution configuration downloaded"
-msgstr ""
-
-msgid "The JSON execution configuration for this preview was downloaded."
-msgstr ""
-
 msgid "Success"
 msgstr ""
 
@@ -482,8 +203,376 @@ msgstr ""
 msgid "Export interrupted"
 msgstr ""
 
-msgid "Tracker Program"
+msgid "Review the resolved export plan"
 msgstr ""
 
-msgid "Event Program"
+msgid ""
+"Inspect the final target paths and warnings before you unlock the storage "
+"and execution steps."
+msgstr ""
+
+msgid "Select program and organisation unit filter before loading preview."
+msgstr ""
+
+msgid "Selected file data elements"
+msgstr ""
+
+msgid "Org unit mode"
+msgstr ""
+
+msgid "Selected"
+msgstr ""
+
+msgid "Descendants"
+msgstr ""
+
+msgid "Preview the resolved export rows before continuing."
+msgstr ""
+
+msgid "No files found"
+msgstr ""
+
+msgid "No exportable files match the selected date filters."
+msgstr ""
+
+msgid "No exportable files match the current selection."
+msgstr ""
+
+msgid "File data value"
+msgstr ""
+
+msgid "Source filename"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid "Original file"
+msgstr ""
+
+msgid "Duplicate target filepaths detected"
+msgstr ""
+
+msgid "Files will be skipped"
+msgstr ""
+
+msgid "Files"
+msgstr ""
+
+msgid "Total size"
+msgstr ""
+
+msgid "Export configuration"
+msgstr ""
+
+msgid "Download a JSON execution configuration for the current reviewed preview."
+msgstr ""
+
+msgid "Execution configuration downloaded"
+msgstr ""
+
+msgid "The JSON execution configuration for this preview was downloaded."
+msgstr ""
+
+msgid "Choose a program and the files to export"
+msgstr ""
+
+msgid ""
+"Start by selecting the tracker program. Then confirm which file data values "
+"should move forward to template setup and preview."
+msgstr ""
+
+msgid "Only programs with file-capable data values are listed."
+msgstr ""
+
+msgid "Search programs"
+msgstr ""
+
+msgid "No matching programs"
+msgstr ""
+
+msgid "File data values to sync"
+msgstr ""
+
+msgid "Choose the file fields to include in the export flow."
+msgstr ""
+
+msgid "Select a program to inspect file data values."
+msgstr ""
+
+msgid "Loading file-capable data values"
+msgstr ""
+
+msgid "No file data elements"
+msgstr ""
+
+msgid "No file-capable data elements were found in this program."
+msgstr ""
+
+msgid "No program stage"
+msgstr ""
+
+msgid "Program summary"
+msgstr ""
+
+msgid "File fields found"
+msgstr ""
+
+msgid "Program stages"
+msgstr ""
+
+msgid "Program details will appear here once the selection is loaded."
+msgstr ""
+
+msgid "Why this matters"
+msgstr ""
+
+msgid ""
+"The files selected here determine which mapping editors and preview rows "
+"appear in later steps."
+msgstr ""
+
+msgid "Testing connection..."
+msgstr ""
+
+msgid "Retest connection"
+msgstr ""
+
+msgid "Test connection"
+msgstr ""
+
+msgid "Validating directory..."
+msgstr ""
+
+msgid "Revalidate directory"
+msgstr ""
+
+msgid "Validate directory"
+msgstr ""
+
+msgid "Choose the export destination"
+msgstr ""
+
+msgid ""
+"Select how the reviewed files should be written, then complete the setup "
+"for that destination."
+msgstr ""
+
+msgid "Storage method"
+msgstr ""
+
+msgid ""
+"You can switch between methods before execution. Only the selected method "
+"must be validated."
+msgstr ""
+
+msgid "WebDAV"
+msgstr ""
+
+msgid "Connect to a remote WebDAV-compatible server."
+msgstr ""
+
+msgid "Local directory"
+msgstr ""
+
+msgid "Write files directly into a folder on this computer."
+msgstr ""
+
+msgid "Connection details"
+msgstr ""
+
+msgid ""
+"Enter the WebDAV endpoint URL and credentials that the browser will use "
+"during export."
+msgstr ""
+
+msgid "WebDAV URL"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "You must pass this test before continuing to execution."
+msgstr ""
+
+msgid "Storage setup"
+msgstr ""
+
+msgid ""
+"Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or "
+"another WebDAV-enabled server."
+msgstr ""
+
+msgid ""
+"Use the direct WebDAV endpoint, not a generic product homepage or login "
+"page."
+msgstr ""
+
+msgid ""
+"The WebDAV server must allow cross-origin requests from this app origin "
+"(CORS) or the browser will block validation and file transfer."
+msgstr ""
+
+msgid ""
+"If your server sits behind a proxy or self-signed TLS setup, make sure the "
+"browser can reach it successfully from this environment."
+msgstr ""
+
+msgid "Destination directory"
+msgstr ""
+
+msgid ""
+"Choose the local folder where the reviewed export paths will be created "
+"during this browser session."
+msgstr ""
+
+msgid "Choose a different folder"
+msgstr ""
+
+msgid "Choose folder"
+msgstr ""
+
+msgid "No local folder selected yet."
+msgstr ""
+
+msgid "Validate the selected folder before continuing to execution."
+msgstr ""
+
+msgid "Local directory setup"
+msgstr ""
+
+msgid ""
+"Local directory export writes files directly into a folder on this computer "
+"instead of sending them to a remote server."
+msgstr ""
+
+msgid ""
+"This option requires browser support for the File System Access API, which "
+"is typically available in Chromium-based browsers."
+msgstr ""
+
+msgid ""
+"Folder access applies only to the current browser session. If you reload "
+"the app, choose the folder again."
+msgstr ""
+
+msgid ""
+"The export will recreate the reviewed folder structure under the selected "
+"local directory."
+msgstr ""
+
+msgid "Testing connection"
+msgstr ""
+
+msgid ""
+"Checking whether this browser can reach the WebDAV endpoint with the "
+"provided credentials."
+msgstr ""
+
+msgid "Connection valid"
+msgstr ""
+
+msgid "WebDAV connection validated. You can continue to execution."
+msgstr ""
+
+msgid "Connection invalid"
+msgstr ""
+
+msgid "Review the setup remarks above and try again."
+msgstr ""
+
+msgid "Validating directory"
+msgstr ""
+
+msgid ""
+"Checking whether this browser session can write files into the selected "
+"local directory."
+msgstr ""
+
+msgid "Directory valid"
+msgstr ""
+
+msgid "Local directory validated. You can continue to execution."
+msgstr ""
+
+msgid "Directory invalid"
+msgstr ""
+
+msgid "Choose a supported browser or select a different folder and try again."
+msgstr ""
+
+msgid "Define the export scope and filename templates"
+msgstr ""
+
+msgid ""
+"Choose where to look for records, then define the destination path for each "
+"selected file field."
+msgstr ""
+
+msgid "Filters"
+msgstr ""
+
+msgid "Organisation unit"
+msgstr ""
+
+msgid "Select a program first to filter by organisation unit."
+msgstr ""
+
+msgid "Include"
+msgstr ""
+
+msgid "Date from (optional)"
+msgstr ""
+
+msgid "Date to (optional)"
+msgstr ""
+
+msgid "No selected files"
+msgstr ""
+
+msgid "Go back to step 1 and select at least one file data value to sync."
+msgstr ""
+
+msgid "Path and filename template - {{name}}"
+msgstr ""
+
+msgid ""
+"Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, "
+"{dataElement:FileName}."
+msgstr ""
+
+msgid "Required."
+msgstr ""
+
+msgid "Valid template. Preview:"
+msgstr ""
+
+msgid "Select program and organisation unit to load resolved values."
+msgstr ""
+
+msgid "Could not load resolved values."
+msgstr ""
+
+msgid "No resolved template values found for current filters."
+msgstr ""
+
+msgid "Available properties"
+msgstr ""
+
+msgid "Select a program to inspect available properties."
+msgstr ""
+
+msgid "Could not inspect program properties"
+msgstr ""
+
+msgid "No properties found"
+msgstr ""
+
+msgid "No resolvable properties were found for this program."
 msgstr ""
