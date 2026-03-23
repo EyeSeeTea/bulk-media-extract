@@ -1,8 +1,5 @@
-# org-unit-tree-picker Specification
+## MODIFIED Requirements
 
-## Purpose
-Define a reusable org unit tree picker component for selecting a single organisation unit within constrained program scope.
-## Requirements
 ### Requirement: OrgUnitTreePicker wraps DHIS2 tree component
 The system SHALL provide a reusable `OrgUnitTreePicker` component that wraps `OrganisationUnitTree` from `@dhis2/ui`, accepting a restricted list of selectable org units and emitting single-selection events. The component SHALL derive its visual selection state entirely from the `selected` prop, without maintaining independent internal selection state. The component SHALL resolve paths for all nodes in the org unit hierarchy (root, intermediate, and leaf), not only the org units directly listed in `programOrgUnits`.
 
@@ -40,6 +37,8 @@ The system MUST use a custom `React.memo` comparator that compares `programOrgUn
 #### Scenario: Selection changes do not recreate tree query configuration
 - **WHEN** the user changes the selected organisation unit without changing the allowed org unit scope
 - **THEN** the picker re-renders only for the selection change, keeping the org unit scope inputs stable
+
+## ADDED Requirements
 
 ### Requirement: Default scope selects the hierarchy root org unit
 The `useWizardDefaultScope` hook SHALL select the root org unit of the hierarchy (the first path segment of the shortest org unit path) as the default, rather than an arbitrary leaf org unit.
