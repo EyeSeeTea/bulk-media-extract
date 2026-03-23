@@ -89,6 +89,14 @@ export function resolveTemplateForEvent(
             return selectedFileProperty?.valueType ?? "";
         }
 
+        if (token === "currentDataElementName") {
+            return selectedFileProperty?.name ?? "";
+        }
+
+        if (token === "currentDataElementCode") {
+            return selectedFileProperty?.code ?? "";
+        }
+
         if (token.startsWith("dataElement:")) {
             const key = token.slice("dataElement:".length);
             return event.dataValues[key] ?? event.fileValues[key] ?? "";
@@ -196,6 +204,41 @@ export function buildFileMetadataPropertyGroup(
     return ProgramFilePropertyGroup.create({
         id: "fileMetadata",
         name: "File metadata",
+        sourceType: "metadata",
+        properties,
+    });
+}
+
+export function buildCurrentDataElementPropertyGroup(
+    selectedFileProperties: ProgramFileProperty[]
+): ProgramFilePropertyGroup | undefined {
+    if (selectedFileProperties.length === 0) {
+        return undefined;
+    }
+
+    const properties: ProgramFileProperty[] = [
+        ProgramFileProperty.create({
+            id: "currentDataElementName",
+            name: "Current data element name",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+    ];
+
+    if (selectedFileProperties.some(property => property.code)) {
+        properties.push(
+            ProgramFileProperty.create({
+                id: "currentDataElementCode",
+                name: "Current data element code",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            })
+        );
+    }
+
+    return ProgramFilePropertyGroup.create({
+        id: "currentDataElement",
+        name: "Current data element",
         sourceType: "metadata",
         properties,
     });

@@ -360,7 +360,7 @@ export class ProgramD2Repository implements ProgramRepository {
                 "programType",
                 "organisationUnits[id,displayName,path,code,shortName,level,attributeValues[attribute[id,displayName],value]]",
                 "programTrackedEntityAttributes[trackedEntityAttribute[id,displayName,valueType]]",
-                "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType]]]",
+                "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType,code]]]",
             ].join(","),
             pageSize: "500",
             page: "1",
@@ -455,6 +455,7 @@ export class ProgramD2Repository implements ProgramRepository {
                             sourceType: "dataElement",
                             sourceContainerId: stage.id,
                             sourceContainerName: stage.displayName,
+                            code: dataElement.code,
                         });
                     });
 
@@ -651,6 +652,7 @@ type D2Program = {
                 id: string;
                 displayName: string;
                 valueType: string;
+                code?: string;
             };
         }>;
     }>;
