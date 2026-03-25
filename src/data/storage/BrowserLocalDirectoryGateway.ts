@@ -74,7 +74,7 @@ export class BrowserLocalDirectoryGateway implements LocalDirectoryGateway {
         signal: AbortSignal;
     }): Promise<void> {
         const relativePath = normalizeTargetPath(params.targetPath);
-        const pathSegments = relativePath.split("/").filter(Boolean);
+        const pathSegments = relativePath.split("/").filter(Boolean).map(sanitizePathSegment);
         const fileName = pathSegments[pathSegments.length - 1];
 
         if (!fileName) {
@@ -127,5 +127,29 @@ export class BrowserLocalDirectoryGateway implements LocalDirectoryGateway {
 }
 
 function normalizeTargetPath(targetPath: string): string {
-    return targetPath.replace(/^\/+/, "").replace(/\/+/g, "/");
+    return targetPath
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "")
+        .replace(/\/+/g, "/");
+}
+
+/**
+ * Sanitize a single path segment (file or directory name) for the
+ * File System Access API.  The spec forbids names that contain
+ * / \ : < > " | ? *  or that are exactly "." or "..".
+ * We also collapse leading/trailing whitespace and dots, which are
+ * problematic on Windows.
+ */
+function sanitizePathSegment(segment: string): string {
+    let name = segment
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/^[\s.]+/, "")
+        .replace(/[\s.]+$/, "")
+        .trim();
+
+    if (name === "" || name === "." || name === "..") {
+        name = "_";
+    }
+
+    return name;
 }

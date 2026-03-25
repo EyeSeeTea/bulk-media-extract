@@ -60,6 +60,81 @@ describe("BrowserLocalDirectoryGateway", () => {
         window.showDirectoryPicker = originalShowDirectoryPicker;
     });
 
+    it("sanitizes path segments with characters forbidden by the File System Access API", async () => {
+        const write = vi.fn().mockResolvedValue(undefined);
+        const close = vi.fn().mockResolvedValue(undefined);
+        const createWritable = vi.fn().mockResolvedValue({
+            write,
+            close,
+            abort: vi.fn(),
+        });
+        const getFileHandle = vi.fn().mockResolvedValue({
+            createWritable,
+        });
+        const leafDirectoryHandle = {
+            getFileHandle,
+        };
+        const rootDirectory = {
+            getDirectoryHandle: vi.fn().mockResolvedValue(leafDirectoryHandle),
+            getFileHandle: vi.fn(),
+        } as unknown as FileSystemDirectoryHandle;
+        const controller = new AbortController();
+        const response = new Response(new Blob(["data"]));
+
+        await gateway.writeResponse({
+            rootDirectory,
+            targetPath: "clinic: March <2025>/report?.pdf",
+            response,
+            signal: controller.signal,
+        });
+
+        expect(rootDirectory.getDirectoryHandle).toHaveBeenCalledWith("clinic_ March _2025_", {
+            create: true,
+        });
+        expect(getFileHandle).toHaveBeenCalledWith("report_.pdf", { create: true });
+    });
+
+    it("normalizes backslash-separated paths into forward-slash segments", async () => {
+        const write = vi.fn().mockResolvedValue(undefined);
+        const close = vi.fn().mockResolvedValue(undefined);
+        const createWritable = vi.fn().mockResolvedValue({
+            write,
+            close,
+            abort: vi.fn(),
+        });
+        const getFileHandle = vi.fn().mockResolvedValue({
+            createWritable,
+        });
+        const leafDirectoryHandle = {
+            getFileHandle,
+        };
+        const nestedDirectoryHandle = {
+            getDirectoryHandle: vi.fn().mockResolvedValue(leafDirectoryHandle),
+            getFileHandle: vi.fn(),
+        };
+        const rootDirectory = {
+            getDirectoryHandle: vi.fn().mockResolvedValue(nestedDirectoryHandle),
+            getFileHandle: vi.fn(),
+        } as unknown as FileSystemDirectoryHandle;
+        const controller = new AbortController();
+        const response = new Response(new Blob(["data"]));
+
+        await gateway.writeResponse({
+            rootDirectory,
+            targetPath: "2025 Clinic\\05780\\tempFile.jpg",
+            response,
+            signal: controller.signal,
+        });
+
+        expect(rootDirectory.getDirectoryHandle).toHaveBeenCalledWith("2025 Clinic", {
+            create: true,
+        });
+        expect(nestedDirectoryHandle.getDirectoryHandle).toHaveBeenCalledWith("05780", {
+            create: true,
+        });
+        expect(getFileHandle).toHaveBeenCalledWith("tempFile.jpg", { create: true });
+    });
+
     it("writes nested target paths under the selected root directory", async () => {
         const write = vi.fn().mockResolvedValue(undefined);
         const close = vi.fn().mockResolvedValue(undefined);
