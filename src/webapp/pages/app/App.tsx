@@ -4,37 +4,47 @@ import { SnackbarProvider } from "@eyeseetea/d2-ui-components";
 import { Feedback } from "@eyeseetea/feedback-component";
 import { appConfig } from "$/app-config";
 import { CompositionRoot } from "$/CompositionRoot";
+import { Dhis2Version } from "$/webapp/utils/dhis2Version";
 import { Share } from "$/webapp/components/share/Share";
 import { AppContext, AppContextState } from "$/webapp/contexts/app-context";
 import { Router } from "$/webapp/pages/Router";
 import "./App.css";
 
-type AppProps = {
+type InitData = {
     compositionRoot: CompositionRoot;
     baseUrl: string;
-    dhis2Version: AppContextState["dhis2Version"];
+    dhis2Version: Dhis2Version;
+};
+
+type AppProps = {
+    initData: InitData | undefined;
+    baseUrl: string;
 };
 
 function App_(props: AppProps) {
-    const { compositionRoot, baseUrl, dhis2Version } = props;
+    const { initData, baseUrl } = props;
     const [showShareButton, setShowShareButton] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [appContext, setAppContext] = useState<AppContextState | null>(null);
 
     useEffect(() => {
+        if (!initData) return;
+        const { compositionRoot, baseUrl: initBaseUrl, dhis2Version } = initData;
+
         async function setup() {
             const isShareButtonVisible = appConfig.appearance.showShareButton;
             const currentUser = await compositionRoot.users.getCurrent.execute().toPromise();
             if (!currentUser) throw new Error("User not logged in");
 
-            setAppContext({ currentUser, compositionRoot, baseUrl, dhis2Version });
+            setAppContext({
+                currentUser,
+                compositionRoot,
+                baseUrl: initBaseUrl,
+                dhis2Version,
+            });
             setShowShareButton(isShareButtonVisible);
-            setLoading(false);
         }
         setup();
-    }, [baseUrl, compositionRoot, dhis2Version]);
-
-    if (loading) return null;
+    }, [initData, baseUrl]);
 
     return (
         <SnackbarProvider>

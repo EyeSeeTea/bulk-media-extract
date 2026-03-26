@@ -6,75 +6,83 @@ import { Dhis2Version, loadDhis2Version } from "$/webapp/utils/dhis2Version";
 import { App } from "./App";
 import { CompositionRoot, getWebappCompositionRoot } from "$/CompositionRoot";
 
-export function Dhis2App(_props: {}) {
-    const [compositionRootRes, setCompositionRootRes] = React.useState<CompositionRootResult>({
-        type: "loading",
-    });
-
-    React.useEffect(() => {
-        getData().then(setCompositionRootRes);
-    }, []);
-
-    switch (compositionRootRes.type) {
-        case "loading":
-            return <h3>Loading...</h3>;
-        case "error": {
-            const { baseUrl, error } = compositionRootRes.error;
-            return (
-                <h3 style={{ margin: 20 }}>
-                    <h3>{error.message}</h3>
-                    <a rel="noopener noreferrer" target="_blank" href={baseUrl}>
-                        Login {baseUrl}
-                    </a>
-                </h3>
-            );
-        }
-        case "loaded": {
-            const { baseUrl, compositionRoot, dhis2Version } = compositionRootRes.data;
-            type ProviderProps = React.ComponentProps<typeof Provider>;
-            const config: ProviderProps["config"] = { baseUrl, apiVersion: 30 };
-
-            return (
-                <Provider
-                    config={config}
-                    plugin={false}
-                    parentAlertsAdd={() => {}}
-                    showAlertsInPlugin={false}
-                >
-                    <App
-                        compositionRoot={compositionRoot}
-                        baseUrl={baseUrl}
-                        dhis2Version={dhis2Version}
-                    />
-                </Provider>
-            );
-        }
-    }
-}
-
-type Data = {
+type InitData = {
     compositionRoot: CompositionRoot;
     baseUrl: string;
     dhis2Version: Dhis2Version;
 };
 
-async function getData(): Promise<CompositionRootResult> {
-    const baseUrl = await getBaseUrl();
+type InitState =
+    | { type: "loading" }
+    | { type: "loaded"; data: InitData }
+    | { type: "error"; error: { baseUrl: string; error: Error } };
 
-    const auth = env["VITE_DHIS2_AUTH"];
-    const [username = "", password = ""] = auth.split(":");
-    const api = auth
-        ? new D2Api({ baseUrl: baseUrl, auth: { username, password } })
-        : new D2Api({ baseUrl: baseUrl });
-    const compositionRoot = getWebappCompositionRoot(api);
+export function Dhis2App(_props: {}) {
+    const [initState, setInitState] = React.useState<InitState>({ type: "loading" });
+    const baseUrl = getBaseUrlSync();
 
-    const [userSettings, dhis2Version] = await Promise.all([
-        api.get<{ keyUiLocale: string }>("/userSettings").getData(),
-        loadDhis2Version(api),
-    ]);
-    configI18n(userSettings);
+    React.useEffect(() => {
+        if (!baseUrl) return;
+        initializeApp(baseUrl).then(setInitState);
+    }, [baseUrl]);
 
+    if (!baseUrl) {
+        return (
+            <BaseUrlFallback
+                onResolved={url => {
+                    // This case is rare (manifest fallback). Re-render handled by parent.
+                    initializeApp(url).then(setInitState);
+                }}
+                onError={error => setInitState({ type: "error", error: { baseUrl: "", error } })}
+            />
+        );
+    }
+
+    if (initState.type === "error") {
+        const { baseUrl: errUrl, error } = initState.error;
+        return (
+            <h3 style={{ margin: 20 }}>
+                <h3>{error.message}</h3>
+                <a rel="noopener noreferrer" target="_blank" href={errUrl}>
+                    Login {errUrl}
+                </a>
+            </h3>
+        );
+    }
+
+    type ProviderProps = React.ComponentProps<typeof Provider>;
+    const config: ProviderProps["config"] = { baseUrl, apiVersion: 30 };
+
+    return (
+        <Provider config={config} plugin={false} parentAlertsAdd={() => {}} showAlertsInPlugin={false}>
+            <App initData={initState.type === "loaded" ? initState.data : undefined} baseUrl={baseUrl} />
+        </Provider>
+    );
+}
+
+function BaseUrlFallback(props: { onResolved: (url: string) => void; onError: (error: Error) => void }) {
+    React.useEffect(() => {
+        getBaseUrlFromManifest().then(props.onResolved).catch(props.onError);
+    }, [props.onResolved, props.onError]);
+
+    return null;
+}
+
+async function initializeApp(baseUrl: string): Promise<InitState> {
     try {
+        const auth = env["VITE_DHIS2_AUTH"];
+        const [username = "", password = ""] = auth.split(":");
+        const api = auth
+            ? new D2Api({ baseUrl: baseUrl, auth: { username, password } })
+            : new D2Api({ baseUrl: baseUrl });
+        const compositionRoot = getWebappCompositionRoot(api);
+
+        const [userSettings, dhis2Version] = await Promise.all([
+            api.get<{ keyUiLocale: string }>("/userSettings").getData(),
+            loadDhis2Version(api),
+        ]);
+        configI18n(userSettings);
+
         return { type: "loaded", data: { baseUrl, compositionRoot, dhis2Version } };
     } catch (err) {
         return { type: "error", error: { baseUrl, error: err as Error } };
@@ -84,15 +92,13 @@ async function getData(): Promise<CompositionRootResult> {
 const env = import.meta.env;
 const isDev = env.DEV;
 
-async function getBaseUrl() {
+function getBaseUrlSync(): string | null {
     if (isDev) {
-        return "/dhis2"; // See vite.config.ts: defineConfig -> server.proxy
-    } else {
-        return getInjectedBaseUrl() || getBaseUrlFromManifest();
+        return "/dhis2";
     }
+    return getInjectedBaseUrl();
 }
 
-// Get from manifest.webapp: activities.dhis.href
 async function getBaseUrlFromManifest(): Promise<string> {
     const response = await fetch("manifest.webapp");
     const manifest = await response.json();
@@ -105,7 +111,6 @@ async function getBaseUrlFromManifest(): Promise<string> {
     }
 }
 
-// Injected by backend (DHIS2 +41) in public.html meta tag "dhis2-base-url"
 function getInjectedBaseUrl() {
     const baseUrl = document.querySelector('meta[name="dhis2-base-url"]')?.getAttribute("content");
 
@@ -126,10 +131,3 @@ const configI18n = ({ keyUiLocale }: { keyUiLocale: string }) => {
     i18n.changeLanguage(keyUiLocale);
     document.documentElement.setAttribute("dir", isLangRTL(keyUiLocale) ? "rtl" : "ltr");
 };
-
-type Result<Data, E> =
-    | { type: "loading" }
-    | { type: "loaded"; data: Data }
-    | { type: "error"; error: E };
-
-type CompositionRootResult = Result<Data, { baseUrl: string; error: Error }>;
