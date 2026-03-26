@@ -1,7 +1,7 @@
 {
-    "short_name": "Tracker File Bridge",
-    "name": "Tracker File Bridge",
-    "description": "Export DHIS2 Tracker files to external storage with metadata-driven paths.",
+    "short_name": "Bulk Media Extract",
+    "name": "Bulk Media Extract",
+    "description": "Bulk extract and export DHIS2 media files to external storage with metadata-driven paths.",
     "icons": [
         {
             "src": "favicon.ico",

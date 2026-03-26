@@ -196,6 +196,7 @@ export const StorageStep: React.FC<StorageStepProps> = ({
                                 {localDirectory.directoryName
                                     ? i18n.t("Selected folder: {{name}}", {
                                           name: localDirectory.directoryName,
+                                          nsSeparator: false,
                                       })
                                     : i18n.t("No local folder selected yet.")}
                             </span>

@@ -36,7 +36,7 @@ describe("WizardShell", () => {
         fireEvent.click(view.getByText("Back"));
         expect(onBack).toHaveBeenCalledTimes(1);
 
-        const nextButton = view.getByText("Next").closest("button")!;
+        const nextButton = view.getByRole("button", { name: "Next" });
         expect(nextButton).toBeDisabled();
 
         fireEvent.click(view.getByTestId("wizard-step-tab-preview"));
@@ -62,7 +62,7 @@ describe("WizardShell", () => {
             </WizardShell>
         );
 
-        const nextButton = view.getByText("Next").closest("button")!;
+        const nextButton = view.getByRole("button", { name: "Next" });
         expect(nextButton).not.toBeDisabled();
 
         fireEvent.click(nextButton);

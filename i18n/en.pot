@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-03-23T14:04:46.271Z\n"
-"PO-Revision-Date: 2026-03-23T14:04:46.272Z\n"
+"POT-Creation-Date: 2026-03-26T16:27:09.827Z\n"
+"PO-Revision-Date: 2026-03-26T16:27:09.828Z\n"
 
 msgid "Add new"
 msgstr ""
@@ -38,7 +38,13 @@ msgstr ""
 msgid "Unknown error"
 msgstr ""
 
-msgid "File Export Program Picker"
+msgid "Bulk Media Extract"
+msgstr ""
+
+msgid "Export file data values from your programs to WebDAV or a local directory."
+msgstr ""
+
+msgid "Start new export"
 msgstr ""
 
 msgid "Event preview"
@@ -128,6 +134,23 @@ msgstr ""
 msgid "Reload programs"
 msgstr ""
 
+msgid "Export program files"
+msgstr ""
+
+msgid "Exit current export"
+msgstr ""
+
+msgid ""
+"All configuration entered in this export session will be lost. This action "
+"cannot be undone."
+msgstr ""
+
+msgid "Continue editing"
+msgstr ""
+
+msgid "Exit export"
+msgstr ""
+
 msgid "Success"
 msgstr ""
 
@@ -138,6 +161,9 @@ msgid "Warning"
 msgstr ""
 
 msgid "Info"
+msgstr ""
+
+msgid "Event {{eventId}} — {{dataElement}}"
 msgstr ""
 
 msgid "Run the export"
@@ -436,6 +462,9 @@ msgid "Choose a different folder"
 msgstr ""
 
 msgid "Choose folder"
+msgstr ""
+
+msgid "Selected folder: {{name}}"
 msgstr ""
 
 msgid "No local folder selected yet."

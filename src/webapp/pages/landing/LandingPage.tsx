@@ -10,7 +10,7 @@ export const LandingPage: React.FC = () => {
     return (
         <div className="landing-page">
             <div className="landing-page-card">
-                <h1 className="landing-page-title">{i18n.t("File Export")}</h1>
+                <h1 className="landing-page-title">{i18n.t("Bulk Media Extract")}</h1>
                 <p className="landing-page-subtitle">
                     {i18n.t("Export file data values from your programs to WebDAV or a local directory.")}
                 </p>

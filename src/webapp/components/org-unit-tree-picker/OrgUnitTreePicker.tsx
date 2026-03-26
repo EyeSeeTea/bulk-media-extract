@@ -61,7 +61,7 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 if (!orgUnit.path) continue;
                 const segments = orgUnit.path.split("/").filter(Boolean);
                 for (let i = 0; i < segments.length; i++) {
-                    const id = segments[i]!;
+                    const id = segments[i] as string;
                     if (!map.has(id)) {
                         map.set(id, "/" + segments.slice(0, i + 1).join("/"));
                     }

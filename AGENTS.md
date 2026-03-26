@@ -110,6 +110,11 @@ yarn localize       # Update i18n .po files from i18n.t() calls
   - `docs(scope): description` for documentation
   - `chore(scope): description` for maintenance
 
+## Internationalization (i18n)
+
+- This project uses `@dhis2/d2-i18n` which is built on i18next.
+- **Colon caveat**: i18next treats `:` as a namespace separator by default. Any `i18n.t()` call whose key contains a colon (e.g., `"Selected folder: {{name}}"`) must pass `{ nsSeparator: false }` in its options, otherwise i18next will silently split the key at the colon and fail to find the translation.
+
 ## DHIS2 Integration
 
 **API Access**:

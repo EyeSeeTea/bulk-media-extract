@@ -1,6 +1,6 @@
 {
-    "name": "tracker-file-bridge",
-    "description": "Export DHIS2 Tracker files to external storage with metadata-driven paths.",
+    "name": "bulk-media-extract",
+    "description": "Bulk extract and export DHIS2 media files to external storage with metadata-driven paths.",
     "version": "0.0.1",
     "license": "GPL-3.0",
     "author": "EyeSeeTea team",
@@ -89,14 +89,14 @@
         "build": "yarn localize && VITE_DHIS2_BASE_URL='' VITE_DHIS2_AUTH='' yarn build-folder && rm -f $npm_package_name.zip && cd build && zip --quiet -r ../$npm_package_name.zip *",
         "prettify": "prettier \"./**/*.{js,jsx,json,css,ts,tsx}\" --write",
         "extract-pot": "yarn d2-i18n-extract -p src/ -o i18n/",
-        "localize": "yarn update-po && d2-i18n-generate -l -n tracker-file-bridge -p ./i18n/ -o ./src/locales/",
+        "localize": "yarn update-po && d2-i18n-generate -l -n bulk-media-extract -p ./i18n/ -o ./src/locales/",
         "update-po": "yarn extract-pot && find i18n/ -name '*.po' -exec msgmerge --backup=off -U {} i18n/en.pot \\;",
         "prepare": "husky install",
         "script-example": "yarn run-script src/scripts/example.ts"
     },
     "manifest.webapp": {
-        "name": "Tracker File Bridge",
-        "description": "Export DHIS2 Tracker files to external storage with metadata-driven paths.",
+        "name": "Bulk Media Extract",
+        "description": "Bulk extract and export DHIS2 media files to external storage with metadata-driven paths.",
         "icons": {
             "48": "icon.png"
         },

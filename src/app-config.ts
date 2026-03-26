@@ -1,7 +1,7 @@
 import { FeedbackOptions } from "@eyeseetea/feedback-component";
 
 export const appConfig: AppConfig = {
-    id: "tracker-file-bridge",
+    id: "bulk-media-extract",
     appearance: {
         showShareButton: true,
     },
@@ -9,7 +9,7 @@ export const appConfig: AppConfig = {
         repositories: {
             clickUp: {
                 // https://app.clickup.com/${workspace}/v/b/N-${listId}-M
-                // Web development -> Common resources -> tracker-file-bridge
+                // Web development -> Common resources -> bulk-media-extract
                 listId: "42597084",
                 title: "[User feedback] {title}",
                 body: "## dhis2\n\nUsername: {username}\n\n{body}",
