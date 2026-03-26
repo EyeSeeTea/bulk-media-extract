@@ -112,7 +112,7 @@ export const WizardContent: React.FC = () => {
             state,
             currentStepId,
             exportPreviewState,
-            duplicateTargetPathCount: exportPreviewSummary.duplicateTargetPaths.length,
+            duplicateTargetPathCount: exportPreviewSummary.duplicateTargetPathDetails.length,
             setStep,
         });
 

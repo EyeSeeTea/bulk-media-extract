@@ -43,7 +43,15 @@ When `Local directory` is selected, the storage step MUST require the user to se
 
 #### Scenario: Duplicate preview target filepath prevents transition
 - **WHEN** the preview step contains two or more files with the same resolved target filepath and the user clicks next
-- **THEN** the system blocks progression, highlights the duplicate conflict, and instructs the user to revise the template
+- **THEN** the system blocks progression, highlights **all** rows that share each duplicate target path, and displays a warning notice that lists each conflicting path together with the event IDs and file data element names that produce it
+
+#### Scenario: All duplicate rows are highlighted not just one
+- **WHEN** two or more preview rows resolve to the same target filepath
+- **THEN** every row sharing that duplicate path SHALL be visually highlighted with the duplicate warning style
+
+#### Scenario: Duplicate warning notice lists conflicting paths with sources
+- **WHEN** the preview step detects duplicate target filepaths
+- **THEN** the warning notice SHALL display each conflicting target path and, for each path, list the event ID and file data element name of every row that produces it
 
 #### Scenario: Storage step blocks progression until current WebDAV credentials are validated
 - **WHEN** the user attempts to continue from the storage step with `WebDAV` selected before a successful connection test with the currently entered WebDAV URL, username, and password

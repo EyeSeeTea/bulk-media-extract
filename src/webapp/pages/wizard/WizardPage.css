@@ -836,12 +836,23 @@
     font-size: 13px;
 }
 
-.wizard-preview-row-duplicate {
-    background: #fff4e5;
+.wizard-preview-duplicate-list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 13px;
 }
 
-.wizard-preview-row-warning {
-    background: #fff7d6;
+.wizard-preview-duplicate-list code {
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.wizard-preview-duplicate-list ul {
+    padding-left: 16px;
+    margin: 2px 0 6px;
+    color: #5b6b7f;
 }
 
 .wizard-preview-table-wrap {
@@ -879,6 +890,14 @@
 
 .wizard-step-content .wizard-preview-table tbody tr:nth-child(even) {
     background: #fbfcfe;
+}
+
+.wizard-step-content .wizard-preview-table tbody tr.wizard-preview-row-warning {
+    background: #fff7d6;
+}
+
+.wizard-step-content .wizard-preview-table tbody tr.wizard-preview-row-duplicate {
+    background: #fff4e5;
 }
 
 .wizard-step-content .wizard-preview-table tbody tr:last-child td {

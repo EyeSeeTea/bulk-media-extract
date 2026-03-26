@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, CircularLoader, NoticeBox } from "@dhis2/ui";
-import { ExportPreviewRow } from "$/application/export/ExportPreview";
+import { ExportPreviewRow, ExportPreviewSummary } from "$/application/export/ExportPreview";
 import { OrgUnitSelectionMode } from "$/application/export/OrgUnitSelectionMode";
 import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import { AsyncData } from "$/webapp/hooks/useAsyncData";
@@ -17,6 +17,7 @@ import {
     getPreviewCellValue,
     getPreviewFileWarning,
 } from "$/webapp/presenters/previewFormatting";
+import { DuplicatePathList } from "$/webapp/pages/wizard/steps/DuplicatePathList";
 import i18n from "$/utils/i18n";
 
 type PreviewStepProps = {
@@ -35,12 +36,7 @@ type PreviewStepProps = {
     dateTo: string;
     previewState: AsyncData<ProgramEventsPreviewResult>;
     previewRows: ExportPreviewRow[];
-    previewSummary: {
-        totalFiles: number;
-        totalSize: number;
-        duplicateTargetPaths: string[];
-        missingFileResourceCount: number;
-    };
+    previewSummary: ExportPreviewSummary;
     onRetry: () => void;
 };
 
@@ -256,18 +252,25 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                         </div>
                     )}
                     <div className="wizard-preview-footer" data-testid="wizard-preview-footer">
-                        {previewSummary.duplicateTargetPaths.length > 0 ? (
+                        {previewSummary.duplicateTargetPathDetails.length > 0 ? (
                             <NoticeBox
                                 warning
                                 title={i18n.t("Duplicate target filepaths detected")}
                                 dataTest="wizard-preview-duplicate-error"
                             >
-                                {i18n.t(
-                                    "Revise the template. {{count}} target filepath conflicts were found.",
-                                    {
-                                        count: String(previewSummary.duplicateTargetPaths.length),
-                                    }
-                                )}
+                                <p>
+                                    {i18n.t(
+                                        "{{count}} target filepath conflicts were found. Go back to the previous step and modify the template to make each export destination unique.",
+                                        {
+                                            count: String(
+                                                previewSummary.duplicateTargetPathDetails.length
+                                            ),
+                                        }
+                                    )}
+                                </p>
+                                <DuplicatePathList
+                                    details={previewSummary.duplicateTargetPathDetails}
+                                />
                             </NoticeBox>
                         ) : null}
                         {previewSummary.missingFileResourceCount > 0 ? (

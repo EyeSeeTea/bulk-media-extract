@@ -17,9 +17,17 @@ export type ExportPreviewRow = {
     isMissingFileResource: boolean;
 };
 
+export type DuplicateTargetPathDetail = {
+    path: string;
+    rows: Array<{
+        eventId: string;
+        fileDataValueName: string;
+    }>;
+};
+
 export type ExportPreviewSummary = {
     totalFiles: number;
     totalSize: number;
-    duplicateTargetPaths: string[];
+    duplicateTargetPathDetails: DuplicateTargetPathDetail[];
     missingFileResourceCount: number;
 };
