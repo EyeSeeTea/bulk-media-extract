@@ -442,7 +442,6 @@
 
 .wizard-footer-actions {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 16px;
     margin-top: 4px;
@@ -451,6 +450,10 @@
     border-radius: 16px;
     background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.wizard-footer-spacer {
+    flex: 1;
 }
 
 .wizard-preview-actions {
@@ -923,6 +926,11 @@
     margin-top: 4px;
     color: #6b7a90;
     font-size: 12px;
+}
+
+.wizard-modal-actions {
+    display: flex;
+    gap: 12px;
 }
 
 .wizard-preview-warning-text {

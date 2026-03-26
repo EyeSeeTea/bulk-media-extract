@@ -100,15 +100,18 @@ export const WizardShell: React.FC<WizardShellProps> = ({
             ) : null}
 
             <div className="wizard-footer-actions" data-testid="wizard-footer-actions">
-                <Button
-                    secondary
-                    disabled={currentStep === 0 || isExecutionRunning}
-                    onClick={onBack}
-                >
-                    {i18n.t("Back")}
-                </Button>
+                {currentStep > 0 && (
+                    <Button
+                        secondary
+                        disabled={isExecutionRunning}
+                        onClick={onBack}
+                    >
+                        {i18n.t("Back")}
+                    </Button>
+                )}
+                <span className="wizard-footer-spacer" />
                 {currentStep < steps.length - 1 ? (
-                    <Button primary onClick={onNext}>
+                    <Button primary disabled={!!currentStepError} onClick={onNext}>
                         {i18n.t("Next")}
                     </Button>
                 ) : (

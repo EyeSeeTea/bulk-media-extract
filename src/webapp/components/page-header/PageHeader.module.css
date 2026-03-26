@@ -1,15 +1,24 @@
 .wrapper {
     display: block;
+    padding: 12px 16px;
+    border-bottom: 1px solid #d5dde5;
+    background: linear-gradient(180deg, #f8fbff 0%, #f0f4f8 100%);
 }
 
 .row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
-    column-gap: 0.5rem;
+    column-gap: 12px;
+}
+
+.row h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--colors-grey900, #212934);
 }
 
 .backWrap {
-    padding-top: 10px;
-    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
 }

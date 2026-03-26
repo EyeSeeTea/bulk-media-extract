@@ -975,7 +975,7 @@ describe("WizardPage", () => {
         expect(view.getByTestId("wizard-step-number-template").textContent).toContain("2");
         expect(view.getByTestId("wizard-step-tab-preview")).toBeDisabled();
         expect(view.getByTestId("wizard-footer-actions")).toBeInTheDocument();
-        expect(view.getByTestId("wizard-footer-actions").textContent).toContain("Back");
+        expect(view.getByTestId("wizard-footer-actions").textContent).not.toContain("Back");
         expect(view.getByTestId("wizard-footer-actions").textContent).toContain("Next");
     });
 

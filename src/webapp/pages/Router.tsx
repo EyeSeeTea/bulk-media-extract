@@ -1,5 +1,6 @@
 import React from "react";
 import { HashRouter, Route, Switch } from "react-router-dom";
+import { LandingPage } from "./landing/LandingPage";
 import { WizardPage } from "./wizard/WizardPage";
 
 export function Router() {
@@ -9,7 +10,7 @@ export function Router() {
                 <Route path="/wizard" render={() => <WizardPage />} />
 
                 {/* Default route */}
-                <Route render={() => <WizardPage />} />
+                <Route render={() => <LandingPage />} />
             </Switch>
         </HashRouter>
     );

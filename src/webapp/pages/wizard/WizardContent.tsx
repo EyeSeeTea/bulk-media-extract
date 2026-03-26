@@ -1,5 +1,9 @@
 import React from "react";
+import { useHistory } from "react-router-dom";
+import { Button, Modal, ModalTitle, ModalContent, ModalActions } from "@dhis2/ui";
+import i18n from "$/utils/i18n";
 import { useAppContext } from "$/webapp/contexts/app-context";
+import { PageHeader } from "$/webapp/components/page-header/PageHeader";
 import { WizardShell } from "$/webapp/components/wizard/WizardShell";
 import { useWizardDefaultScope } from "$/webapp/pages/wizard/hooks/useWizardDefaultScope";
 import { useWizardExecutionController } from "$/webapp/pages/wizard/hooks/useWizardExecutionController";
@@ -16,6 +20,8 @@ import { useWizardContext } from "$/webapp/pages/wizard/WizardContext";
 import { WIZARD_STEPS } from "$/webapp/pages/wizard/wizardConfig";
 
 export const WizardContent: React.FC = () => {
+    const history = useHistory();
+    const [showExitModal, setShowExitModal] = React.useState(false);
     const { baseUrl, compositionRoot, dhis2Version } = useAppContext();
     const {
         state,
@@ -224,18 +230,44 @@ export const WizardContent: React.FC = () => {
     };
 
     return (
-        <WizardShell
-            currentStep={state.currentStep}
-            steps={WIZARD_STEPS}
-            currentStepError={currentStepError}
-            isExecutionRunning={isExecutionRunning}
-            canNavigateToStep={canNavigateToStep}
-            onSetStep={setStep}
-            onBack={goBack}
-            onNext={onNext}
-            onFinish={() => undefined}
-        >
-            {renderStep()}
-        </WizardShell>
+        <>
+            <PageHeader
+                title={i18n.t("Export program files")}
+                onBackClick={isExecutionRunning ? undefined : () => setShowExitModal(true)}
+            />
+
+            <WizardShell
+                currentStep={state.currentStep}
+                steps={WIZARD_STEPS}
+                currentStepError={currentStepError}
+                isExecutionRunning={isExecutionRunning}
+                canNavigateToStep={canNavigateToStep}
+                onSetStep={setStep}
+                onBack={goBack}
+                onNext={onNext}
+                onFinish={() => history.push("/")}
+            >
+                {renderStep()}
+            </WizardShell>
+
+            {showExitModal && (
+                <Modal position="middle" onClose={() => setShowExitModal(false)}>
+                    <ModalTitle>{i18n.t("Exit current export")}</ModalTitle>
+                    <ModalContent>
+                        {i18n.t("All configuration entered in this export session will be lost. This action cannot be undone.")}
+                    </ModalContent>
+                    <ModalActions>
+                        <div className="wizard-modal-actions">
+                            <Button secondary onClick={() => setShowExitModal(false)}>
+                                {i18n.t("Continue editing")}
+                            </Button>
+                            <Button destructive onClick={() => history.push("/")}>
+                                {i18n.t("Exit export")}
+                            </Button>
+                        </div>
+                    </ModalActions>
+                </Modal>
+            )}
+        </>
     );
 };
