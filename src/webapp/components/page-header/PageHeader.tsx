@@ -17,7 +17,7 @@ const TooltipIconButton: React.FC<{
     "data-test"?: string;
 }> = ({ title, onClick, icon, ...rest }) => (
     <Tooltip content={title} placement="top">
-        <Button small icon={icon} onClick={onClick} {...rest} />
+        <Button small icon={icon} onClick={onClick} aria-label={title} {...rest} />
     </Tooltip>
 );
 
