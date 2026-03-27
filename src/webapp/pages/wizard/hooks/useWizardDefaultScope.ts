@@ -6,9 +6,7 @@ type UseWizardDefaultScopeParams = {
     selectedProgram?: ProgramOption;
     selectedOrgUnitId: string;
     setScope: (
-        values: Partial<
-            Pick<WizardState, "selectedOrgUnitId" | "orgUnitSelectionMode">
-        >
+        values: Partial<Pick<WizardState, "selectedOrgUnitId" | "orgUnitSelectionMode">>
     ) => void;
 };
 
@@ -20,9 +18,7 @@ function findRootOrgUnitId(orgUnits: ProgramOption["organisationUnits"]): string
         (a.path?.length ?? Infinity) <= (b.path?.length ?? Infinity) ? a : b
     );
 
-    return shortest.path
-        ? shortest.path.split("/").filter(Boolean)[0]
-        : orgUnits[0]?.id;
+    return shortest.path ? shortest.path.split("/").filter(Boolean)[0] : orgUnits[0]?.id;
 }
 
 export function useWizardDefaultScope({

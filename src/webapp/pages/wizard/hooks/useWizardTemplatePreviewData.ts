@@ -95,18 +95,11 @@ export function useWizardTemplatePreviewData({
                     return Boolean(event.fileNames[selectedFileProperty.id]);
                 })
                 .slice(0, 10)
-                .map(event =>
-                    resolveTemplateForEvent(template, event, selectedFileProperty)
-                )
+                .map(event => resolveTemplateForEvent(template, event, selectedFileProperty))
                 .filter(value => Boolean(value));
             return acc;
         }, {});
-    }, [
-        mappingByFileKey,
-        quickPreviewEvents,
-        selectedFileDataValueIds,
-        selectedFilePropertyById,
-    ]);
+    }, [mappingByFileKey, quickPreviewEvents, selectedFileDataValueIds, selectedFilePropertyById]);
 
     return {
         previewEnabled,

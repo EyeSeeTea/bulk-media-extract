@@ -155,7 +155,9 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                             </NoticeBox>
                         ) : fileDataElements.length === 0 ? (
                             <NoticeBox title={i18n.t("No file data elements")}>
-                                {i18n.t("No file-capable data elements were found in this program.")}
+                                {i18n.t(
+                                    "No file-capable data elements were found in this program."
+                                )}
                             </NoticeBox>
                         ) : (
                             <>
@@ -176,14 +178,19 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                         return (
                                             <div
                                                 key={item.id}
-                                                className={`wizard-program-file-card${isSelected ? " selected" : ""}`}
+                                                className={`wizard-program-file-card${
+                                                    isSelected ? " selected" : ""
+                                                }`}
                                                 data-testid={`wizard-file-select-${item.id}`}
                                                 role="checkbox"
                                                 aria-checked={isSelected}
                                                 tabIndex={0}
                                                 onClick={() => onToggleFileSelection(item.id)}
                                                 onKeyDown={event => {
-                                                    if (event.key === " " || event.key === "Enter") {
+                                                    if (
+                                                        event.key === " " ||
+                                                        event.key === "Enter"
+                                                    ) {
                                                         event.preventDefault();
                                                         onToggleFileSelection(item.id);
                                                     }
@@ -196,7 +203,9 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                                     <CheckboxField
                                                         checked={isSelected}
                                                         label={item.name}
-                                                        onChange={() => onToggleFileSelection(item.id)}
+                                                        onChange={() =>
+                                                            onToggleFileSelection(item.id)
+                                                        }
                                                     />
                                                 </div>
                                                 <div className="wizard-program-file-card-meta">
@@ -204,7 +213,8 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                                         {item.valueType}
                                                     </span>
                                                     <span className="wizard-program-file-pill">
-                                                        {item.sourceContainerName ?? i18n.t("No program stage")}
+                                                        {item.sourceContainerName ??
+                                                            i18n.t("No program stage")}
                                                     </span>
                                                 </div>
                                             </div>
@@ -249,7 +259,9 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                             </dl>
                         ) : (
                             <p className="wizard-helper-text">
-                                {i18n.t("Program details will appear here once the selection is loaded.")}
+                                {i18n.t(
+                                    "Program details will appear here once the selection is loaded."
+                                )}
                             </p>
                         )}
                         <NoticeBox title={i18n.t("Why this matters")}>

@@ -2,10 +2,7 @@ import React from "react";
 import { ExportExecutionConfiguration } from "$/application/export/ExportExecution";
 import { ExecutionRunHandle, runExecutionPlan } from "$/application/export/ExecutionRunner";
 import { CompositionRoot } from "$/CompositionRoot";
-import {
-    getExecutionStatusMessage,
-    runFutureData,
-} from "$/webapp/pages/wizard/executionSupport";
+import { getExecutionStatusMessage, runFutureData } from "$/webapp/pages/wizard/executionSupport";
 import {
     initialExecutionState,
     WizardExecutionState,
@@ -18,9 +15,7 @@ type UseWizardExecutionControllerParams = {
     storage: WizardStorageConfig;
     executionState: WizardExecutionState;
     setExecution: (
-        state:
-            | WizardExecutionState
-            | ((previous: WizardExecutionState) => WizardExecutionState)
+        state: WizardExecutionState | ((previous: WizardExecutionState) => WizardExecutionState)
     ) => void;
 };
 
@@ -73,7 +68,9 @@ export function useWizardExecutionController({
                 if (!directoryHandle) {
                     return {
                         promise: Promise.reject(
-                            new Error("Local directory export is not ready. Select and validate a directory.")
+                            new Error(
+                                "Local directory export is not ready. Select and validate a directory."
+                            )
                         ),
                     };
                 }
@@ -122,12 +119,14 @@ export function useWizardExecutionController({
                     progress:
                         report?.summary.totalOperations && report.summary.totalOperations > 0
                             ? Math.round(
-                                  (report.summary.attemptedOperations / report.summary.totalOperations) *
+                                  (report.summary.attemptedOperations /
+                                      report.summary.totalOperations) *
                                       100
                               )
                             : previous.progress,
                     processed: report?.summary.attemptedOperations ?? previous.processed,
-                    total: report?.summary.totalOperations ?? executionConfiguration.operations.length,
+                    total:
+                        report?.summary.totalOperations ?? executionConfiguration.operations.length,
                     successCount: report?.summary.successCount ?? previous.successCount,
                     failureCount: report?.summary.failureCount ?? previous.failureCount,
                     report,

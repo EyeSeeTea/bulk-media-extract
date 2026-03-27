@@ -109,7 +109,10 @@ export function validateTemplate(template: string): string | undefined {
     return undefined;
 }
 
-export function getStepValidationError(state: WizardState, stepId: WizardStepId): string | undefined {
+export function getStepValidationError(
+    state: WizardState,
+    stepId: WizardStepId
+): string | undefined {
     if (stepId === "program") {
         if (!state.selectedProgramId) {
             return "Program is required.";
@@ -205,7 +208,9 @@ export function getStorageMethodError(storage: WizardStorageConfig): string | un
     return undefined;
 }
 
-export function getStorageMethodStatus(storage: WizardStorageConfig): WizardStorageValidationStatus {
+export function getStorageMethodStatus(
+    storage: WizardStorageConfig
+): WizardStorageValidationStatus {
     if (storage.selectedMethod === "webdav") {
         return storage.webdav.status;
     }
@@ -219,7 +224,11 @@ export function getStorageMethodStatus(storage: WizardStorageConfig): WizardStor
 
 export function getStorageValidationError(state: WizardState): string | undefined {
     if (state.storage.selectedMethod === "webdav") {
-        if (!state.storage.webdav.url || !state.storage.webdav.username || !state.storage.webdav.password) {
+        if (
+            !state.storage.webdav.url ||
+            !state.storage.webdav.username ||
+            !state.storage.webdav.password
+        ) {
             return "Storage URL, username, and password are required.";
         }
         if (state.storage.webdav.status !== "valid") {

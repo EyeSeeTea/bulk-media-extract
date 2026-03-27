@@ -15,8 +15,10 @@ export function getTestContext(): AppContextState {
     };
 }
 
-export function getReactComponent(children: ReactNode, context: AppContextState = getTestContext()): RenderResult {
-
+export function getReactComponent(
+    children: ReactNode,
+    context: AppContextState = getTestContext()
+): RenderResult {
     return render(
         <AppContext.Provider value={context}>
             <SnackbarProvider>{children}</SnackbarProvider>

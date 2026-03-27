@@ -579,7 +579,9 @@ describe("ProgramD2Repository", () => {
             .getProgramEventsPreview("program-a", "ou-1", "selected", "stage-a", "de-a", 20)
             .toPromise();
 
-        expect(api.__calls.filter((path: string) => path.startsWith("/fileResources/file-1"))).toHaveLength(1);
+        expect(
+            api.__calls.filter((path: string) => path.startsWith("/fileResources/file-1"))
+        ).toHaveLength(1);
     });
 
     it("keeps preview events when a file resource is missing", async () => {
@@ -669,8 +671,12 @@ describe("ProgramD2Repository", () => {
             .toPromise();
 
         expect(api.__calls.some((path: string) => path.includes("ouMode=DESCENDANTS"))).toBe(true);
-        expect(api.__calls.some((path: string) => path.includes("programStage=stage-a"))).toBe(true);
-        expect(api.__calls.some((path: string) => path.includes("filter=de-a%3Agt%3A1"))).toBe(true);
+        expect(api.__calls.some((path: string) => path.includes("programStage=stage-a"))).toBe(
+            true
+        );
+        expect(api.__calls.some((path: string) => path.includes("filter=de-a%3Agt%3A1"))).toBe(
+            true
+        );
     });
 
     it("stops loading all pages when subsequent pages repeat the same events", async () => {
@@ -732,7 +738,9 @@ describe("ProgramD2Repository", () => {
             .toPromise();
 
         expect(events.events).toHaveLength(2);
-        expect(api.__calls.filter((path: string) => path.startsWith("/tracker/events?"))).toHaveLength(2);
+        expect(
+            api.__calls.filter((path: string) => path.startsWith("/tracker/events?"))
+        ).toHaveLength(2);
     });
 
     it("propagates API errors", async () => {

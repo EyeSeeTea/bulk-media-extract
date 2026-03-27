@@ -171,7 +171,10 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                         </NoticeBox>
                     ) : (
                         <div className="wizard-preview-table-wrap">
-                            <table className="preview-table wizard-preview-table" data-testid="wizard-preview-table">
+                            <table
+                                className="preview-table wizard-preview-table"
+                                data-testid="wizard-preview-table"
+                            >
                                 <thead>
                                     <tr>
                                         <th>{i18n.t("Event")}</th>
@@ -243,7 +246,9 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                                                     ) : null}
                                                 </td>
                                                 <td>{formatFileSize(row.fileSize)}</td>
-                                                <td>{getPreviewCellValue(row.resolvedTargetPath)}</td>
+                                                <td>
+                                                    {getPreviewCellValue(row.resolvedTargetPath)}
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -275,12 +280,9 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                         ) : null}
                         {previewSummary.missingFileResourceCount > 0 ? (
                             <NoticeBox warning title={i18n.t("Files will be skipped")}>
-                                {i18n.t(
-                                    "{{count}} files without FileResource won't be exported.",
-                                    {
-                                        count: String(previewSummary.missingFileResourceCount),
-                                    }
-                                )}
+                                {i18n.t("{{count}} files without FileResource won't be exported.", {
+                                    count: String(previewSummary.missingFileResourceCount),
+                                })}
                             </NoticeBox>
                         ) : null}
                         <div className="wizard-preview-footer-meta">
@@ -291,7 +293,10 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                                     nsSeparator: false,
                                 })}
                             </p>
-                            <div className="wizard-preview-stats" data-testid="wizard-preview-stats">
+                            <div
+                                className="wizard-preview-stats"
+                                data-testid="wizard-preview-stats"
+                            >
                                 <div className="wizard-preview-stat">
                                     <span>{i18n.t("Files")}</span>
                                     <strong>{String(previewSummary.totalFiles)}</strong>

@@ -27,7 +27,8 @@ export function resolveTemplateForEvent(
     event: ProgramEventPreview,
     selectedFileProperty?: ProgramFileProperty
 ): string {
-    const firstFileDataElementId = selectedFileProperty?.id ?? Object.keys(event.fileValues)[0] ?? "";
+    const firstFileDataElementId =
+        selectedFileProperty?.id ?? Object.keys(event.fileValues)[0] ?? "";
     const firstFileName = firstFileDataElementId
         ? event.fileNames[firstFileDataElementId] ?? ""
         : "";

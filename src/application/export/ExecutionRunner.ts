@@ -1,7 +1,5 @@
 import { ExportExecutionConfiguration } from "$/application/export/ExportExecution";
-import {
-    buildExecutionReport,
-} from "$/application/export/ExecutionReportBuilder";
+import { buildExecutionReport } from "$/application/export/ExecutionReportBuilder";
 import {
     ExportExecutionReport,
     ExportExecutionReportResult,
@@ -27,11 +25,10 @@ export type ExecutionLogSnapshot = {
 type RunExecutionParams = {
     configuration: ExportExecutionConfiguration;
     downloadSourceFile: (url: string, signal: AbortSignal) => Promise<Response>;
-    writeTargetFile: (params: {
-        targetPath: string;
-        response: Response;
-        signal: AbortSignal;
-    }) => { promise: Promise<void>; cancel?: () => void };
+    writeTargetFile: (params: { targetPath: string; response: Response; signal: AbortSignal }) => {
+        promise: Promise<void>;
+        cancel?: () => void;
+    };
     onProgress: (snapshot: ProgressSnapshot) => void;
     onLog: (entry: ExecutionLogSnapshot) => void;
     onStateChange: (status: ExportExecutionRunStatus, report?: ExportExecutionReport) => void;
@@ -76,7 +73,10 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
             }
 
             try {
-                const response = await params.downloadSourceFile(operation.source.url, abortController.signal);
+                const response = await params.downloadSourceFile(
+                    operation.source.url,
+                    abortController.signal
+                );
                 const writeTarget = params.writeTargetFile({
                     targetPath: operation.target.path,
                     response,
@@ -147,8 +147,8 @@ export function runExecutionPlan(params: RunExecutionParams): ExecutionRunHandle
                 finalStatus === "interrupted"
                     ? "warning"
                     : finalStatus === "success"
-                      ? "success"
-                      : "failure",
+                    ? "success"
+                    : "failure",
             message: getFinalLogMessage(finalStatus, results.length, total),
         });
         const report = buildExecutionReport({
@@ -179,11 +179,15 @@ function getFinalLogMessage(
     totalOperations: number
 ): string {
     if (status === "interrupted") {
-        return `Export interrupted after ${attemptedOperations} of ${totalOperations} file${totalOperations === 1 ? "" : "s"}.`;
+        return `Export interrupted after ${attemptedOperations} of ${totalOperations} file${
+            totalOperations === 1 ? "" : "s"
+        }.`;
     }
 
     if (status === "success") {
-        return `Export completed successfully for ${attemptedOperations} file${attemptedOperations === 1 ? "" : "s"}.`;
+        return `Export completed successfully for ${attemptedOperations} file${
+            attemptedOperations === 1 ? "" : "s"
+        }.`;
     }
 
     if (status === "failed") {

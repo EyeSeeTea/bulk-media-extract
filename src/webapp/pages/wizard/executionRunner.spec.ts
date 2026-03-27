@@ -206,9 +206,12 @@ describe("executionRunner", () => {
         const report = await run.done;
 
         expect(onStateChange).toHaveBeenCalledWith("running");
-        expect(onStateChange).toHaveBeenLastCalledWith("interrupted", expect.objectContaining({
-            interrupted: true,
-        }));
+        expect(onStateChange).toHaveBeenLastCalledWith(
+            "interrupted",
+            expect.objectContaining({
+                interrupted: true,
+            })
+        );
         expect(onLog).toHaveBeenCalledWith(
             expect.objectContaining({
                 status: "warning",

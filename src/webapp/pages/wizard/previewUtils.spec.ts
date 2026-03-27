@@ -253,7 +253,9 @@ describe("previewUtils", () => {
                 "http://localhost:8081/dhis2",
                 parseDhis2Version("2.40.7")
             )
-        ).toBe("http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1");
+        ).toBe(
+            "http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1"
+        );
     });
 
     it("builds tracker data value urls for newer DHIS2 versions", () => {
@@ -264,9 +266,7 @@ describe("previewUtils", () => {
                 "http://localhost:8081/dhis2",
                 parseDhis2Version("2.42.1")
             )
-        ).toBe(
-            "http://localhost:8081/dhis2/api/42/tracker/events/evt-1/dataValues/de-file/file"
-        );
+        ).toBe("http://localhost:8081/dhis2/api/42/tracker/events/evt-1/dataValues/de-file/file");
     });
 
     it("provides preview cell fallbacks", () => {

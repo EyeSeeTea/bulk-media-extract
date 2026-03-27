@@ -84,7 +84,9 @@ function createMockDirectoryHandle(name = "Exports") {
     const nestedDirectoryHandle: FileSystemDirectoryHandle = {
         kind: "directory" as const,
         name,
-        getDirectoryHandle: vi.fn(async (): Promise<FileSystemDirectoryHandle> => nestedDirectoryHandle),
+        getDirectoryHandle: vi.fn(
+            async (): Promise<FileSystemDirectoryHandle> => nestedDirectoryHandle
+        ),
         getFileHandle: vi.fn(async () => fileHandle),
         queryPermission: vi.fn(async () => "granted" as const),
         requestPermission: vi.fn(async () => "granted" as const),
@@ -198,7 +200,9 @@ describe("WizardPage", () => {
         await clickAndFlush(view.getByText("Back"));
         expectCurrentStep(view, "template");
         expect(view.getByTestId("org-unit-tree-picker")).toBeInTheDocument();
-        expect((view.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe("selected");
+        expect((view.getByTestId("wizard-org-unit-mode") as HTMLSelectElement).value).toBe(
+            "selected"
+        );
         expect((view.getByTestId("wizard-date-from") as HTMLInputElement).value).toBe("2026-01-01");
         expect((view.getByTestId("wizard-date-to") as HTMLInputElement).value).toBe("2026-01-31");
         expect((view.getByTestId("wizard-template-input") as HTMLTextAreaElement).value).toBe(
@@ -238,9 +242,15 @@ describe("WizardPage", () => {
         const mappingText = within(summary).getByText("Visit Form");
         const orgUnitText = within(summary).getByText("Central Clinic");
         const modeText = within(summary).getByText("Descendants");
-        expect(programText.compareDocumentPosition(mappingText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-        expect(mappingText.compareDocumentPosition(orgUnitText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-        expect(orgUnitText.compareDocumentPosition(modeText)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(programText.compareDocumentPosition(mappingText)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
+        expect(mappingText.compareDocumentPosition(orgUnitText)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
+        expect(orgUnitText.compareDocumentPosition(modeText)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
 
         const table = view.getByTestId("wizard-preview-table");
         expect(within(table).queryByText("Date")).not.toBeInTheDocument();
@@ -251,7 +261,9 @@ describe("WizardPage", () => {
         expect(eventLink.href).toContain(
             "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-a"
         );
-        const originalFileLink = view.getByRole("link", { name: "Original file" }) as HTMLAnchorElement;
+        const originalFileLink = view.getByRole("link", {
+            name: "Original file",
+        }) as HTMLAnchorElement;
         expect(originalFileLink.href).toContain(
             "/dhis2/api/41/tracker/events/evt-1/dataValues/de-file/file"
         );
@@ -283,22 +295,39 @@ describe("WizardPage", () => {
         await waitFor(() => {
             expect(view.getByText("All files processed successfully.")).toBeInTheDocument();
         });
-        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Processed");
-        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain("Progress");
-        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Successes");
-        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain("Failures");
+        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain(
+            "Processed"
+        );
+        expect(view.getByTestId("wizard-execution-stat-pair-throughput").textContent).toContain(
+            "Progress"
+        );
+        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain(
+            "Successes"
+        );
+        expect(view.getByTestId("wizard-execution-stat-pair-outcome").textContent).toContain(
+            "Failures"
+        );
         expect(view.getByTestId("wizard-execution-stats").textContent).toContain("1/1");
         expect(view.getByTestId("wizard-execution-progress-panel")).toBeInTheDocument();
-        expect(view.getByTestId("wizard-execution-progress-bar")).toHaveAttribute("aria-valuenow", "100");
+        expect(view.getByTestId("wizard-execution-progress-bar")).toHaveAttribute(
+            "aria-valuenow",
+            "100"
+        );
         const executionLog = view.getByTestId("wizard-execution-log");
         expect(executionLog).not.toHaveAttribute("open");
         expect(within(executionLog).getByText("3 entries")).toBeInTheDocument();
         await clickAndFlush(view.getByTestId("wizard-execution-log-toggle"));
         expect(executionLog).toHaveAttribute("open");
         expect(view.getByTestId("wizard-execution-log-list")).toBeInTheDocument();
-        expect(within(executionLog).getByText("Export started with 1 file to process.")).toBeInTheDocument();
-        expect(within(executionLog).getByText("/exports/Central Clinic/visit-form.pdf")).toBeInTheDocument();
-        expect(view.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")).not.toBeInTheDocument();
+        expect(
+            within(executionLog).getByText("Export started with 1 file to process.")
+        ).toBeInTheDocument();
+        expect(
+            within(executionLog).getByText("/exports/Central Clinic/visit-form.pdf")
+        ).toBeInTheDocument();
+        expect(
+            view.queryByText("Latest target path: /exports/Central Clinic/visit-form.pdf")
+        ).not.toBeInTheDocument();
         expect(view.getByText("Download result summary")).toBeInTheDocument();
         expect(view.getByText("Finish")).toBeEnabled();
     });
@@ -325,8 +354,12 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
         await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));
@@ -340,7 +373,9 @@ describe("WizardPage", () => {
         expect(page.getByText("Execution finished with 1 failed transfers.")).toBeInTheDocument();
         expect(page.getByTestId("wizard-execution-stats").textContent).toContain("2/2");
         fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
-        expect(page.getByText("Upload failed for /exports/fail-consent-form.pdf")).toBeInTheDocument();
+        expect(
+            page.getByText("Upload failed for /exports/fail-consent-form.pdf")
+        ).toBeInTheDocument();
         expect(page.getByText("Retry export")).toBeInTheDocument();
         expect(page.getByText("Download result summary")).toBeInTheDocument();
         expect(page.getByText("Finish")).toBeEnabled();
@@ -385,8 +420,12 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
         await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));
@@ -445,8 +484,12 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
         await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));
@@ -458,11 +501,15 @@ describe("WizardPage", () => {
         await waitFor(() => {
             expect(page.getByText("Export interrupted")).toBeInTheDocument();
         });
-        expect(page.getByText("Execution was interrupted before all transfers completed.")).toBeInTheDocument();
+        expect(
+            page.getByText("Execution was interrupted before all transfers completed.")
+        ).toBeInTheDocument();
         const executionLog = page.getByTestId("wizard-execution-log");
         expect(executionLog).not.toHaveAttribute("open");
         fireEvent.click(page.getByTestId("wizard-execution-log-toggle"));
-        expect(within(executionLog).getByText("Export interrupted after 0 of 1 file.")).toBeInTheDocument();
+        expect(
+            within(executionLog).getByText("Export interrupted after 0 of 1 file.")
+        ).toBeInTheDocument();
         expect(page.getByText("Download result summary")).toBeInTheDocument();
         expect(page.getByText("Finish")).toBeEnabled();
         expect(uploadSpy).toHaveBeenCalledTimes(1);
@@ -499,7 +546,9 @@ describe("WizardPage", () => {
                 "The WebDAV server must allow cross-origin requests from this app origin (CORS) or the browser will block validation and file transfer."
             )
         ).toBeInTheDocument();
-        expect(page.queryByText("WebDAV is the only available export target for now.")).not.toBeInTheDocument();
+        expect(
+            page.queryByText("WebDAV is the only available export target for now.")
+        ).not.toBeInTheDocument();
         expect(page.queryByText("Compatible software")).not.toBeInTheDocument();
         expect(page.queryByText("Before you test")).not.toBeInTheDocument();
         expect(page.queryByText("Complete the connection details")).not.toBeInTheDocument();
@@ -509,20 +558,28 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Storage URL, username, and password are required.")).toBeInTheDocument();
+        expect(
+            page.getByText("Storage URL, username, and password are required.")
+        ).toBeInTheDocument();
 
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
 
         expect(page.getByText("Test connection")).toBeEnabled();
 
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(
+            page.getByText("Test the WebDAV connection successfully before continuing.")
+        ).toBeInTheDocument();
         expectCurrentStep(page, "storage");
     });
 
@@ -559,7 +616,9 @@ describe("WizardPage", () => {
         expect(handle).toBeDefined();
 
         fireEvent.click(page.getByText("Next"));
-        expect(page.getByText("Validate the selected local directory before continuing.")).toBeInTheDocument();
+        expect(
+            page.getByText("Validate the selected local directory before continuing.")
+        ).toBeInTheDocument();
 
         fireEvent.click(page.getByText("Validate directory"));
         await page.findByText("Local directory validated. You can continue to execution.");
@@ -586,12 +645,18 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
 
         await page.findByText("WebDAV connection validated. You can continue to execution.");
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret-2" } });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret-2" },
+        });
 
         expect(page.queryByText("Connection valid")).not.toBeInTheDocument();
         expect(page.queryByText("Ready to test")).not.toBeInTheDocument();
@@ -600,7 +665,9 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(
+            page.getByText("Test the WebDAV connection successfully before continuing.")
+        ).toBeInTheDocument();
         expectCurrentStep(page, "storage");
     });
 
@@ -661,11 +728,17 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav/files/demo" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
 
-        await page.findByText("WebDAV server rejected the credentials. Review the setup remarks above and try again.");
+        await page.findByText(
+            "WebDAV server rejected the credentials. Review the setup remarks above and try again."
+        );
         expect(validateConnectionSpy).toHaveBeenCalledWith({
             url: "https://dav.example.org/remote.php/dav/files/demo",
             username: "demo",
@@ -675,7 +748,9 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(page.getByText("Test the WebDAV connection successfully before continuing.")).toBeInTheDocument();
+        expect(
+            page.getByText("Test the WebDAV connection successfully before continuing.")
+        ).toBeInTheDocument();
         expectCurrentStep(page, "storage");
     });
 
@@ -788,15 +863,21 @@ describe("WizardPage", () => {
         fireEvent.click(page.getByText("Next"));
 
         expect(await page.findByText("Files will be skipped")).toBeInTheDocument();
-        expect(page.getByText("1 files without FileResource won't be exported.")).toBeInTheDocument();
+        expect(
+            page.getByText("1 files without FileResource won't be exported.")
+        ).toBeInTheDocument();
         expect(page.getByTestId("wizard-preview-row-evt-2:de-file-b")).toHaveClass(
             "wizard-preview-row-warning"
         );
         const warningRow = page.getByTestId("wizard-preview-row-evt-2:de-file-b");
-        expect(page.getByText("Missing FileResource metadata for missing-resource-value")).toBeInTheDocument();
+        expect(
+            page.getByText("Missing FileResource metadata for missing-resource-value")
+        ).toBeInTheDocument();
         expect(page.getByTestId("wizard-preview-stats").textContent).toContain("1");
         expect(page.getAllByText("-").length).toBeGreaterThan(0);
-        expect(within(warningRow).queryByRole("link", { name: "Original file" })).not.toBeInTheDocument();
+        expect(
+            within(warningRow).queryByRole("link", { name: "Original file" })
+        ).not.toBeInTheDocument();
     });
 
     it("inserts selected property token into template at cursor", async () => {
@@ -829,7 +910,9 @@ describe("WizardPage", () => {
         });
 
         expect(await page.findByText("Valid template. Preview:")).toBeInTheDocument();
-        expect(await page.findByTestId("wizard-resolved-template-list-de-file")).toBeInTheDocument();
+        expect(
+            await page.findByTestId("wizard-resolved-template-list-de-file")
+        ).toBeInTheDocument();
         expect(page.getByText("/visit-form.pdf")).toBeInTheDocument();
         expect(page.queryByTestId("wizard-preview-table")).not.toBeInTheDocument();
     });
@@ -868,9 +951,9 @@ describe("WizardPage", () => {
 
         const preview = await page.findByText("Valid template. Preview:");
 
-        expect(
-            fileMetadataTitle.compareDocumentPosition(organisationUnitTitle)
-        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(fileMetadataTitle.compareDocumentPosition(organisationUnitTitle)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
         expect(input.compareDocumentPosition(hint)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(hint.compareDocumentPosition(preview)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(await page.findByTestId("wizard-token-fileExtension")).toBeInTheDocument();
@@ -1011,8 +1094,12 @@ describe("WizardPage", () => {
         fireEvent.change(page.getByTestId("wizard-storage-url"), {
             target: { value: "https://dav.example.org/remote.php/dav" },
         });
-        fireEvent.change(page.getByTestId("wizard-storage-username"), { target: { value: "demo" } });
-        fireEvent.change(page.getByTestId("wizard-storage-password"), { target: { value: "secret" } });
+        fireEvent.change(page.getByTestId("wizard-storage-username"), {
+            target: { value: "demo" },
+        });
+        fireEvent.change(page.getByTestId("wizard-storage-password"), {
+            target: { value: "secret" },
+        });
         fireEvent.click(page.getByText("Test connection"));
         await page.findByText("WebDAV connection validated. You can continue to execution.");
         fireEvent.click(page.getByText("Next"));

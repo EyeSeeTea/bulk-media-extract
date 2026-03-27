@@ -4,9 +4,7 @@ const READWRITE_PERMISSION = { mode: "readwrite" as const };
 
 export class BrowserLocalDirectoryGateway implements LocalDirectoryGateway {
     public supportsDirectorySelection(): boolean {
-        return (
-            typeof window !== "undefined" && typeof window.showDirectoryPicker === "function"
-        );
+        return typeof window !== "undefined" && typeof window.showDirectoryPicker === "function";
     }
 
     public async selectDirectory(): Promise<FileSystemDirectoryHandle> {
@@ -127,10 +125,7 @@ export class BrowserLocalDirectoryGateway implements LocalDirectoryGateway {
 }
 
 function normalizeTargetPath(targetPath: string): string {
-    return targetPath
-        .replace(/\\/g, "/")
-        .replace(/^\/+/, "")
-        .replace(/\/+/g, "/");
+    return targetPath.replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+/g, "/");
 }
 
 /**

@@ -113,8 +113,8 @@ export function useWizardPreviewData({
             exportPreviewState.status === "success"
                 ? exportPreviewState.data.events
                 : quickPreviewState.status === "success"
-                  ? quickPreviewState.data.events
-                  : [];
+                ? quickPreviewState.data.events
+                : [];
         const selectedOrgUnitNameFromStateOrList =
             persistedSelectedOrgUnitName ||
             availableOrgUnits.find(orgUnit => orgUnit.id === selectedOrgUnitId)?.name;

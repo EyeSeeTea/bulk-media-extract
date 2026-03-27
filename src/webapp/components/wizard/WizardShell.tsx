@@ -38,10 +38,10 @@ export const WizardShell: React.FC<WizardShellProps> = ({
                         index === currentStep
                             ? "active"
                             : index < currentStep
-                              ? "done"
-                              : isAvailable
-                                ? "available"
-                                : "disabled";
+                            ? "done"
+                            : isAvailable
+                            ? "available"
+                            : "disabled";
 
                     return (
                         <li
@@ -101,11 +101,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
 
             <div className="wizard-footer-actions" data-testid="wizard-footer-actions">
                 {currentStep > 0 && (
-                    <Button
-                        secondary
-                        disabled={isExecutionRunning}
-                        onClick={onBack}
-                    >
+                    <Button secondary disabled={isExecutionRunning} onClick={onBack}>
                         {i18n.t("Back")}
                     </Button>
                 )}

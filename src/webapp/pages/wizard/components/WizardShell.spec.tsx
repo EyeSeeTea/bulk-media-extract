@@ -26,7 +26,10 @@ describe("WizardShell", () => {
             </WizardShell>
         );
 
-        expect(view.getByTestId("wizard-step-tab-template")).toHaveAttribute("aria-current", "step");
+        expect(view.getByTestId("wizard-step-tab-template")).toHaveAttribute(
+            "aria-current",
+            "step"
+        );
         expect(view.getByTestId("wizard-step-complete-program")).toBeInTheDocument();
         expect(view.getByText("Validation required")).toBeInTheDocument();
         expect(view.getByText("Template is required.")).toBeInTheDocument();

@@ -58,13 +58,24 @@ export function Dhis2App(_props: {}) {
     const config: ProviderProps["config"] = { baseUrl, apiVersion: 30 };
 
     return (
-        <Provider config={config} plugin={false} parentAlertsAdd={() => {}} showAlertsInPlugin={false}>
-            <App initData={initState.type === "loaded" ? initState.data : undefined} baseUrl={baseUrl} />
+        <Provider
+            config={config}
+            plugin={false}
+            parentAlertsAdd={() => {}}
+            showAlertsInPlugin={false}
+        >
+            <App
+                initData={initState.type === "loaded" ? initState.data : undefined}
+                baseUrl={baseUrl}
+            />
         </Provider>
     );
 }
 
-function BaseUrlFallback(props: { onResolved: (url: string) => void; onError: (error: Error) => void }) {
+function BaseUrlFallback(props: {
+    onResolved: (url: string) => void;
+    onError: (error: Error) => void;
+}) {
     React.useEffect(() => {
         getBaseUrlFromManifest().then(props.onResolved).catch(props.onError);
     }, [props.onResolved, props.onError]);

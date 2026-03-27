@@ -73,8 +73,12 @@ describe("useWizardTemplatePreviewData", () => {
         expect(byKey["de-file-b"]).toBeDefined();
 
         // Expect the resolved values to contain the example file names from ProgramTestRepository
-        expect(byKey["de-file"]).toEqual(expect.arrayContaining([expect.stringContaining("visit-form.pdf")]));
-        expect(byKey["de-file-b"]).toEqual(expect.arrayContaining([expect.stringContaining("consent-form.pdf")]));
+        expect(byKey["de-file"]).toEqual(
+            expect.arrayContaining([expect.stringContaining("visit-form.pdf")])
+        );
+        expect(byKey["de-file-b"]).toEqual(
+            expect.arrayContaining([expect.stringContaining("consent-form.pdf")])
+        );
     });
 
     it("returns preview entries for each data element even when events have files for only one element each", async () => {
@@ -137,7 +141,11 @@ describe("useWizardTemplatePreviewData", () => {
         // evt-4 has only de-file, evt-5 has only de-file-b — per-element filtering must find both
         expect(byKey["de-file"]?.length).toBeGreaterThanOrEqual(1);
         expect(byKey["de-file-b"]?.length).toBeGreaterThanOrEqual(1);
-        expect(byKey["de-file"]).toEqual(expect.arrayContaining([expect.stringContaining("visit-form-2.pdf")]));
-        expect(byKey["de-file-b"]).toEqual(expect.arrayContaining([expect.stringContaining("consent-form-2.pdf")]));
+        expect(byKey["de-file"]).toEqual(
+            expect.arrayContaining([expect.stringContaining("visit-form-2.pdf")])
+        );
+        expect(byKey["de-file-b"]).toEqual(
+            expect.arrayContaining([expect.stringContaining("consent-form-2.pdf")])
+        );
     });
 });

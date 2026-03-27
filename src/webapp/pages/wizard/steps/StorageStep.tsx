@@ -38,14 +38,14 @@ export const StorageStep: React.FC<StorageStepProps> = ({
         webdav.status === "validating"
             ? i18n.t("Testing connection...")
             : webdav.status === "valid"
-              ? i18n.t("Retest connection")
-              : i18n.t("Test connection");
+            ? i18n.t("Retest connection")
+            : i18n.t("Test connection");
     const validateLocalDirectoryButtonLabel =
         localDirectory.status === "validating"
             ? i18n.t("Validating directory...")
             : localDirectory.status === "valid"
-              ? i18n.t("Revalidate directory")
-              : i18n.t("Validate directory");
+            ? i18n.t("Revalidate directory")
+            : i18n.t("Validate directory");
 
     return (
         <div className="wizard-step-content wizard-storage-step" aria-label="wizard-step-storage">
@@ -63,7 +63,11 @@ export const StorageStep: React.FC<StorageStepProps> = ({
                         "You can switch between methods before execution. Only the selected method must be validated."
                     )}
                 </p>
-                <div className="wizard-storage-methods" role="radiogroup" aria-label="Storage method">
+                <div
+                    className="wizard-storage-methods"
+                    role="radiogroup"
+                    aria-label="Storage method"
+                >
                     <button
                         type="button"
                         className={`wizard-storage-method-card ${
@@ -86,7 +90,9 @@ export const StorageStep: React.FC<StorageStepProps> = ({
                         onClick={() => onMethodChange("local-directory")}
                     >
                         <strong>{i18n.t("Local directory")}</strong>
-                        <span>{i18n.t("Write files directly into a folder on this computer.")}</span>
+                        <span>
+                            {i18n.t("Write files directly into a folder on this computer.")}
+                        </span>
                     </button>
                 </div>
             </section>
@@ -137,7 +143,9 @@ export const StorageStep: React.FC<StorageStepProps> = ({
 
                         <div className="actions-row wizard-storage-actions">
                             <Button
-                                disabled={!hasRequiredWebDAVValues || webdav.status === "validating"}
+                                disabled={
+                                    !hasRequiredWebDAVValues || webdav.status === "validating"
+                                }
                                 onClick={onValidateWebDAV}
                             >
                                 {validateWebDAVButtonLabel}
@@ -213,12 +221,17 @@ export const StorageStep: React.FC<StorageStepProps> = ({
                                 {validateLocalDirectoryButtonLabel}
                             </Button>
                             <span className="wizard-helper-text wizard-storage-action-hint">
-                                {i18n.t("Validate the selected folder before continuing to execution.")}
+                                {i18n.t(
+                                    "Validate the selected folder before continuing to execution."
+                                )}
                             </span>
                         </div>
                     </section>
 
-                    <NoticeBox title={i18n.t("Local directory setup")} dataTest="wizard-storage-local-setup">
+                    <NoticeBox
+                        title={i18n.t("Local directory setup")}
+                        dataTest="wizard-storage-local-setup"
+                    >
                         <p>
                             {i18n.t(
                                 "Local directory export writes files directly into a folder on this computer instead of sending them to a remote server."
@@ -288,7 +301,9 @@ export const StorageStep: React.FC<StorageStepProps> = ({
             {selectedMethod === "local-directory" && localDirectory.error ? (
                 <NoticeBox error title={i18n.t("Directory invalid")}>
                     {localDirectory.error}{" "}
-                    {i18n.t("Choose a supported browser or select a different folder and try again.")}
+                    {i18n.t(
+                        "Choose a supported browser or select a different folder and try again."
+                    )}
                 </NoticeBox>
             ) : null}
         </div>

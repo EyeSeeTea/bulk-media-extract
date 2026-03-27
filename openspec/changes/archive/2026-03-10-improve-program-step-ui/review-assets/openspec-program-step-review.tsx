@@ -1,12 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {
-    Button,
-    CheckboxField,
-    NoticeBox,
-    SingleSelectField,
-    SingleSelectOption,
-} from "@dhis2/ui";
+import { Button, CheckboxField, NoticeBox, SingleSelectField, SingleSelectOption } from "@dhis2/ui";
 import { SnackbarProvider } from "@eyeseetea/d2-ui-components";
 import { getTestCompositionRoot } from "$/CompositionRoot";
 import { createAdminUser } from "$/domain/entities/__tests__/userFixtures";

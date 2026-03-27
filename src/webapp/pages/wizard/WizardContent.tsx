@@ -58,23 +58,19 @@ export const WizardContent: React.FC = () => {
         setScope,
     });
 
-    const {
-        previewEnabled,
-        quickPreviewState,
-        quickPreviewByFileKey,
-        reloadQuickPreview,
-    } = useWizardTemplatePreviewData({
-        currentStepId,
-        selectedProgramId: state.selectedProgramId,
-        selectedOrgUnitId: state.selectedOrgUnitId,
-        orgUnitSelectionMode: state.orgUnitSelectionMode,
-        selectedFileDataValueIds: state.selectedFileDataValueIds,
-        selectedFileDataElements,
-        selectedFilePropertyById,
-        mappingByFileKey: state.mappingByFileKey,
-        dateFrom: state.dateFrom,
-        dateTo: state.dateTo,
-    });
+    const { previewEnabled, quickPreviewState, quickPreviewByFileKey, reloadQuickPreview } =
+        useWizardTemplatePreviewData({
+            currentStepId,
+            selectedProgramId: state.selectedProgramId,
+            selectedOrgUnitId: state.selectedOrgUnitId,
+            orgUnitSelectionMode: state.orgUnitSelectionMode,
+            selectedFileDataValueIds: state.selectedFileDataValueIds,
+            selectedFileDataElements,
+            selectedFilePropertyById,
+            mappingByFileKey: state.mappingByFileKey,
+            dateFrom: state.dateFrom,
+            dateTo: state.dateTo,
+        });
 
     const {
         exportPreviewState,
@@ -101,17 +97,14 @@ export const WizardContent: React.FC = () => {
         quickPreviewState,
     });
 
-    const {
-        onRunExecution,
-        onInterruptExecution,
-        onDownloadExecutionReport,
-    } = useWizardExecutionController({
-        compositionRoot,
-        executionConfiguration,
-        storage: state.storage,
-        executionState: state.execution,
-        setExecution,
-    });
+    const { onRunExecution, onInterruptExecution, onDownloadExecutionReport } =
+        useWizardExecutionController({
+            compositionRoot,
+            executionConfiguration,
+            storage: state.storage,
+            executionState: state.execution,
+            setExecution,
+        });
 
     const { currentStepError, isExecutionRunning, onNext, canNavigateToStep } =
         useWizardStepController({
@@ -254,7 +247,9 @@ export const WizardContent: React.FC = () => {
                 <Modal position="middle" onClose={() => setShowExitModal(false)}>
                     <ModalTitle>{i18n.t("Exit current export")}</ModalTitle>
                     <ModalContent>
-                        {i18n.t("All configuration entered in this export session will be lost. This action cannot be undone.")}
+                        {i18n.t(
+                            "All configuration entered in this export session will be lost. This action cannot be undone."
+                        )}
                     </ModalContent>
                     <ModalActions>
                         <div className="wizard-modal-actions">

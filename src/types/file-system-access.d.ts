@@ -8,8 +8,12 @@ interface FileSystemHandlePermissionDescriptor {
 interface FileSystemHandle {
     kind: "file" | "directory";
     name: string;
-    queryPermission?(descriptor?: FileSystemHandlePermissionDescriptor): Promise<FileSystemPermissionState>;
-    requestPermission?(descriptor?: FileSystemHandlePermissionDescriptor): Promise<FileSystemPermissionState>;
+    queryPermission?(
+        descriptor?: FileSystemHandlePermissionDescriptor
+    ): Promise<FileSystemPermissionState>;
+    requestPermission?(
+        descriptor?: FileSystemHandlePermissionDescriptor
+    ): Promise<FileSystemPermissionState>;
 }
 
 interface FileSystemCreateWritableOptions {
@@ -26,7 +30,9 @@ interface FileSystemGetFileOptions {
 
 interface FileSystemFileHandle extends FileSystemHandle {
     kind: "file";
-    createWritable(options?: FileSystemCreateWritableOptions): Promise<FileSystemWritableFileStream>;
+    createWritable(
+        options?: FileSystemCreateWritableOptions
+    ): Promise<FileSystemWritableFileStream>;
 }
 
 interface FileSystemDirectoryHandle extends FileSystemHandle {

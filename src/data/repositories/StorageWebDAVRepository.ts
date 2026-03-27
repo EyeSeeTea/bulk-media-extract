@@ -72,7 +72,10 @@ export class StorageWebDAVRepository implements StorageRepository {
     }): FutureData<void> {
         const abortController = new AbortController();
         const headers = {
-            Authorization: `Basic ${encodeBasicAuth(params.config.username, params.config.password)}`,
+            Authorization: `Basic ${encodeBasicAuth(
+                params.config.username,
+                params.config.password
+            )}`,
             ...params.headers,
         };
 
@@ -178,5 +181,7 @@ async function safeReadBody(response: Response): Promise<string> {
 }
 
 function isAbortError(error: unknown): error is { name: string } {
-    return Boolean(error && typeof error === "object" && "name" in error && error.name === "AbortError");
+    return Boolean(
+        error && typeof error === "object" && "name" in error && error.name === "AbortError"
+    );
 }

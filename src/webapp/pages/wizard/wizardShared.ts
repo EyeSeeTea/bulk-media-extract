@@ -2,7 +2,10 @@ import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
 import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
-import { buildFileMetadataPropertyGroup, buildCurrentDataElementPropertyGroup } from "$/application/export/TemplateBuilder";
+import {
+    buildFileMetadataPropertyGroup,
+    buildCurrentDataElementPropertyGroup,
+} from "$/application/export/TemplateBuilder";
 
 export type ProgramOption = {
     id: string;
@@ -74,7 +77,11 @@ export function getVisiblePropertyGroupsForFile(
     const insertIndex = eventGroupIndex >= 0 ? eventGroupIndex + 1 : scopedGroups.length;
 
     const orderedGroups = currentDataElementGroup
-        ? [...scopedGroups.slice(0, insertIndex), currentDataElementGroup, ...scopedGroups.slice(insertIndex)]
+        ? [
+              ...scopedGroups.slice(0, insertIndex),
+              currentDataElementGroup,
+              ...scopedGroups.slice(insertIndex),
+          ]
         : scopedGroups;
 
     return fileMetadataGroup ? [fileMetadataGroup, ...orderedGroups] : orderedGroups;

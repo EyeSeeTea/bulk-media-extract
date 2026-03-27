@@ -53,8 +53,12 @@ describe("wizardConfig", () => {
         expect(validateTemplate("/{orgUnitName}/{enrollmentDate}")).toBeUndefined();
         expect(validateTemplate("/{orgUnitId}/{dataElement:de-file}")).toBeUndefined();
         expect(validateTemplate("/{fileName}/{fileDataElementId}")).toBeUndefined();
-        expect(validateTemplate("/{orgUnitCode}/{orgUnitAttribute:zone}/{fileExtension}")).toBeUndefined();
-        expect(validateTemplate("/{unsupported}")).toBe("Template contains unsupported token syntax.");
+        expect(
+            validateTemplate("/{orgUnitCode}/{orgUnitAttribute:zone}/{fileExtension}")
+        ).toBeUndefined();
+        expect(validateTemplate("/{unsupported}")).toBe(
+            "Template contains unsupported token syntax."
+        );
         expect(validateTemplate("/{orgUnitName")).toBe("Template has unbalanced braces.");
     });
 

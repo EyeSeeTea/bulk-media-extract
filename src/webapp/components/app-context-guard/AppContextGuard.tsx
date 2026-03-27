@@ -14,7 +14,14 @@ export function AppContextGuard(props: { children: React.ReactNode }) {
 
     if (!appContext) {
         return (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "60vh",
+                }}
+            >
                 <CircularLoader />
             </div>
         );

@@ -64,7 +64,8 @@ function getCompositionRoot(repositories: Repositories) {
             },
         },
         sourceFiles: {
-            download: (url: string, signal: AbortSignal) => sourceFileDownloader.download(url, signal),
+            download: (url: string, signal: AbortSignal) =>
+                sourceFileDownloader.download(url, signal),
         },
         reports: {
             downloadExecution: (report: Parameters<typeof executionReportDownloader.download>[0]) =>

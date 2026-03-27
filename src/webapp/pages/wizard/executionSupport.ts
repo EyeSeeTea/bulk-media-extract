@@ -3,9 +3,10 @@ import { ExportExecutionReport } from "$/application/export/ExportExecution";
 import { WizardExecutionLogEntry, WizardExecutionState } from "$/webapp/pages/wizard/wizardConfig";
 import i18n from "$/utils/i18n";
 
-export function runFutureData<Data>(
-    future: FutureData<Data>
-): { promise: Promise<Data>; cancel?: () => void } {
+export function runFutureData<Data>(future: FutureData<Data>): {
+    promise: Promise<Data>;
+    cancel?: () => void;
+} {
     let futureCancel: (() => void) | undefined;
     let rejectPromise: ((error: Error) => void) | undefined;
     let settled = false;
