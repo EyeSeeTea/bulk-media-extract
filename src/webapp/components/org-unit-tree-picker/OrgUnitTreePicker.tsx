@@ -30,6 +30,9 @@ const arePropsEqual = (prev: Props, next: Props): boolean => {
 
 export const OrgUnitTreePicker: React.FC<Props> = React.memo(
     ({ programOrgUnits, selected, onChange, disabled = false }) => {
+        const onChangeRef = React.useRef(onChange);
+        onChangeRef.current = onChange;
+
         const scopeSignature = React.useMemo(() => {
             return buildScopeSignature(programOrgUnits);
         }, [programOrgUnits]);
@@ -94,7 +97,7 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 singleSelection
                 disableSelection={disabled}
                 onChange={(payload: TreeOnChangePayload) => {
-                    onChange({ id: payload.id, name: payload.displayName });
+                    onChangeRef.current({ id: payload.id, name: payload.displayName });
                 }}
                 dataTest="org-unit-tree-picker"
             />

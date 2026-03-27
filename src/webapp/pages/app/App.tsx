@@ -25,6 +25,7 @@ function App_(props: AppProps) {
     const { initData, baseUrl } = props;
     const [showShareButton, setShowShareButton] = useState(false);
     const [appContext, setAppContext] = useState<AppContextState | null>(null);
+    const [initError, setInitError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!initData) return;
@@ -43,8 +44,20 @@ function App_(props: AppProps) {
             });
             setShowShareButton(isShareButtonVisible);
         }
-        setup();
+        setup().catch((err: unknown) => {
+            const message = err instanceof Error ? err.message : String(err);
+            setInitError(message);
+        });
     }, [initData, baseUrl]);
+
+    if (initError) {
+        return (
+            <div style={{ margin: 20 }}>
+                <h3>{"Initialization error"}</h3>
+                <p>{initError}</p>
+            </div>
+        );
+    }
 
     return (
         <SnackbarProvider>

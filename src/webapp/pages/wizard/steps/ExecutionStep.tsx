@@ -145,7 +145,7 @@ export const ExecutionStep: React.FC<ExecutionStepProps> = ({
                         </div>
                         {executionState.status !== "success" && latestTargetPath ? (
                             <p className="wizard-helper-text">
-                                {i18n.t("Latest target path:")} {latestTargetPath}
+                                {i18n.t("Latest target path") + ":"} {latestTargetPath}
                             </p>
                         ) : null}
                     </div>

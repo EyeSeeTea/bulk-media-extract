@@ -34,8 +34,9 @@ export function Dhis2App(_props: {}) {
 
     const onResolved = React.useCallback((url: string) => setBaseUrl(url), []);
     const onError = React.useCallback(
-        (error: Error) => setInitState({ type: "error", error: { baseUrl: "", error } }),
-        []
+        (error: Error) =>
+            setInitState({ type: "error", error: { baseUrl: baseUrl ?? "", error } }),
+        [baseUrl]
     );
 
     if (!baseUrl) {
@@ -47,9 +48,11 @@ export function Dhis2App(_props: {}) {
         return (
             <div style={{ margin: 20 }}>
                 <h3>{error.message}</h3>
-                <a rel="noopener noreferrer" target="_blank" href={errUrl}>
-                    Login {errUrl}
-                </a>
+                {errUrl ? (
+                    <a rel="noopener noreferrer" target="_blank" href={errUrl}>
+                        Login {errUrl}
+                    </a>
+                ) : null}
             </div>
         );
     }
