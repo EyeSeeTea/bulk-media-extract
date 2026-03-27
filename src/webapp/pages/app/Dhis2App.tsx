@@ -19,34 +19,38 @@ type InitState =
 
 export function Dhis2App(_props: {}) {
     const [initState, setInitState] = React.useState<InitState>({ type: "loading" });
-    const baseUrl = getBaseUrlSync();
+    const [baseUrl, setBaseUrl] = React.useState<string | null>(getBaseUrlSync);
 
     React.useEffect(() => {
         if (!baseUrl) return;
-        initializeApp(baseUrl).then(setInitState);
+        let ignore = false;
+        initializeApp(baseUrl).then(state => {
+            if (!ignore) setInitState(state);
+        });
+        return () => {
+            ignore = true;
+        };
     }, [baseUrl]);
 
+    const onResolved = React.useCallback((url: string) => setBaseUrl(url), []);
+    const onError = React.useCallback(
+        (error: Error) => setInitState({ type: "error", error: { baseUrl: "", error } }),
+        []
+    );
+
     if (!baseUrl) {
-        return (
-            <BaseUrlFallback
-                onResolved={url => {
-                    // This case is rare (manifest fallback). Re-render handled by parent.
-                    initializeApp(url).then(setInitState);
-                }}
-                onError={error => setInitState({ type: "error", error: { baseUrl: "", error } })}
-            />
-        );
+        return <BaseUrlFallback onResolved={onResolved} onError={onError} />;
     }
 
     if (initState.type === "error") {
         const { baseUrl: errUrl, error } = initState.error;
         return (
-            <h3 style={{ margin: 20 }}>
+            <div style={{ margin: 20 }}>
                 <h3>{error.message}</h3>
                 <a rel="noopener noreferrer" target="_blank" href={errUrl}>
                     Login {errUrl}
                 </a>
-            </h3>
+            </div>
         );
     }
 
