@@ -18,6 +18,7 @@ import {
     getPreviewFileWarning,
 } from "$/webapp/presenters/previewFormatting";
 import { DuplicatePathList } from "$/webapp/pages/wizard/steps/DuplicatePathList";
+import { InfoTooltip } from "$/webapp/components/info-icon-popover/InfoIconPopover";
 import i18n from "$/utils/i18n";
 
 type PreviewStepProps = {
@@ -56,12 +57,6 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
     onRetry,
 }) => {
     const hasScope = Boolean(selectedProgramId && selectedOrgUnitId);
-    const previewTotal =
-        previewState.status === "success"
-            ? String(previewState.data.total ?? previewRows.length)
-            : "";
-    const previewPages =
-        previewState.status === "success" ? String(previewState.data.pageCount ?? 1) : "";
     const [exportConfigStatus, setExportConfigStatus] = React.useState<"idle" | "downloaded">(
         "idle"
     );
@@ -103,7 +98,7 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
             <StepIntro
                 title={i18n.t("Review the resolved export plan")}
                 description={i18n.t(
-                    "Inspect the final target paths and warnings before you unlock the storage and execution steps."
+                    "Review the resolved target paths and any warnings before continuing to storage and execution."
                 )}
             />
             {!hasScope ? (
@@ -162,7 +157,6 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                             </strong>
                         </div>
                     </div>
-                    <p>{i18n.t("Preview the resolved export rows before continuing.")}</p>
                     {previewRows.length === 0 ? (
                         <NoticeBox title={i18n.t("No files found")}>
                             {dateFrom || dateTo
@@ -286,13 +280,6 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                             </NoticeBox>
                         ) : null}
                         <div className="wizard-preview-footer-meta">
-                            <p className="wizard-preview-meta-text">
-                                {i18n.t("Matching events: {{total}}. Pages: {{pages}}.", {
-                                    total: previewTotal,
-                                    pages: previewPages,
-                                    nsSeparator: false,
-                                })}
-                            </p>
                             <div
                                 className="wizard-preview-stats"
                                 data-testid="wizard-preview-stats"
@@ -314,12 +301,12 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                                 >
                                     {i18n.t("Export configuration")}
                                 </Button>
+                                <InfoTooltip data-testid="wizard-export-config-info">
+                                    {i18n.t(
+                                        "Download a JSON snapshot of the current export plan. Import is not yet available, but this file can serve as a backup of the reviewed configuration."
+                                    )}
+                                </InfoTooltip>
                             </div>
-                            <p className="wizard-preview-meta-text">
-                                {i18n.t(
-                                    "Download a JSON execution configuration for the current reviewed preview."
-                                )}
-                            </p>
                             {exportConfigStatus === "downloaded" ? (
                                 <NoticeBox title={i18n.t("Execution configuration downloaded")}>
                                     {i18n.t(

@@ -65,6 +65,11 @@ export type WizardState = {
     execution: WizardExecutionState;
 };
 
+export type StepValidationResult = {
+    error?: string;
+    hasInlineNotice?: boolean;
+};
+
 export type WizardStepDefinition = {
     id: WizardStepId;
     title: string;

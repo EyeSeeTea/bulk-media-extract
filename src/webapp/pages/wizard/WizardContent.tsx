@@ -106,8 +106,13 @@ export const WizardContent: React.FC = () => {
             setExecution,
         });
 
-    const { currentStepError, isExecutionRunning, onNext, canNavigateToStep } =
-        useWizardStepController({
+    const {
+        currentStepError,
+        currentStepHasInlineNotice,
+        isExecutionRunning,
+        onNext,
+        canNavigateToStep,
+    } = useWizardStepController({
             state,
             currentStepId,
             exportPreviewState,
@@ -233,6 +238,7 @@ export const WizardContent: React.FC = () => {
                 currentStep={state.currentStep}
                 steps={WIZARD_STEPS}
                 currentStepError={currentStepError}
+                currentStepHasInlineNotice={currentStepHasInlineNotice}
                 isExecutionRunning={isExecutionRunning}
                 canNavigateToStep={canNavigateToStep}
                 onSetStep={setStep}

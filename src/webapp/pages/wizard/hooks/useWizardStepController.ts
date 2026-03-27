@@ -3,6 +3,8 @@ import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { ProgramEventsPreviewResult } from "$/domain/entities/ProgramEventsPreviewResult";
 import {
     getStepValidationError,
+    getStorageMethodError,
+    StepValidationResult,
     WizardState,
     WizardStepId,
     WIZARD_STEPS,
@@ -23,45 +25,56 @@ export function useWizardStepController({
     duplicateTargetPathCount,
     setStep,
 }: UseWizardStepControllerParams) {
-    const getValidationErrorForStep = React.useCallback(
-        (stepId: WizardStepId): string | undefined => {
+    const getValidationForStep = React.useCallback(
+        (stepId: WizardStepId): StepValidationResult => {
             const baseError = getStepValidationError(state, stepId);
             if (baseError) {
-                return baseError;
+                const hasInlineNotice =
+                    stepId === "storage" && Boolean(getStorageMethodError(state.storage));
+                return { error: baseError, hasInlineNotice };
             }
 
             if (stepId !== "preview") {
-                return undefined;
+                return {};
             }
 
             if (exportPreviewState.status === "idle" || exportPreviewState.status === "loading") {
-                return "Preview results must finish loading before continuing.";
+                return {
+                    error: "Preview results must finish loading before continuing.",
+                };
             }
 
             if (exportPreviewState.status === "error") {
-                return "Preview must load successfully before continuing.";
+                return {
+                    error: "Preview must load successfully before continuing.",
+                };
             }
 
             if (duplicateTargetPathCount > 0) {
-                return "Duplicate target filepaths were found. Revise the template to make each export destination unique.";
+                return {
+                    error: "Duplicate target filepaths were found. Revise the template to make each export destination unique.",
+                    hasInlineNotice: true,
+                };
             }
 
-            return undefined;
+            return {};
         },
         [duplicateTargetPathCount, exportPreviewState.status, state]
     );
 
     const isExecutionRunning = state.execution.status === "running";
-    const currentStepError = getValidationErrorForStep(currentStepId);
+    const currentStepValidation = getValidationForStep(currentStepId);
+    const currentStepError = currentStepValidation.error;
+    const currentStepHasInlineNotice = currentStepValidation.hasInlineNotice ?? false;
 
     const onNext = React.useCallback(() => {
-        const error = getValidationErrorForStep(currentStepId);
-        if (error) {
+        const validation = getValidationForStep(currentStepId);
+        if (validation.error) {
             return;
         }
 
         setStep(state.currentStep + 1);
-    }, [currentStepId, getValidationErrorForStep, setStep, state.currentStep]);
+    }, [currentStepId, getValidationForStep, setStep, state.currentStep]);
 
     const canNavigateToStep = React.useCallback(
         (targetIndex: number): boolean => {
@@ -75,18 +88,19 @@ export function useWizardStepController({
 
             for (let index = 0; index < targetIndex; index += 1) {
                 const step = WIZARD_STEPS[index];
-                if (!step || getValidationErrorForStep(step.id)) {
+                if (!step || getValidationForStep(step.id).error) {
                     return false;
                 }
             }
 
             return true;
         },
-        [getValidationErrorForStep, isExecutionRunning, state.currentStep]
+        [getValidationForStep, isExecutionRunning, state.currentStep]
     );
 
     return {
         currentStepError,
+        currentStepHasInlineNotice,
         isExecutionRunning,
         onNext,
         canNavigateToStep,

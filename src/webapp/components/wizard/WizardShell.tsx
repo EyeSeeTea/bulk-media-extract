@@ -8,6 +8,7 @@ type WizardShellProps = {
     currentStep: number;
     steps: WizardStepDefinition[];
     currentStepError?: string;
+    currentStepHasInlineNotice?: boolean;
     isExecutionRunning: boolean;
     canNavigateToStep: (targetIndex: number) => boolean;
     onSetStep: (step: number) => void;
@@ -21,6 +22,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
     currentStep,
     steps,
     currentStepError,
+    currentStepHasInlineNotice = false,
     isExecutionRunning,
     canNavigateToStep,
     onSetStep,
@@ -93,7 +95,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
 
             <section className="panel wizard-panel">{children}</section>
 
-            {currentStepError ? (
+            {currentStepError && !currentStepHasInlineNotice ? (
                 <NoticeBox warning title={i18n.t("Validation required")}>
                     {currentStepError}
                 </NoticeBox>

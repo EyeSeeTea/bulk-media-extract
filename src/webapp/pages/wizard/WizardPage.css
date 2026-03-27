@@ -853,7 +853,8 @@
 
 .wizard-preview-table-wrap {
     width: 100%;
-    overflow-x: auto;
+    max-height: 70vh;
+    overflow: auto;
     border: 1px solid #d8dee8;
     border-radius: 10px;
 }
@@ -877,6 +878,7 @@
 .wizard-step-content .wizard-preview-table th {
     position: sticky;
     top: 0;
+    z-index: 1;
     background: #f5f8fb;
     color: #4a5768;
     font-size: 12px;
@@ -1084,4 +1086,16 @@
     .wizard-step-content .wizard-preview-summary {
         grid-template-columns: 1fr;
     }
+}
+
+.wizard-preview-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.wizard-preview-actions .info-tooltip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
 }

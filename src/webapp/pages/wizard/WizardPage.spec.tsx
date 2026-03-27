@@ -747,9 +747,11 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByText("Next"));
 
-        expect(page.getByText("Validation required")).toBeInTheDocument();
+        expect(page.queryByText("Validation required")).not.toBeInTheDocument();
         expect(
-            page.getByText("Test the WebDAV connection successfully before continuing.")
+            page.getByText(
+                "WebDAV server rejected the credentials. Review the setup remarks above and try again."
+            )
         ).toBeInTheDocument();
         expectCurrentStep(page, "storage");
     });
@@ -776,12 +778,8 @@ describe("WizardPage", () => {
 
         fireEvent.click(page.getByText("Next"));
 
-        expect(page.getByText("Validation required")).toBeInTheDocument();
-        expect(
-            page.getByText(
-                "Duplicate target filepaths were found. Revise the template to make each export destination unique."
-            )
-        ).toBeInTheDocument();
+        expect(page.queryByText("Validation required")).not.toBeInTheDocument();
+        expect(page.getByText("Duplicate target filepaths detected")).toBeInTheDocument();
         expectCurrentStep(page, "preview");
     });
 
