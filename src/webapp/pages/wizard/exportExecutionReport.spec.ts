@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildExecutionReportFilename, ExportExecutionConfiguration } from "$/application/export/ExportExecution";
+import {
+    buildExecutionReportFilename,
+    ExportExecutionConfiguration,
+} from "$/application/export/ExportExecution";
 import { buildExecutionReport } from "$/application/export/ExecutionReportBuilder";
 
 const configuration: ExportExecutionConfiguration = {

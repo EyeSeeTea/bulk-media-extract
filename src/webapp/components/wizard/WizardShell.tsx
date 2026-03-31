@@ -8,6 +8,7 @@ type WizardShellProps = {
     currentStep: number;
     steps: WizardStepDefinition[];
     currentStepError?: string;
+    currentStepHasInlineNotice?: boolean;
     isExecutionRunning: boolean;
     canNavigateToStep: (targetIndex: number) => boolean;
     onSetStep: (step: number) => void;
@@ -21,6 +22,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
     currentStep,
     steps,
     currentStepError,
+    currentStepHasInlineNotice = false,
     isExecutionRunning,
     canNavigateToStep,
     onSetStep,
@@ -38,10 +40,10 @@ export const WizardShell: React.FC<WizardShellProps> = ({
                         index === currentStep
                             ? "active"
                             : index < currentStep
-                              ? "done"
-                              : isAvailable
-                                ? "available"
-                                : "disabled";
+                            ? "done"
+                            : isAvailable
+                            ? "available"
+                            : "disabled";
 
                     return (
                         <li
@@ -93,22 +95,21 @@ export const WizardShell: React.FC<WizardShellProps> = ({
 
             <section className="panel wizard-panel">{children}</section>
 
-            {currentStepError ? (
+            {currentStepError && !currentStepHasInlineNotice ? (
                 <NoticeBox warning title={i18n.t("Validation required")}>
                     {currentStepError}
                 </NoticeBox>
             ) : null}
 
             <div className="wizard-footer-actions" data-testid="wizard-footer-actions">
-                <Button
-                    secondary
-                    disabled={currentStep === 0 || isExecutionRunning}
-                    onClick={onBack}
-                >
-                    {i18n.t("Back")}
-                </Button>
+                {currentStep > 0 && (
+                    <Button secondary disabled={isExecutionRunning} onClick={onBack}>
+                        {i18n.t("Back")}
+                    </Button>
+                )}
+                <span className="wizard-footer-spacer" />
                 {currentStep < steps.length - 1 ? (
-                    <Button primary onClick={onNext}>
+                    <Button primary disabled={!!currentStepError} onClick={onNext}>
                         {i18n.t("Next")}
                     </Button>
                 ) : (

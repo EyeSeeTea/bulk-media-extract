@@ -27,8 +27,7 @@ export const ExecutionStep: React.FC<ExecutionStepProps> = ({
     const hasStartedExecution =
         executionState.status !== "idle" || executionState.logEntries.length > 0;
     const latestLogEntry = executionState.logEntries[executionState.logEntries.length - 1];
-    const latestTargetPath =
-        executionState.currentTargetPath ?? latestLogEntry?.targetPath ?? "";
+    const latestTargetPath = executionState.currentTargetPath ?? latestLogEntry?.targetPath ?? "";
     const progressWidth = `${Math.max(0, Math.min(executionState.progress, 100))}%`;
 
     return (
@@ -146,10 +145,7 @@ export const ExecutionStep: React.FC<ExecutionStepProps> = ({
                         </div>
                         {executionState.status !== "success" && latestTargetPath ? (
                             <p className="wizard-helper-text">
-                                {i18n.t("Latest target path: {{path}}", {
-                                    path: latestTargetPath,
-                                    nsSeparator: false,
-                                })}
+                                {i18n.t("Latest target path") + ":"} {latestTargetPath}
                             </p>
                         ) : null}
                     </div>
@@ -220,7 +216,9 @@ export const ExecutionStep: React.FC<ExecutionStepProps> = ({
             ) : null}
 
             {executionState.status === "failed" ? (
-                <NoticeBox error title={i18n.t("Export failed")}>{executionState.error}</NoticeBox>
+                <NoticeBox error title={i18n.t("Export failed")}>
+                    {executionState.error}
+                </NoticeBox>
             ) : null}
 
             {executionState.status === "interrupted" ? (

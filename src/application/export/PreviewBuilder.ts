@@ -39,7 +39,10 @@ export function buildExportPreviewRows(
                     eventId: event.id,
                     eventOrgUnitId: event.orgUnitId,
                     eventOrgUnitName: event.orgUnitName ?? event.orgUnitId,
-                    fileDataValue: event.dataValues[fileProperty.id] ?? event.fileValues[fileProperty.id] ?? "",
+                    fileDataValue:
+                        event.dataValues[fileProperty.id] ??
+                        event.fileValues[fileProperty.id] ??
+                        "",
                     fileDataValueId: fileProperty.id,
                     fileDataValueName: fileProperty.name,
                     fileDataValueUrl: buildEventDataValueUrl(
@@ -53,7 +56,9 @@ export function buildExportPreviewRows(
                     fileResourceId,
                     fileName: event.fileNames[fileProperty.id],
                     fileSize: event.fileSizes?.[fileProperty.id],
-                    resolvedTargetPath: event.fileNames[fileProperty.id] ? resolvedTargetPath : undefined,
+                    resolvedTargetPath: event.fileNames[fileProperty.id]
+                        ? resolvedTargetPath
+                        : undefined,
                     hasDuplicateTargetPath: false,
                     isMissingFileResource: !fileResourceId || !event.fileNames[fileProperty.id],
                 },
@@ -79,20 +84,28 @@ export function buildExportPreviewRows(
 }
 
 export function summarizeExportPreview(rows: ExportPreviewRow[]): ExportPreviewSummary {
-    const duplicateTargetPaths = Array.from(
-        rows.reduce<Set<string>>((acc, row) => {
-            const targetPath = row.resolvedTargetPath;
-            if (row.hasDuplicateTargetPath && targetPath) {
-                acc.add(targetPath);
-            }
-            return acc;
-        }, new Set())
+    const duplicateRowsByPath = rows.reduce<
+        Map<string, Array<{ eventId: string; fileDataValueName: string }>>
+    >((acc, row) => {
+        const targetPath = row.resolvedTargetPath;
+        if (row.hasDuplicateTargetPath && targetPath) {
+            const existing = acc.get(targetPath) ?? [];
+            acc.set(targetPath, [
+                ...existing,
+                { eventId: row.eventId, fileDataValueName: row.fileDataValueName },
+            ]);
+        }
+        return acc;
+    }, new Map());
+
+    const duplicateTargetPathDetails = Array.from(duplicateRowsByPath.entries()).map(
+        ([path, pathRows]) => ({ path, rows: pathRows })
     );
 
     return {
         totalFiles: rows.filter(row => !row.isMissingFileResource).length,
         totalSize: rows.reduce((sum, row) => sum + (row.fileSize ?? 0), 0),
-        duplicateTargetPaths,
+        duplicateTargetPathDetails,
         missingFileResourceCount: rows.filter(row => row.isMissingFileResource).length,
     };
 }

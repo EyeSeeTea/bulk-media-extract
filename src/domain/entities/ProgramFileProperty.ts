@@ -16,6 +16,7 @@ export type ProgramFilePropertyAttrs = {
     sourceType: FilePropertySourceType;
     sourceContainerId?: Id;
     sourceContainerName?: string;
+    code?: string;
 };
 
 export class ProgramFileProperty extends Struct<ProgramFilePropertyAttrs>() {}

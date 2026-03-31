@@ -85,7 +85,9 @@ export class ProgramD2Repository implements ProgramRepository {
             if (loadAllPages) {
                 const total = firstResponse.total ?? firstResponse.pager?.total;
                 const seenEventIds = new Set(
-                    (firstResponse.instances ?? firstResponse.events ?? []).map(event => event.event)
+                    (firstResponse.instances ?? firstResponse.events ?? []).map(
+                        event => event.event
+                    )
                 );
                 let lastPageEvents = firstResponse.instances ?? firstResponse.events ?? [];
                 let accumulatedCount = lastPageEvents.length;
@@ -104,7 +106,9 @@ export class ProgramD2Repository implements ProgramRepository {
                         break;
                     }
 
-                    const hasNewEvent = nextPageEvents.some(event => !seenEventIds.has(event.event));
+                    const hasNewEvent = nextPageEvents.some(
+                        event => !seenEventIds.has(event.event)
+                    );
                     responses.push(nextResponse);
                     nextPageEvents.forEach(event => seenEventIds.add(event.event));
                     accumulatedCount += nextPageEvents.length;
@@ -117,7 +121,9 @@ export class ProgramD2Repository implements ProgramRepository {
                     }
                 }
             }
-            const events = responses.flatMap(response => response.instances ?? response.events ?? []);
+            const events = responses.flatMap(
+                response => response.instances ?? response.events ?? []
+            );
             const fileDataElementIds = new Set(
                 (program?.programStages ?? []).flatMap(stage => {
                     return (stage.programStageDataElements ?? [])
@@ -154,20 +160,26 @@ export class ProgramD2Repository implements ProgramRepository {
                         return this.get<D2FileResource>(
                             `/fileResources/${fileResourceId}?fields=id,name,originalName,contentLength`
                         )
-                            .map<{ id: string; fileName?: string; fileSize?: number }>(fileResource => {
-                                const fileName =
-                                    fileResource.originalName ?? fileResource.name ?? fileResourceId;
-                                const fileSize = normalizeContentLength(fileResource.contentLength);
-                                this.fileResourceNameCache.set(fileResourceId, fileName);
-                                if (fileSize !== undefined) {
-                                    this.fileResourceSizeCache.set(fileResourceId, fileSize);
+                            .map<{ id: string; fileName?: string; fileSize?: number }>(
+                                fileResource => {
+                                    const fileName =
+                                        fileResource.originalName ??
+                                        fileResource.name ??
+                                        fileResourceId;
+                                    const fileSize = normalizeContentLength(
+                                        fileResource.contentLength
+                                    );
+                                    this.fileResourceNameCache.set(fileResourceId, fileName);
+                                    if (fileSize !== undefined) {
+                                        this.fileResourceSizeCache.set(fileResourceId, fileSize);
+                                    }
+                                    return {
+                                        id: fileResourceId,
+                                        fileName,
+                                        fileSize,
+                                    };
                                 }
-                                return {
-                                    id: fileResourceId,
-                                    fileName,
-                                    fileSize,
-                                };
-                            })
+                            )
                             .flatMapError(() => {
                                 return Future.success<
                                     Error,
@@ -190,8 +202,9 @@ export class ProgramD2Repository implements ProgramRepository {
             );
             const fileSizeById = Object.fromEntries(
                 fileResources
-                    .filter((fileResource): fileResource is { id: string; fileSize: number } =>
-                        fileResource.fileSize !== undefined
+                    .filter(
+                        (fileResource): fileResource is { id: string; fileSize: number } =>
+                            fileResource.fileSize !== undefined
                     )
                     .map(fileResource => [fileResource.id, fileResource.fileSize])
             );
@@ -235,7 +248,12 @@ export class ProgramD2Repository implements ProgramRepository {
                 ])
             );
             const orgUnitIds = Array.from(
-                new Set(events.map(event => event.orgUnit).filter(Boolean).filter(isDefined))
+                new Set(
+                    events
+                        .map(event => event.orgUnit)
+                        .filter(Boolean)
+                        .filter(isDefined)
+                )
             );
             const orgUnits = await $(
                 Future.parallel<Error, ResolvedOrgUnit>(
@@ -306,8 +324,7 @@ export class ProgramD2Repository implements ProgramRepository {
 
                 return new ProgramEventPreview({
                     id: event.event,
-                    eventDate:
-                        event.occurredAt ?? event.eventDate ?? event.scheduledAt ?? null,
+                    eventDate: event.occurredAt ?? event.eventDate ?? event.scheduledAt ?? null,
                     orgUnitId: event.orgUnit,
                     orgUnitName: event.orgUnitName ?? orgUnitById[event.orgUnit]?.name,
                     orgUnitCode: orgUnitById[event.orgUnit]?.code,
@@ -360,7 +377,7 @@ export class ProgramD2Repository implements ProgramRepository {
                 "programType",
                 "organisationUnits[id,displayName,path,code,shortName,level,attributeValues[attribute[id,displayName],value]]",
                 "programTrackedEntityAttributes[trackedEntityAttribute[id,displayName,valueType]]",
-                "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType]]]",
+                "programStages[id,displayName,programStageDataElements[dataElement[id,displayName,valueType,code]]]",
             ].join(","),
             pageSize: "500",
             page: "1",
@@ -381,11 +398,7 @@ export class ProgramD2Repository implements ProgramRepository {
         const teiProperties = this.buildTrackedEntityProperties(program);
         const propertyGroups: ProgramFilePropertyGroup[] =
             programType === "WITH_REGISTRATION"
-                ? [
-                      ...metadataProperties.groups,
-                      ...teiProperties.groups,
-                      ...eventPropertiesByStage,
-                  ]
+                ? [...metadataProperties.groups, ...teiProperties.groups, ...eventPropertiesByStage]
                 : [...metadataProperties.groups, ...this.buildEventProgramGroup(eventProperties)];
 
         const properties = propertyGroups.flatMap(group => group.properties);
@@ -455,6 +468,7 @@ export class ProgramD2Repository implements ProgramRepository {
                             sourceType: "dataElement",
                             sourceContainerId: stage.id,
                             sourceContainerName: stage.displayName,
+                            code: dataElement.code,
                         });
                     });
 
@@ -600,7 +614,8 @@ function buildMetadataProperties(programOrgUnits: D2ProgramOrgUnit[]): {
         );
     }
 
-    const organisationUnitAttributeProperties = buildOrganisationUnitAttributeProperties(programOrgUnits);
+    const organisationUnitAttributeProperties =
+        buildOrganisationUnitAttributeProperties(programOrgUnits);
     const eventProperties = [
         new ProgramFileProperty({
             id: "enrollmentDate",
@@ -651,6 +666,7 @@ type D2Program = {
                 id: string;
                 displayName: string;
                 valueType: string;
+                code?: string;
             };
         }>;
     }>;

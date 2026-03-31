@@ -2,7 +2,10 @@ import { ProgramEventPreview } from "$/domain/entities/ProgramEventPreview";
 import { ProgramFileProperties } from "$/domain/entities/ProgramFileProperties";
 import { ProgramFileProperty } from "$/domain/entities/ProgramFileProperty";
 import { ProgramFilePropertyGroup } from "$/domain/entities/ProgramFilePropertyGroup";
-import { buildFileMetadataPropertyGroup } from "$/application/export/TemplateBuilder";
+import {
+    buildFileMetadataPropertyGroup,
+    buildCurrentDataElementPropertyGroup,
+} from "$/application/export/TemplateBuilder";
 
 export type ProgramOption = {
     id: string;
@@ -46,6 +49,7 @@ export function getVisiblePropertyGroupsForFile(
     currentFileProperty: ProgramFileProperty
 ) {
     const fileMetadataGroup = buildFileMetadataPropertyGroup(selectedFileProperties);
+    const currentDataElementGroup = buildCurrentDataElementPropertyGroup(selectedFileProperties);
     const currentStageId = currentFileProperty.sourceContainerId;
     const scopedGroups = propertyGroups
         .map(group => {
@@ -69,5 +73,16 @@ export function getVisiblePropertyGroupsForFile(
         })
         .filter(group => group.properties.length > 0);
 
-    return fileMetadataGroup ? [fileMetadataGroup, ...scopedGroups] : scopedGroups;
+    const eventGroupIndex = scopedGroups.findIndex(group => group.sourceType === "event");
+    const insertIndex = eventGroupIndex >= 0 ? eventGroupIndex + 1 : scopedGroups.length;
+
+    const orderedGroups = currentDataElementGroup
+        ? [
+              ...scopedGroups.slice(0, insertIndex),
+              currentDataElementGroup,
+              ...scopedGroups.slice(insertIndex),
+          ]
+        : scopedGroups;
+
+    return fileMetadataGroup ? [fileMetadataGroup, ...orderedGroups] : orderedGroups;
 }

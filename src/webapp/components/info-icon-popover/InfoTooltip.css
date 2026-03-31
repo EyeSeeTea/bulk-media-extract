@@ -1,0 +1,15 @@
+.info-tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    color: #6e7a8a;
+    transition: color 0.15s;
+}
+
+.info-tooltip-trigger:hover {
+    color: #1565c0;
+}
+
+.info-tooltip-trigger svg {
+    fill: currentColor;
+}

@@ -15,14 +15,26 @@ type TreeOnChangePayload = {
     selected?: string[];
 };
 
+function buildScopeSignature(orgUnits: NamedRef[]): string {
+    return orgUnits
+        .map(orgUnit => `${orgUnit.id}:${orgUnit.path ?? ""}`)
+        .sort()
+        .join("|");
+}
+
+const arePropsEqual = (prev: Props, next: Props): boolean => {
+    if (prev.selected !== next.selected) return false;
+    if (prev.disabled !== next.disabled) return false;
+    return buildScopeSignature(prev.programOrgUnits) === buildScopeSignature(next.programOrgUnits);
+};
+
 export const OrgUnitTreePicker: React.FC<Props> = React.memo(
     ({ programOrgUnits, selected, onChange, disabled = false }) => {
-        const [selectedPaths, setSelectedPaths] = React.useState<string[]>([]);
+        const onChangeRef = React.useRef(onChange);
+        onChangeRef.current = onChange;
+
         const scopeSignature = React.useMemo(() => {
-            return programOrgUnits
-                .map(orgUnit => `${orgUnit.id}:${orgUnit.path ?? ""}`)
-                .sort()
-                .join("|");
+            return buildScopeSignature(programOrgUnits);
         }, [programOrgUnits]);
 
         const filterPaths = React.useMemo(() => {
@@ -45,26 +57,32 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 )
             );
         }, [filterPaths]);
+
         const pathByOrgUnitId = React.useMemo(() => {
-            return new Map(
-                programOrgUnits.flatMap(orgUnit => (orgUnit.path ? [[orgUnit.id, orgUnit.path] as const] : []))
-            );
+            const map = new Map<string, string>();
+            for (const orgUnit of programOrgUnits) {
+                if (!orgUnit.path) continue;
+                const segments = orgUnit.path.split("/").filter(Boolean);
+                for (let i = 0; i < segments.length; i++) {
+                    const id = segments[i] as string;
+                    if (!map.has(id)) {
+                        map.set(id, "/" + segments.slice(0, i + 1).join("/"));
+                    }
+                }
+            }
+            return map;
         }, [programOrgUnits]);
 
-        React.useEffect(() => {
-            if (!selected) {
-                setSelectedPaths([]);
-                return;
-            }
-
-            const selectedPath = pathByOrgUnitId.get(selected);
-            if (selectedPath) {
-                setSelectedPaths([selectedPath]);
-                return;
-            }
-
-            setSelectedPaths([]);
+        const selectedPaths = React.useMemo(() => {
+            if (!selected) return [];
+            const path = pathByOrgUnitId.get(selected);
+            return path ? [path] : [];
         }, [pathByOrgUnitId, selected]);
+
+        const initiallyExpanded = React.useMemo(() => {
+            return selectedPaths;
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [scopeSignature]);
 
         if (rootIds.length === 0 || filterPaths.length === 0) {
             return null;
@@ -75,14 +93,15 @@ export const OrgUnitTreePicker: React.FC<Props> = React.memo(
                 roots={rootIds}
                 filter={filterPaths}
                 selected={selectedPaths}
+                initiallyExpanded={initiallyExpanded}
                 singleSelection
                 disableSelection={disabled}
                 onChange={(payload: TreeOnChangePayload) => {
-                    setSelectedPaths(payload.selected ?? []);
-                    onChange({ id: payload.id, name: payload.displayName });
+                    onChangeRef.current({ id: payload.id, name: payload.displayName });
                 }}
                 dataTest="org-unit-tree-picker"
             />
         );
-    }
+    },
+    arePropsEqual
 );

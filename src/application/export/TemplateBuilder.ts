@@ -27,7 +27,8 @@ export function resolveTemplateForEvent(
     event: ProgramEventPreview,
     selectedFileProperty?: ProgramFileProperty
 ): string {
-    const firstFileDataElementId = selectedFileProperty?.id ?? Object.keys(event.fileValues)[0] ?? "";
+    const firstFileDataElementId =
+        selectedFileProperty?.id ?? Object.keys(event.fileValues)[0] ?? "";
     const firstFileName = firstFileDataElementId
         ? event.fileNames[firstFileDataElementId] ?? ""
         : "";
@@ -87,6 +88,14 @@ export function resolveTemplateForEvent(
 
         if (token === "fileValueType") {
             return selectedFileProperty?.valueType ?? "";
+        }
+
+        if (token === "currentDataElementName") {
+            return selectedFileProperty?.name ?? "";
+        }
+
+        if (token === "currentDataElementCode") {
+            return selectedFileProperty?.code ?? "";
         }
 
         if (token.startsWith("dataElement:")) {
@@ -196,6 +205,41 @@ export function buildFileMetadataPropertyGroup(
     return ProgramFilePropertyGroup.create({
         id: "fileMetadata",
         name: "File metadata",
+        sourceType: "metadata",
+        properties,
+    });
+}
+
+export function buildCurrentDataElementPropertyGroup(
+    selectedFileProperties: ProgramFileProperty[]
+): ProgramFilePropertyGroup | undefined {
+    if (selectedFileProperties.length === 0) {
+        return undefined;
+    }
+
+    const properties: ProgramFileProperty[] = [
+        ProgramFileProperty.create({
+            id: "currentDataElementName",
+            name: "Current data element name",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+    ];
+
+    if (selectedFileProperties.some(property => property.code)) {
+        properties.push(
+            ProgramFileProperty.create({
+                id: "currentDataElementCode",
+                name: "Current data element code",
+                valueType: "TEXT",
+                sourceType: "metadata",
+            })
+        );
+    }
+
+    return ProgramFilePropertyGroup.create({
+        id: "currentDataElement",
+        name: "Current data element",
         sourceType: "metadata",
         properties,
     });

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: i18next-conv\n"
-"POT-Creation-Date: 2026-03-10T02:09:48.325Z\n"
+"POT-Creation-Date: 2026-03-26T16:27:09.827Z\n"
 "PO-Revision-Date: 2018-10-25T09:02:35.143Z\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,472 +23,651 @@ msgstr "Ayuda"
 msgid "Close"
 msgstr "Cerrar"
 
-msgid "Unknown error"
-msgstr ""
+msgid "Step {{number}}"
+msgstr "Paso {{number}}"
 
-msgid "File Export Program Picker"
+msgid "Validation required"
+msgstr "Validación requerida"
+
+msgid "Next"
+msgstr "Siguiente"
+
+msgid "Finish"
+msgstr "Finalizar"
+
+msgid "Unknown error"
+msgstr "Error desconocido"
+
+msgid "Bulk Media Extract"
+msgstr "Extracción masiva de archivos"
+
+msgid ""
+"Export file data values from your programs to WebDAV or a local directory."
 msgstr ""
+"Exportar valores de datos de archivo de sus programas a WebDAV o a un "
+"directorio local."
+
+msgid "Start new export"
+msgstr "Iniciar nueva exportación"
 
 msgid "Event preview"
-msgstr ""
+msgstr "Vista previa de eventos"
 
 msgid "Select organisation unit"
-msgstr ""
+msgstr "Seleccionar unidad organizativa"
 
 msgid "Program required"
-msgstr ""
+msgstr "Programa requerido"
 
 msgid "Select a program to load organisation units."
-msgstr ""
+msgstr "Seleccione un programa para cargar las unidades organizativas."
 
 msgid "No organisation units available"
-msgstr ""
+msgstr "No hay unidades organizativas disponibles"
 
 msgid "The selected program has no organisation units available for selection."
 msgstr ""
+"El programa seleccionado no tiene unidades organizativas disponibles para "
+"seleccionar."
 
 msgid "Preview requirements"
-msgstr ""
+msgstr "Requisitos de vista previa"
 
 msgid "Select both a program and an organisation unit to preview events."
 msgstr ""
+"Seleccione un programa y una unidad organizativa para previsualizar eventos."
 
 msgid "Could not load event preview"
-msgstr ""
+msgstr "No se pudo cargar la vista previa de eventos"
 
 msgid "Retry preview"
-msgstr ""
+msgstr "Reintentar vista previa"
 
 msgid "Matching events: {{total}}. Pages: {{pages}}."
-msgstr ""
+msgstr "Eventos coincidentes: {{total}}. Páginas: {{pages}}."
 
 msgid "No events found"
-msgstr ""
+msgstr "No se encontraron eventos"
 
 msgid "No preview events match the current selections."
-msgstr ""
+msgstr "Ningún evento coincide con las selecciones actuales."
 
 msgid "Event"
-msgstr ""
+msgstr "Evento"
 
 msgid "Date"
-msgstr ""
+msgstr "Fecha"
 
 msgid "Org unit"
-msgstr ""
+msgstr "Unidad organizativa"
 
 msgid "File values"
-msgstr ""
+msgstr "Valores de archivo"
 
 msgid "Selected program details"
-msgstr ""
+msgstr "Detalles del programa seleccionado"
 
 msgid "No program selected"
-msgstr ""
+msgstr "Ningún programa seleccionado"
 
 msgid "Select a program to inspect its file properties."
-msgstr ""
+msgstr "Seleccione un programa para inspeccionar sus propiedades de archivo."
 
 msgid "Could not inspect program"
-msgstr ""
+msgstr "No se pudo inspeccionar el programa"
 
 msgid "Program type"
-msgstr ""
+msgstr "Tipo de programa"
 
 msgid "No file properties found"
-msgstr ""
+msgstr "No se encontraron propiedades de archivo"
 
 msgid "This program has no resolvable file-capable properties."
 msgstr ""
+"Este programa no tiene propiedades de archivo resolubles."
 
 msgid "Program"
-msgstr ""
+msgstr "Programa"
 
 msgid "Could not load programs"
-msgstr ""
+msgstr "No se pudieron cargar los programas"
 
 msgid "Select a file-capable program"
-msgstr ""
+msgstr "Seleccione un programa con archivos"
 
 msgid "Choose a program"
-msgstr ""
+msgstr "Elegir un programa"
 
 msgid "Reload programs"
-msgstr ""
+msgstr "Recargar programas"
 
-#, fuzzy
-msgid "Step {{number}}"
-msgstr "Hola {{name}}"
+msgid "Export program files"
+msgstr "Exportar archivos del programa"
 
-msgid "Validation required"
-msgstr ""
-
-msgid "Next"
-msgstr ""
-
-msgid "Finish"
-msgstr ""
-
-msgid "Choose a program and the files to export"
-msgstr ""
+msgid "Exit current export"
+msgstr "Salir de la exportación actual"
 
 msgid ""
-"Start by selecting the tracker program. Then confirm which file data values "
-"should move forward to template setup and preview."
+"All configuration entered in this export session will be lost. This action "
+"cannot be undone."
 msgstr ""
+"Toda la configuración introducida en esta sesión de exportación se perderá. "
+"Esta acción no se puede deshacer."
 
-msgid "Only programs with file-capable data values are listed."
-msgstr ""
+msgid "Continue editing"
+msgstr "Continuar editando"
 
-msgid "Search programs"
-msgstr ""
+msgid "Exit export"
+msgstr "Salir de la exportación"
 
-msgid "No matching programs"
-msgstr ""
+msgid "Success"
+msgstr "Éxito"
 
-msgid "File data values to sync"
-msgstr ""
+msgid "Failure"
+msgstr "Error"
 
-msgid "Choose the file fields to include in the export flow."
-msgstr ""
+msgid "Warning"
+msgstr "Advertencia"
 
-msgid "Select a program to inspect file data values."
-msgstr ""
+msgid "Info"
+msgstr "Información"
 
-msgid "Loading file-capable data values"
-msgstr ""
+msgid "Event {{eventId}} — {{dataElement}}"
+msgstr "Evento {{eventId}} — {{dataElement}}"
 
-msgid "No file data elements"
-msgstr ""
+msgid "Run the export"
+msgstr "Ejecutar la exportación"
 
-msgid "No file-capable data elements were found in this program."
-msgstr ""
+msgid "Transfer the reviewed files to the configured destination."
+msgstr "Transferir los archivos revisados al destino configurado."
 
-msgid "No program stage"
-msgstr ""
+msgid "Processed"
+msgstr "Procesados"
 
-msgid "Program summary"
-msgstr ""
+msgid "Progress"
+msgstr "Progreso"
 
-msgid "File fields found"
-msgstr ""
+msgid "Successes"
+msgstr "Exitosos"
 
-msgid "Program stages"
-msgstr ""
+msgid "Failures"
+msgstr "Fallidos"
 
-msgid "Program details will appear here once the selection is loaded."
-msgstr ""
+msgid "Retry export"
+msgstr "Reintentar exportación"
 
-msgid "Why this matters"
-msgstr ""
+msgid "Start export"
+msgstr "Iniciar exportación"
 
-msgid ""
-"The files selected here determine which mapping editors and preview rows "
-"appear in later steps."
-msgstr ""
+msgid "Interrupt export"
+msgstr "Interrumpir exportación"
 
-msgid "Define the export scope and filename templates"
-msgstr ""
+msgid "Download result summary"
+msgstr "Descargar resumen de resultados"
 
-msgid ""
-"Choose where to look for records, then define the destination path for each "
-"selected file field."
-msgstr ""
+msgid "Export in progress"
+msgstr "Exportación en curso"
 
-msgid "Filters"
-msgstr ""
+msgid "Latest execution progress"
+msgstr "Último progreso de ejecución"
 
-msgid "Organisation unit"
-msgstr ""
+msgid "Processed {{processed}} of {{total}} files ({{progress}}%)."
+msgstr "Procesados {{processed}} de {{total}} archivos ({{progress}}%)."
 
-msgid "Select a program first to filter by organisation unit."
-msgstr ""
+msgid "Execution progress"
+msgstr "Progreso de ejecución"
 
-msgid "Include"
-msgstr ""
+msgid "Latest target path: {{path}}"
+msgstr "Última ruta de destino: {{path}}"
 
-msgid "Selected"
-msgstr ""
+msgid "Execution log"
+msgstr "Registro de ejecución"
 
-msgid "Descendants"
-msgstr ""
+msgid "Export completed"
+msgstr "Exportación completada"
 
-msgid "Date from (optional)"
-msgstr ""
+msgid "All files processed successfully."
+msgstr "Todos los archivos se procesaron correctamente."
 
-msgid "Date to (optional)"
-msgstr ""
+msgid "Export completed with failures"
+msgstr "Exportación completada con errores"
 
-msgid "No selected files"
-msgstr ""
+msgid "Export failed"
+msgstr "Exportación fallida"
 
-msgid "Go back to step 1 and select at least one file data value to sync."
-msgstr ""
-
-msgid "Path and filename template - {{name}}"
-msgstr ""
-
-msgid ""
-"Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, "
-"{dataElement:FileName}."
-msgstr ""
-
-msgid "Required."
-msgstr ""
-
-msgid "Valid template. Preview:"
-msgstr ""
-
-msgid "Select program and organisation unit to load resolved values."
-msgstr ""
-
-msgid "Could not load resolved values."
-msgstr ""
-
-msgid "No resolved template values found for current filters."
-msgstr ""
-
-msgid "Available properties"
-msgstr ""
-
-msgid "Select a program to inspect available properties."
-msgstr ""
-
-msgid "Could not inspect program properties"
-msgstr ""
-
-msgid "No properties found"
-msgstr ""
-
-msgid "No resolvable properties were found for this program."
-msgstr ""
-
-msgid "Testing connection..."
-msgstr ""
-
-msgid "Retest connection"
-msgstr ""
-
-msgid "Test connection"
-msgstr ""
-
-msgid "Validate the WebDAV destination"
-msgstr ""
-
-msgid ""
-"Confirm that the browser can reach the target WebDAV endpoint before running "
-"the export."
-msgstr ""
-
-msgid "Connection details"
-msgstr ""
-
-msgid ""
-"Enter the WebDAV endpoint URL and credentials that the browser will use "
-"during export."
-msgstr ""
-
-msgid "WebDAV URL"
-msgstr ""
-
-#, fuzzy
-msgid "Username"
-msgstr "Usuarios"
-
-msgid "Password"
-msgstr ""
-
-msgid "You must pass this test before continuing to execution."
-msgstr ""
-
-msgid "Storage setup"
-msgstr ""
-
-msgid ""
-"Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or "
-"another WebDAV-enabled server."
-msgstr ""
-
-msgid ""
-"Use the direct WebDAV endpoint, not a generic product homepage or login page."
-msgstr ""
-
-msgid ""
-"The WebDAV server must allow cross-origin requests from this app origin "
-"(CORS) or the browser will block validation and file transfer."
-msgstr ""
-
-msgid ""
-"If your server sits behind a proxy or self-signed TLS setup, make sure the "
-"browser can reach it successfully from this environment."
-msgstr ""
-
-msgid "Testing connection"
-msgstr ""
-
-msgid ""
-"Checking whether this browser can reach the WebDAV endpoint with the "
-"provided credentials."
-msgstr ""
-
-msgid "Connection valid"
-msgstr ""
-
-msgid "WebDAV connection validated. You can continue to execution."
-msgstr ""
-
-msgid "Connection invalid"
-msgstr ""
-
-msgid "Review the setup remarks above and try again."
-msgstr ""
+msgid "Export interrupted"
+msgstr "Exportación interrumpida"
 
 msgid "Review the resolved export plan"
-msgstr ""
+msgstr "Revisar el plan de exportación resuelto"
 
 msgid ""
 "Inspect the final target paths and warnings before you unlock the storage "
 "and execution steps."
 msgstr ""
+"Inspeccione las rutas de destino finales y las advertencias antes de "
+"desbloquear los pasos de almacenamiento y ejecución."
 
 msgid "Select program and organisation unit filter before loading preview."
 msgstr ""
+"Seleccione un programa y un filtro de unidad organizativa antes de cargar la "
+"vista previa."
 
 msgid "Selected file data elements"
-msgstr ""
+msgstr "Elementos de datos de archivo seleccionados"
 
 msgid "Org unit mode"
-msgstr ""
+msgstr "Modo de unidad organizativa"
+
+msgid "Selected"
+msgstr "Seleccionados"
+
+msgid "Descendants"
+msgstr "Descendientes"
 
 msgid "Preview the resolved export rows before continuing."
-msgstr ""
+msgstr "Previsualice las filas de exportación resueltas antes de continuar."
 
 msgid "No files found"
-msgstr ""
+msgstr "No se encontraron archivos"
 
 msgid "No exportable files match the selected date filters."
 msgstr ""
+"Ningún archivo exportable coincide con los filtros de fecha seleccionados."
 
 msgid "No exportable files match the current selection."
-msgstr ""
+msgstr "Ningún archivo exportable coincide con la selección actual."
 
 msgid "File data value"
-msgstr ""
+msgstr "Valor de dato de archivo"
 
 msgid "Source filename"
-msgstr ""
+msgstr "Nombre del archivo de origen"
 
 msgid "Size"
-msgstr ""
+msgstr "Tamaño"
 
 msgid "Target"
-msgstr ""
+msgstr "Destino"
+
+msgid "Original file"
+msgstr "Archivo original"
 
 msgid "Duplicate target filepaths detected"
-msgstr ""
+msgstr "Rutas de destino duplicadas detectadas"
 
 msgid "Files will be skipped"
-msgstr ""
+msgstr "Los archivos se omitirán"
 
 msgid "Files"
-msgstr ""
+msgstr "Archivos"
 
 msgid "Total size"
-msgstr ""
+msgstr "Tamaño total"
 
 msgid "Export configuration"
-msgstr ""
+msgstr "Configuración de exportación"
 
 msgid ""
 "Download a JSON execution configuration for the current reviewed preview."
 msgstr ""
+"Descargar una configuración de ejecución JSON para la vista previa revisada "
+"actual."
 
 msgid "Execution configuration downloaded"
-msgstr ""
+msgstr "Configuración de ejecución descargada"
 
 msgid "The JSON execution configuration for this preview was downloaded."
 msgstr ""
+"La configuración de ejecución JSON para esta vista previa ha sido descargada."
 
-msgid "Success"
-msgstr ""
+msgid "Choose a program and the files to export"
+msgstr "Elija un programa y los archivos a exportar"
 
-msgid "Failure"
+msgid ""
+"Start by selecting the tracker program. Then confirm which file data values "
+"should move forward to template setup and preview."
 msgstr ""
+"Comience seleccionando el programa tracker. Luego confirme qué valores de "
+"datos de archivo deben avanzar a la configuración de plantilla y vista previa."
 
-msgid "Warning"
-msgstr ""
+msgid "Only programs with file-capable data values are listed."
+msgstr "Solo se muestran programas con valores de datos de archivo."
 
-msgid "Info"
-msgstr ""
+msgid "Search programs"
+msgstr "Buscar programas"
 
-msgid "Run the export"
-msgstr ""
+msgid "No matching programs"
+msgstr "No hay programas coincidentes"
 
-msgid "Transfer the reviewed files to the configured destination."
-msgstr ""
+msgid "File data values to sync"
+msgstr "Valores de datos de archivo a sincronizar"
 
-msgid "Processed"
-msgstr ""
+msgid "Choose the file fields to include in the export flow."
+msgstr "Elija los campos de archivo a incluir en el flujo de exportación."
 
-msgid "Progress"
-msgstr ""
+msgid "Select a program to inspect file data values."
+msgstr "Seleccione un programa para inspeccionar los valores de datos de archivo."
 
-msgid "Successes"
-msgstr ""
+msgid "Loading file-capable data values"
+msgstr "Cargando valores de datos con capacidad de archivo"
 
-msgid "Failures"
-msgstr ""
+msgid "No file data elements"
+msgstr "Sin elementos de datos de archivo"
 
-msgid "Retry export"
+msgid "No file-capable data elements were found in this program."
 msgstr ""
+"No se encontraron elementos de datos con capacidad de archivo en este programa."
 
-msgid "Start export"
-msgstr ""
+msgid "No program stage"
+msgstr "Sin etapa de programa"
 
-msgid "Interrupt export"
-msgstr ""
+msgid "Program summary"
+msgstr "Resumen del programa"
 
-msgid "Download result summary"
-msgstr ""
+msgid "File fields found"
+msgstr "Campos de archivo encontrados"
 
-msgid "Export in progress"
-msgstr ""
+msgid "Program stages"
+msgstr "Etapas del programa"
 
-msgid "Latest execution progress"
+msgid "Program details will appear here once the selection is loaded."
 msgstr ""
+"Los detalles del programa aparecerán aquí una vez cargada la selección."
 
-msgid "Processed {{processed}} of {{total}} files ({{progress}}%)."
-msgstr ""
+msgid "Why this matters"
+msgstr "Por qué es importante"
 
-msgid "Execution progress"
+msgid ""
+"The files selected here determine which mapping editors and preview rows "
+"appear in later steps."
 msgstr ""
+"Los archivos seleccionados aquí determinan qué editores de mapeo y filas de "
+"vista previa aparecen en los pasos posteriores."
 
-msgid "Latest target path: {{path}}"
-msgstr ""
+msgid "Testing connection..."
+msgstr "Probando conexión..."
 
-msgid "Execution log"
-msgstr ""
+msgid "Retest connection"
+msgstr "Reprobar conexión"
 
-msgid "Export completed"
-msgstr ""
+msgid "Test connection"
+msgstr "Probar conexión"
 
-msgid "All files processed successfully."
-msgstr ""
+msgid "Validating directory..."
+msgstr "Validando directorio..."
 
-msgid "Export completed with failures"
-msgstr ""
+msgid "Revalidate directory"
+msgstr "Revalidar directorio"
 
-msgid "Export failed"
-msgstr ""
+msgid "Validate directory"
+msgstr "Validar directorio"
 
-msgid "Export interrupted"
-msgstr ""
+msgid "Choose the export destination"
+msgstr "Elija el destino de exportación"
 
-msgid "Tracker Program"
+msgid ""
+"Select how the reviewed files should be written, then complete the setup for "
+"that destination."
 msgstr ""
+"Seleccione cómo deben escribirse los archivos revisados y complete la "
+"configuración de ese destino."
 
-msgid "Event Program"
+msgid "Storage method"
+msgstr "Método de almacenamiento"
+
+msgid ""
+"You can switch between methods before execution. Only the selected method "
+"must be validated."
 msgstr ""
+"Puede cambiar entre métodos antes de la ejecución. Solo el método "
+"seleccionado debe ser validado."
+
+msgid "WebDAV"
+msgstr "WebDAV"
+
+msgid "Connect to a remote WebDAV-compatible server."
+msgstr "Conectar a un servidor remoto compatible con WebDAV."
+
+msgid "Local directory"
+msgstr "Directorio local"
+
+msgid "Write files directly into a folder on this computer."
+msgstr "Escribir archivos directamente en una carpeta de este equipo."
+
+msgid "Connection details"
+msgstr "Detalles de conexión"
+
+msgid ""
+"Enter the WebDAV endpoint URL and credentials that the browser will use "
+"during export."
+msgstr ""
+"Introduzca la URL del endpoint WebDAV y las credenciales que el navegador "
+"usará durante la exportación."
+
+msgid "WebDAV URL"
+msgstr "URL de WebDAV"
+
+msgid "Username"
+msgstr "Nombre de usuario"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "You must pass this test before continuing to execution."
+msgstr "Debe superar esta prueba antes de continuar con la ejecución."
+
+msgid "Storage setup"
+msgstr "Configuración de almacenamiento"
+
+msgid ""
+"Use a WebDAV-compatible storage service such as ownCloud, Nextcloud, or "
+"another WebDAV-enabled server."
+msgstr ""
+"Utilice un servicio de almacenamiento compatible con WebDAV como ownCloud, "
+"Nextcloud u otro servidor habilitado para WebDAV."
+
+msgid ""
+"Use the direct WebDAV endpoint, not a generic product homepage or login page."
+msgstr ""
+"Utilice el endpoint WebDAV directo, no una página de inicio genérica o de "
+"inicio de sesión."
+
+msgid ""
+"The WebDAV server must allow cross-origin requests from this app origin "
+"(CORS) or the browser will block validation and file transfer."
+msgstr ""
+"El servidor WebDAV debe permitir solicitudes de origen cruzado desde el "
+"origen de esta aplicación (CORS) o el navegador bloqueará la validación y la "
+"transferencia de archivos."
+
+msgid ""
+"If your server sits behind a proxy or self-signed TLS setup, make sure the "
+"browser can reach it successfully from this environment."
+msgstr ""
+"Si su servidor está detrás de un proxy o una configuración TLS autofirmada, "
+"asegúrese de que el navegador pueda acceder correctamente desde este entorno."
+
+msgid "Destination directory"
+msgstr "Directorio de destino"
+
+msgid ""
+"Choose the local folder where the reviewed export paths will be created "
+"during this browser session."
+msgstr ""
+"Elija la carpeta local donde se crearán las rutas de exportación revisadas "
+"durante esta sesión del navegador."
+
+msgid "Choose a different folder"
+msgstr "Elegir otra carpeta"
+
+msgid "Choose folder"
+msgstr "Elegir carpeta"
+
+msgid "Selected folder: {{name}}"
+msgstr "Carpeta seleccionada: {{name}}"
+
+msgid "No local folder selected yet."
+msgstr "Aún no se ha seleccionado una carpeta local."
+
+msgid "Validate the selected folder before continuing to execution."
+msgstr "Valide la carpeta seleccionada antes de continuar con la ejecución."
+
+msgid "Local directory setup"
+msgstr "Configuración de directorio local"
+
+msgid ""
+"Local directory export writes files directly into a folder on this computer "
+"instead of sending them to a remote server."
+msgstr ""
+"La exportación a directorio local escribe archivos directamente en una "
+"carpeta de este equipo en lugar de enviarlos a un servidor remoto."
+
+msgid ""
+"This option requires browser support for the File System Access API, which "
+"is typically available in Chromium-based browsers."
+msgstr ""
+"Esta opción requiere compatibilidad del navegador con la API File System "
+"Access, disponible normalmente en navegadores basados en Chromium."
+
+msgid ""
+"Folder access applies only to the current browser session. If you reload the "
+"app, choose the folder again."
+msgstr ""
+"El acceso a la carpeta aplica solo a la sesión actual del navegador. Si "
+"recarga la aplicación, elija la carpeta de nuevo."
+
+msgid ""
+"The export will recreate the reviewed folder structure under the selected "
+"local directory."
+msgstr ""
+"La exportación recreará la estructura de carpetas revisada dentro del "
+"directorio local seleccionado."
+
+msgid "Testing connection"
+msgstr "Probando conexión"
+
+msgid ""
+"Checking whether this browser can reach the WebDAV endpoint with the "
+"provided credentials."
+msgstr ""
+"Comprobando si este navegador puede alcanzar el endpoint WebDAV con las "
+"credenciales proporcionadas."
+
+msgid "Connection valid"
+msgstr "Conexión válida"
+
+msgid "WebDAV connection validated. You can continue to execution."
+msgstr "Conexión WebDAV validada. Puede continuar con la ejecución."
+
+msgid "Connection invalid"
+msgstr "Conexión no válida"
+
+msgid "Review the setup remarks above and try again."
+msgstr "Revise las observaciones de configuración anteriores e inténtelo de nuevo."
+
+msgid "Validating directory"
+msgstr "Validando directorio"
+
+msgid ""
+"Checking whether this browser session can write files into the selected "
+"local directory."
+msgstr ""
+"Comprobando si esta sesión del navegador puede escribir archivos en el "
+"directorio local seleccionado."
+
+msgid "Directory valid"
+msgstr "Directorio válido"
+
+msgid "Local directory validated. You can continue to execution."
+msgstr "Directorio local validado. Puede continuar con la ejecución."
+
+msgid "Directory invalid"
+msgstr "Directorio no válido"
+
+msgid "Choose a supported browser or select a different folder and try again."
+msgstr ""
+"Elija un navegador compatible o seleccione una carpeta diferente e "
+"inténtelo de nuevo."
+
+msgid "Define the export scope and filename templates"
+msgstr "Definir el alcance de exportación y las plantillas de nombre de archivo"
+
+msgid ""
+"Choose where to look for records, then define the destination path for each "
+"selected file field."
+msgstr ""
+"Elija dónde buscar registros y defina la ruta de destino para cada campo de "
+"archivo seleccionado."
+
+msgid "Filters"
+msgstr "Filtros"
+
+msgid "Organisation unit"
+msgstr "Unidad organizativa"
+
+msgid "Select a program first to filter by organisation unit."
+msgstr "Seleccione un programa primero para filtrar por unidad organizativa."
+
+msgid "Include"
+msgstr "Incluir"
+
+msgid "Date from (optional)"
+msgstr "Fecha desde (opcional)"
+
+msgid "Date to (optional)"
+msgstr "Fecha hasta (opcional)"
+
+msgid "No selected files"
+msgstr "Sin archivos seleccionados"
+
+msgid "Go back to step 1 and select at least one file data value to sync."
+msgstr ""
+"Vuelva al paso 1 y seleccione al menos un valor de dato de archivo a "
+"sincronizar."
+
+msgid "Path and filename template - {{name}}"
+msgstr "Plantilla de ruta y nombre de archivo - {{name}}"
+
+msgid ""
+"Use tokens like {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, "
+"{dataElement:FileName}."
+msgstr ""
+"Use tokens como {orgUnitName}, {enrollmentDate}, {attribute:NationalID}, "
+"{dataElement:FileName}."
+
+msgid "Required."
+msgstr "Obligatorio."
+
+msgid "Valid template. Preview:"
+msgstr "Plantilla válida. Vista previa:"
+
+msgid "Select program and organisation unit to load resolved values."
+msgstr ""
+"Seleccione un programa y una unidad organizativa para cargar los valores "
+"resueltos."
+
+msgid "Could not load resolved values."
+msgstr "No se pudieron cargar los valores resueltos."
+
+msgid "No resolved template values found for current filters."
+msgstr ""
+"No se encontraron valores de plantilla resueltos para los filtros actuales."
+
+msgid "Available properties"
+msgstr "Propiedades disponibles"
+
+msgid "Select a program to inspect available properties."
+msgstr "Seleccione un programa para inspeccionar las propiedades disponibles."
+
+msgid "Could not inspect program properties"
+msgstr "No se pudieron inspeccionar las propiedades del programa"
+
+msgid "No properties found"
+msgstr "No se encontraron propiedades"
+
+msgid "No resolvable properties were found for this program."
+msgstr "No se encontraron propiedades resolubles para este programa."
 
 #~ msgid "Detail page"
 #~ msgstr "Página de detalle"

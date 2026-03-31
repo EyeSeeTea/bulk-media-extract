@@ -34,7 +34,9 @@ export function usesLegacyEventFileEndpoint(version: Dhis2Version): boolean {
 
 export async function loadDhis2Version(api: D2Api): Promise<Dhis2Version> {
     try {
-        const systemInfo = await api.get<{ version?: string }>("/system/info?fields=version").getData();
+        const systemInfo = await api
+            .get<{ version?: string }>("/system/info?fields=version")
+            .getData();
         return parseDhis2Version(systemInfo.version);
     } catch {
         return DEFAULT_DHIS2_VERSION;

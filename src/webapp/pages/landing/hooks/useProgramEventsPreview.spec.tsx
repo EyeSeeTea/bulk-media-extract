@@ -33,11 +33,14 @@ describe("useProgramEventsPreview", () => {
     });
 
     it("loads event preview for selected program and org unit", async () => {
-        const { result } = renderHook(() => useProgramEventsPreview("prog-a", "ou-a", "descendants"), {
-            wrapper: ({ children }) => (
-                <AppContext.Provider value={context}>{children}</AppContext.Provider>
-            ),
-        });
+        const { result } = renderHook(
+            () => useProgramEventsPreview("prog-a", "ou-a", "descendants"),
+            {
+                wrapper: ({ children }) => (
+                    <AppContext.Provider value={context}>{children}</AppContext.Provider>
+                ),
+            }
+        );
 
         await waitFor(() => {
             expect(result.current.state.status).toBe("success");

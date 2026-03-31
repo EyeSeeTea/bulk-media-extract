@@ -20,10 +20,11 @@ The path/file naming template setup step MUST expose a visual template builder w
 - **THEN** the wizard advances to the preview step instead of the storage step
 
 ### Requirement: Wizard enforces step-level validation gates
-The system MUST block step transitions and final execution when required fields are missing or invalid, including required file selection in step 1, required per-file mapping coverage in step 2, valid template input before preview, duplicate target filepaths in preview, and a successful validation of the currently selected storage method before execution.  
-The storage step MUST require the user to select a storage method before the wizard can advance.  
-When `WebDAV` is selected, the storage step MUST require the user to provide the WebDAV URL, username, and password, and MUST require a successful connection test using the currently entered values before the wizard can advance.  
+The system MUST block step transitions and final execution when required fields are missing or invalid, including required file selection in step 1, required per-file mapping coverage in step 2, valid template input before preview, duplicate target filepaths in preview, and a successful validation of the currently selected storage method before execution.
+The storage step MUST require the user to select a storage method before the wizard can advance.
+When `WebDAV` is selected, the storage step MUST require the user to provide the WebDAV URL, username, and password, and MUST require a successful connection test using the currently entered values before the wizard can advance.
 When `Local directory` is selected, the storage step MUST require the user to select and validate a destination directory before the wizard can advance.
+When a step already renders its own specific warning or error notice that explains the validation issue (e.g. duplicate-path warning in preview, connection-error notice in storage), the wizard shell MUST suppress the generic "Validation required" banner for that step. The Next button MUST still be disabled regardless of whether the generic banner is shown.
 
 #### Scenario: Missing required step data prevents transition
 - **WHEN** the user attempts to continue with incomplete required fields
@@ -43,7 +44,15 @@ When `Local directory` is selected, the storage step MUST require the user to se
 
 #### Scenario: Duplicate preview target filepath prevents transition
 - **WHEN** the preview step contains two or more files with the same resolved target filepath and the user clicks next
-- **THEN** the system blocks progression, highlights the duplicate conflict, and instructs the user to revise the template
+- **THEN** the system blocks progression, highlights **all** rows that share each duplicate target path, and displays a warning notice that lists each conflicting path together with the event IDs and file data element names that produce it
+
+#### Scenario: All duplicate rows are highlighted not just one
+- **WHEN** two or more preview rows resolve to the same target filepath
+- **THEN** every row sharing that duplicate path SHALL be visually highlighted with the duplicate warning style
+
+#### Scenario: Duplicate warning notice lists conflicting paths with sources
+- **WHEN** the preview step detects duplicate target filepaths
+- **THEN** the warning notice SHALL display each conflicting target path and, for each path, list the event ID and file data element name of every row that produces it
 
 #### Scenario: Storage step blocks progression until current WebDAV credentials are validated
 - **WHEN** the user attempts to continue from the storage step with `WebDAV` selected before a successful connection test with the currently entered WebDAV URL, username, and password
@@ -60,6 +69,14 @@ When `Local directory` is selected, the storage step MUST require the user to se
 #### Scenario: Failed real WebDAV validation prevents progression
 - **WHEN** the user runs the storage-step connection test with `WebDAV` selected and the real WebDAV validation request fails
 - **THEN** the system keeps the storage step blocked from progressing and displays the validation failure result
+
+#### Scenario: Generic validation banner is suppressed when step has inline notice
+- **WHEN** a step has a validation error AND the step already renders a specific warning or error NoticeBox explaining the issue
+- **THEN** the wizard shell does NOT render the generic "Validation required" banner, but the Next button remains disabled
+
+#### Scenario: Generic validation banner is shown when step has no inline notice
+- **WHEN** a step has a validation error AND the step does not render its own specific notice (e.g. missing program selection in preview step)
+- **THEN** the wizard shell renders the generic "Validation required" banner as before
 
 ### Requirement: Wizard storage step supports selectable destination methods
 The system SHALL present the storage step as a destination-method selection workflow instead of a fixed WebDAV-only form.  
@@ -90,15 +107,16 @@ The system SHALL preserve entered values while the user navigates backward or fo
 - **THEN** corrected values are retained in subsequent steps
 
 ### Requirement: Wizard executes export through existing export workflow
-The system MUST trigger export execution using the reviewed configuration from the previous wizard steps and expose progress, interruption, and failures in the wizard UI.  
-The execution step MUST be robust for large file lists by processing the reviewed export plan through controlled batch orchestration instead of a fire-and-forget launch action.  
-The execution step MUST show clear progress reporting, including processed items versus total items, and MUST preserve a run summary that includes both successes and failures.  
-The execution step MUST present `Processed` and `Progress` together as one summary pair and MUST present `Successes` and `Failures` together as one summary pair.  
-The execution step MUST display a prominent progress bar only after export execution has started, and that progress bar MUST use animation to communicate active work while reflecting the best available progress approximation.  
-The execution step MUST display an execution log only after export execution has started, and that log MUST be collapsed by default until the user expands it.  
-Expanded execution-log entries MUST remain compact and the log region MUST have a bounded scrollable height for long runs.  
-When execution finishes successfully, the completion notice MUST use a positive valid/success treatment and MUST expose the download-result-summary action from within that notice.  
-The final execution step MUST replace the wizard-level `Next` action with a `Finish` action even before a concrete completion flow is implemented.  
+The system MUST trigger export execution using the reviewed configuration from the previous wizard steps and expose progress, interruption, and failures in the wizard UI.
+The execution step MUST be robust for large file lists by processing the reviewed export plan through controlled batch orchestration instead of a fire-and-forget launch action.
+The execution step MUST show clear progress reporting, including processed items versus total items, and MUST preserve a run summary that includes both successes and failures.
+The execution step MUST present `Processed` and `Progress` together as one summary pair and MUST present `Successes` and `Failures` together as one summary pair.
+The execution step MUST display a prominent progress bar only after export execution has started, and that progress bar MUST use animation to communicate active work while reflecting the best available progress approximation.
+The execution step MUST display an execution log only after export execution has started, and that log MUST be collapsed by default until the user expands it.
+Expanded execution-log entries MUST remain compact and the log region MUST have a bounded scrollable height for long runs.
+When execution finishes successfully, the completion notice MUST use a positive valid/success treatment and MUST expose the download-result-summary action from within that notice.
+The final execution step MUST replace the wizard-level `Next` action with a `Finish` action.
+When the user activates the `Finish` action, the system MUST navigate to the landing page (`/`) and the wizard state MUST be fully reset.
 Once execution finishes successfully, the execution step MUST stop showing the `Latest target path` helper label.
 
 #### Scenario: Export starts from final step using reviewed configuration
@@ -131,7 +149,11 @@ Once execution finishes successfully, the execution step MUST stop showing the `
 
 #### Scenario: Final step exposes finish action
 - **WHEN** the user is on the execution step
-- **THEN** the wizard footer displays a `Finish` action instead of `Next` as the end-of-flow affordance even if that action does not yet complete additional behavior
+- **THEN** the wizard footer displays a `Finish` action instead of `Next` as the end-of-flow affordance
+
+#### Scenario: Finish action navigates to landing page and resets state
+- **WHEN** the user activates the `Finish` action on the execution step
+- **THEN** the system navigates to the landing page at `/` and the wizard state is fully reset for the next session
 
 #### Scenario: Successful completion hides latest target path helper
 - **WHEN** an execution run finishes successfully
@@ -146,13 +168,19 @@ Once execution finishes successfully, the execution step MUST stop showing the `
 - **THEN** the system provides an action to download the execution result summary containing successes and failures for that run
 
 ### Requirement: Wizard preview step exposes export configuration action
-The system SHALL display an export configuration action in the preview step and MUST generate a JSON execution configuration from the current reviewed preview result when the user activates it.  
-The downloaded configuration MUST use the defined execution-configuration contract and MUST reflect the same reviewed preview rows and resolved targets currently visible in the preview step, excluding rows that are marked as skipped because they are missing `FileResource`.  
+The system SHALL display an export configuration action in the preview step and MUST generate a JSON execution configuration from the current reviewed preview result when the user activates it.
+The downloaded configuration MUST use the defined execution-configuration contract and MUST reflect the same reviewed preview rows and resolved targets currently visible in the preview step, excluding rows that are marked as skipped because they are missing `FileResource`.
 Each exported operation's source URL MUST match the upstream-file endpoint for the detected DHIS2 version so the saved execution plan remains runnable against the same server version that produced the preview.
+The export configuration button MUST be accompanied by an inline info-icon popover (using the `InfoIconPopover` component) that explains the purpose of the download and clarifies that import is not yet available.
+The preview step MUST NOT display a standalone paragraph below the button to describe the export action.
 
 #### Scenario: Preview shows export configuration button
 - **WHEN** the user reaches the preview step
 - **THEN** the system displays an export configuration button alongside the preview actions
+
+#### Scenario: Export configuration button has an info-icon popover
+- **WHEN** the user views the export configuration button in the preview step
+- **THEN** an info icon is displayed next to the button, and clicking it reveals a popover explaining that the download is a JSON snapshot of the export plan and that import is not yet available
 
 #### Scenario: Export configuration downloads as JSON
 - **WHEN** the user activates the export configuration action after the preview has loaded
@@ -165,6 +193,10 @@ Each exported operation's source URL MUST match the upstream-file endpoint for t
 #### Scenario: Export configuration preserves DHIS2 2.40 source URLs
 - **WHEN** the current preview was generated against a DHIS2 2.40 server
 - **THEN** each exported operation references the legacy `api/40/events/files` source URL for its row instead of the 2.41 Tracker file route
+
+#### Scenario: No standalone help paragraph below export button
+- **WHEN** the preview step renders the export configuration area
+- **THEN** there is no paragraph element describing the export action below the button — help is only available via the info-icon popover
 
 ### Requirement: Wizard storage step explains WebDAV scope and setup prerequisites
 The system SHALL present WebDAV setup guidance when `WebDAV` is the selected storage method.  
@@ -310,11 +342,33 @@ The system SHALL present friendly program type labels in the UI instead of expos
 - **THEN** the wizard displays `Event Program` wherever the program type is shown
 
 ### Requirement: Wizard provides a prominent footer action bar
-The system SHALL render wizard navigation actions inside a dedicated footer action bar that visually separates navigation from step content. The primary forward action MUST be visually prominent, and the back action MUST remain clearly available without being crowded against the page edge.
+The system SHALL render wizard navigation actions inside a dedicated footer action bar that visually separates navigation from step content. The primary forward action MUST be visually prominent and MUST always be right-aligned regardless of whether the back action is present. The back action MUST remain clearly available without being crowded against the page edge.
+The back action MUST be hidden when the user is on the first step of the wizard, not merely disabled.
+The forward action (Next) MUST be visually disabled when the current step has a validation error, providing clear feedback that the step is not yet complete.
 
 #### Scenario: Step actions are visually grouped and spaced
 - **WHEN** the user views any wizard step
-- **THEN** Back and forward actions appear in a dedicated footer region with clear spacing and alignment instead of as small buttons attached to the far left of the content area
+- **THEN** Back and forward actions appear in a dedicated footer region with clear spacing and alignment
+
+#### Scenario: Forward action stays right-aligned without Back
+- **WHEN** the user is on the first step and the Back button is hidden
+- **THEN** the forward action (Next) remains right-aligned in the footer
+
+#### Scenario: Back button is hidden on the first step
+- **WHEN** the user is on the first step of the wizard
+- **THEN** the back action is not rendered in the footer
+
+#### Scenario: Back button is visible on subsequent steps
+- **WHEN** the user is on any step after the first
+- **THEN** the back action is visible and enabled in the footer
+
+#### Scenario: Next button is visually disabled when step has validation error
+- **WHEN** the current step has a validation error
+- **THEN** the Next button is rendered in a visually disabled state
+
+#### Scenario: Next button is enabled when step is valid
+- **WHEN** the current step passes validation
+- **THEN** the Next button is enabled and clickable
 
 #### Scenario: Footer actions remain usable on narrow layouts
 - **WHEN** the wizard is rendered on a narrow viewport
@@ -330,3 +384,57 @@ The system SHALL present each wizard step with a consistent content hierarchy so
 #### Scenario: Page content ends with intentional breathing room
 - **WHEN** the user reaches the end of a step with a long content body
 - **THEN** the wizard layout keeps visible bottom padding below the final content and action area
+
+### Requirement: Wizard provides a header-level exit action with confirmation
+The wizard page MUST display a page header titled "Export program files" with a back/exit button above the wizard steps that allows the user to leave the wizard from any step. The page header MUST be visually distinct from the wizard step content through a bottom border and subtle background treatment.
+Activating the exit action MUST present a confirmation modal titled "Exit current export" warning that all configuration will be lost. The modal buttons MUST have visible spacing between them. If the user confirms, the system MUST navigate to the landing page (`/`). If the user dismisses the modal, the wizard MUST remain on the current step with all state preserved.
+The exit action MUST be disabled while an export execution is running.
+
+#### Scenario: Exit action is visible in the wizard header
+- **WHEN** the user is on any wizard step
+- **THEN** a back/exit action is visible in the page header above the wizard steps
+
+#### Scenario: Exit triggers confirmation modal
+- **WHEN** the user activates the header exit action
+- **THEN** the system displays a confirmation modal warning that all progress will be lost and offering confirm and dismiss options
+
+#### Scenario: Confirming exit navigates to landing page
+- **WHEN** the user confirms the exit action in the modal
+- **THEN** the system navigates to the landing page at `/` and the wizard state is fully reset
+
+#### Scenario: Dismissing exit preserves wizard state
+- **WHEN** the user dismisses the exit confirmation modal
+- **THEN** the wizard remains on the current step with all entered values preserved
+
+#### Scenario: Exit is disabled during execution
+- **WHEN** an export execution is currently running
+- **THEN** the header exit action is disabled to prevent interrupting the process via navigation
+
+### Requirement: Preview step shows only the StepIntro description without a redundant body paragraph
+The preview step MUST NOT render the "Preview the resolved export rows before continuing." paragraph. The StepIntro description MUST be the sole introductory text and SHALL read: "Review the resolved target paths and any warnings before continuing to storage and execution."
+
+#### Scenario: No redundant preview paragraph is rendered
+- **WHEN** the preview step loads with results
+- **THEN** the step does not render a separate paragraph with "Preview the resolved export rows before continuing."
+
+#### Scenario: StepIntro description is self-sufficient
+- **WHEN** the user views the preview step
+- **THEN** the StepIntro description reads "Review the resolved target paths and any warnings before continuing to storage and execution."
+
+### Requirement: Preview step does not display event and page counts
+The preview step MUST NOT render the "Matching events: X. Pages: Y." text. The files count and total size in the stats grid are sufficient.
+
+#### Scenario: Event and page count text is absent
+- **WHEN** the preview step renders the footer area
+- **THEN** there is no text displaying "Matching events" or page counts
+
+### Requirement: Preview table has a bounded height with sticky headers
+The preview table wrapper MUST enforce a maximum height. When the table content exceeds that height, the wrapper MUST scroll vertically while keeping the table header row fixed at the top of the scrollable area.
+
+#### Scenario: Table scrolls vertically for large file sets
+- **WHEN** the preview table contains more rows than fit within the maximum height
+- **THEN** the table wrapper scrolls vertically and the header row remains visible at the top
+
+#### Scenario: Table does not scroll when content fits
+- **WHEN** the preview table rows fit within the maximum height
+- **THEN** no vertical scrollbar appears and the table renders at its natural height

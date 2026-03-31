@@ -21,9 +21,12 @@ export function useProgramEventsPreview(
     options?: Options
 ) {
     const { compositionRoot } = useAppContext();
-    const cacheKey = programId && orgUnitId
-        ? `${programId}:${orgUnitId}:${orgUnitMode}:${programStageId ?? ""}:${fileDataElementId ?? ""}:${String(options?.pageSize ?? "")}:${String(options?.loadAllPages ?? false)}`
-        : undefined;
+    const cacheKey =
+        programId && orgUnitId
+            ? `${programId}:${orgUnitId}:${orgUnitMode}:${programStageId ?? ""}:${
+                  fileDataElementId ?? ""
+              }:${String(options?.pageSize ?? "")}:${String(options?.loadAllPages ?? false)}`
+            : undefined;
     const enabled = options?.enabled ?? true;
     const pageSize = options?.pageSize;
     const loadAllPages = options?.loadAllPages ?? false;

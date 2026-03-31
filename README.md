@@ -1,6 +1,6 @@
-## Tracker File Bridge
+## Bulk Media Extract
 
-Export DHIS2 Tracker files to external storage with metadata-driven paths.
+Bulk extract and export DHIS2 media files to external storage with metadata-driven paths.
 
 ## Setup
 

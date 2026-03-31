@@ -56,13 +56,7 @@ export function useWizardExportPreview({
 
     const cacheKey =
         programId && orgUnitId && normalizedFilters.length > 0
-            ? [
-                  programId,
-                  orgUnitId,
-                  orgUnitMode,
-                  String(pageSize),
-                  filterSignature,
-              ].join("|")
+            ? [programId, orgUnitId, orgUnitMode, String(pageSize), filterSignature].join("|")
             : undefined;
 
     const asyncFunction = React.useCallback(async (): Promise<ProgramEventsPreviewResult> => {

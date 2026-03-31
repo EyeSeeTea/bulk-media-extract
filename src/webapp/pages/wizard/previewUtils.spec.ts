@@ -114,7 +114,7 @@ describe("previewUtils", () => {
         );
         expect(summary.totalFiles).toBe(0);
         expect(summary.totalSize).toBe(0);
-        expect(summary.duplicateTargetPaths).toEqual([]);
+        expect(summary.duplicateTargetPathDetails).toEqual([]);
         expect(summary.missingFileResourceCount).toBe(1);
     });
 
@@ -159,9 +159,73 @@ describe("previewUtils", () => {
 
         expect(summary.totalFiles).toBe(2);
         expect(summary.totalSize).toBe(2048);
-        expect(summary.duplicateTargetPaths).toEqual(["/exports/visit-form.pdf"]);
+        expect(summary.duplicateTargetPathDetails).toEqual([
+            {
+                path: "/exports/visit-form.pdf",
+                rows: [
+                    { eventId: "evt-1", fileDataValueName: "Visit Form" },
+                    { eventId: "evt-1", fileDataValueName: "Attachment" },
+                ],
+            },
+        ]);
         expect(summary.missingFileResourceCount).toBe(0);
         expect(rows.every(row => row.hasDuplicateTargetPath)).toBe(true);
+    });
+
+    it("marks all rows sharing a duplicate target path across different events", () => {
+        const rows = buildExportPreviewRows(
+            [
+                ProgramEventPreview.create({
+                    id: "evt-1",
+                    eventDate: "2026-01-10",
+                    orgUnitId: "ou-a",
+                    orgUnitName: "Central Clinic",
+                    orgUnitAttributeValues: {},
+                    dataValues: { "de-file": "file-123" },
+                    attributeValues: {},
+                    fileValues: { "de-file": "file-123" },
+                    fileNames: { "de-file": "report.pdf" },
+                    fileSizes: { "de-file": 512 },
+                }),
+                ProgramEventPreview.create({
+                    id: "evt-2",
+                    eventDate: "2026-01-11",
+                    orgUnitId: "ou-a",
+                    orgUnitName: "Central Clinic",
+                    orgUnitAttributeValues: {},
+                    dataValues: { "de-file": "file-456" },
+                    attributeValues: {},
+                    fileValues: { "de-file": "file-456" },
+                    fileNames: { "de-file": "report.pdf" },
+                    fileSizes: { "de-file": 1024 },
+                }),
+            ],
+            [
+                ProgramFileProperty.create({
+                    id: "de-file",
+                    name: "Visit Form",
+                    valueType: "FILE_RESOURCE",
+                    sourceType: "dataElement",
+                }),
+            ],
+            { "de-file": "/exports/{orgUnitName}/{fileName}" },
+            "http://localhost:8081/dhis2"
+        );
+
+        expect(rows).toHaveLength(2);
+        expect(rows[0]?.hasDuplicateTargetPath).toBe(true);
+        expect(rows[1]?.hasDuplicateTargetPath).toBe(true);
+
+        const summary = summarizeExportPreview(rows);
+        expect(summary.duplicateTargetPathDetails).toEqual([
+            {
+                path: "/exports/Central Clinic/report.pdf",
+                rows: [
+                    { eventId: "evt-1", fileDataValueName: "Visit Form" },
+                    { eventId: "evt-2", fileDataValueName: "Visit Form" },
+                ],
+            },
+        ]);
     });
 
     it("builds Capture event links", () => {
@@ -189,7 +253,9 @@ describe("previewUtils", () => {
                 "http://localhost:8081/dhis2",
                 parseDhis2Version("2.40.7")
             )
-        ).toBe("http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1");
+        ).toBe(
+            "http://localhost:8081/dhis2/api/40/events/files?dataElementUid=de-file&eventUid=evt-1"
+        );
     });
 
     it("builds tracker data value urls for newer DHIS2 versions", () => {
@@ -200,9 +266,7 @@ describe("previewUtils", () => {
                 "http://localhost:8081/dhis2",
                 parseDhis2Version("2.42.1")
             )
-        ).toBe(
-            "http://localhost:8081/dhis2/api/42/tracker/events/evt-1/dataValues/de-file/file"
-        );
+        ).toBe("http://localhost:8081/dhis2/api/42/tracker/events/evt-1/dataValues/de-file/file");
     });
 
     it("provides preview cell fallbacks", () => {

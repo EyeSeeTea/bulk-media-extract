@@ -9,7 +9,11 @@ import { AsyncData } from "$/webapp/hooks/useAsyncData";
 import { StepIntro } from "$/webapp/components/wizard/StepIntro";
 import { getPropertyTemplateToken } from "$/application/export/TemplateBuilder";
 import { insertAtCursor } from "$/webapp/pages/wizard/templateInputUtils";
-import { getVisiblePropertyGroupsForFile, ProgramOption, FILE_VALUE_TYPES } from "$/webapp/pages/wizard/wizardShared";
+import {
+    getVisiblePropertyGroupsForFile,
+    ProgramOption,
+    FILE_VALUE_TYPES,
+} from "$/webapp/pages/wizard/wizardShared";
 import { validateTemplate } from "$/webapp/pages/wizard/wizardConfig";
 import i18n from "$/utils/i18n";
 
@@ -153,7 +157,9 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
             {selectedFileDataElements.length === 0 ? (
                 <section className="wizard-section">
                     <NoticeBox title={i18n.t("No selected files")}>
-                        {i18n.t("Go back to step 1 and select at least one file data value to sync.")}
+                        {i18n.t(
+                            "Go back to step 1 and select at least one file data value to sync."
+                        )}
                     </NoticeBox>
                 </section>
             ) : (
@@ -184,7 +190,9 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                         ref={input => {
                                             templateInputRefs.current[fileProperty.id] = input;
                                         }}
-                                        className={templateError ? "wizard-input-invalid" : undefined}
+                                        className={
+                                            templateError ? "wizard-input-invalid" : undefined
+                                        }
                                         data-testid={
                                             fileIndex === 0
                                                 ? "wizard-template-input"
@@ -205,11 +213,15 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                     {templateError ? (
                                         <p
                                             className={`template-editor-feedback ${
-                                                isTemplateMissing ? "template-editor-feedback-muted" : "template-editor-feedback-error"
+                                                isTemplateMissing
+                                                    ? "template-editor-feedback-muted"
+                                                    : "template-editor-feedback-error"
                                             }`}
                                             data-testid={`wizard-template-feedback-${fileProperty.id}`}
                                         >
-                                            {isTemplateMissing ? i18n.t("Required.") : templateError}
+                                            {isTemplateMissing
+                                                ? i18n.t("Required.")
+                                                : templateError}
                                         </p>
                                     ) : (
                                         <div
@@ -245,12 +257,20 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                                     )}
                                                 </p>
                                             ) : (
-                                                <ul data-testid={`wizard-resolved-template-list-${fileProperty.id}`}>
-                                                    {resolvedTemplates.map((resolvedTemplate, index) => (
-                                                        <li key={`${fileProperty.id}:${String(index)}`}>
-                                                            {resolvedTemplate}
-                                                        </li>
-                                                    ))}
+                                                <ul
+                                                    data-testid={`wizard-resolved-template-list-${fileProperty.id}`}
+                                                >
+                                                    {resolvedTemplates.map(
+                                                        (resolvedTemplate, index) => (
+                                                            <li
+                                                                key={`${fileProperty.id}:${String(
+                                                                    index
+                                                                )}`}
+                                                            >
+                                                                {resolvedTemplate}
+                                                            </li>
+                                                        )
+                                                    )}
                                                 </ul>
                                             )}
                                         </div>
@@ -260,33 +280,52 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                     <h5>{i18n.t("Available properties")}</h5>
                                     {!selectedProgram ? (
                                         <NoticeBox title={i18n.t("Program required")}>
-                                            {i18n.t("Select a program to inspect available properties.")}
+                                            {i18n.t(
+                                                "Select a program to inspect available properties."
+                                            )}
                                         </NoticeBox>
                                     ) : programDetailsState.status === "loading" ? (
                                         <CircularLoader small />
                                     ) : programDetailsState.status === "error" ? (
-                                        <NoticeBox error title={i18n.t("Could not inspect program properties")}>
+                                        <NoticeBox
+                                            error
+                                            title={i18n.t("Could not inspect program properties")}
+                                        >
                                             {programDetailsState.error}
                                         </NoticeBox>
                                     ) : programDetailsState.status === "success" &&
                                       visiblePropertyGroups.length > 0 ? (
-                                        <div className="template-property-groups" data-testid="wizard-property-groups">
+                                        <div
+                                            className="template-property-groups"
+                                            data-testid="wizard-property-groups"
+                                        >
                                             {visiblePropertyGroups.map(group => (
-                                                <div key={group.id} className="template-property-group">
-                                                    <p className="template-property-group-title">{group.name}</p>
+                                                <div
+                                                    key={group.id}
+                                                    className="template-property-group"
+                                                >
+                                                    <p className="template-property-group-title">
+                                                        {group.name}
+                                                    </p>
                                                     <ul>
                                                         {group.properties.map(property => {
                                                             if (
                                                                 group.id !== "fileMetadata" &&
-                                                                property.sourceType === "dataElement" &&
-                                                                FILE_VALUE_TYPES.has(property.valueType) &&
+                                                                property.sourceType ===
+                                                                    "dataElement" &&
+                                                                FILE_VALUE_TYPES.has(
+                                                                    property.valueType
+                                                                ) &&
                                                                 !selectedFileIdSet.has(property.id)
                                                             ) {
                                                                 return null;
                                                             }
-                                                            const token = getPropertyTemplateToken(property);
+                                                            const token =
+                                                                getPropertyTemplateToken(property);
                                                             return (
-                                                                <li key={`${group.id}:${property.sourceType}:${property.id}`}>
+                                                                <li
+                                                                    key={`${group.id}:${property.sourceType}:${property.id}`}
+                                                                >
                                                                     <button
                                                                         type="button"
                                                                         className="template-token-button"
@@ -314,7 +353,9 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                         </div>
                                     ) : (
                                         <NoticeBox title={i18n.t("No properties found")}>
-                                            {i18n.t("No resolvable properties were found for this program.")}
+                                            {i18n.t(
+                                                "No resolvable properties were found for this program."
+                                            )}
                                         </NoticeBox>
                                     )}
                                 </div>

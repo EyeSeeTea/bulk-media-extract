@@ -21,7 +21,11 @@ type WizardContextValue = {
         values: Partial<
             Pick<
                 WizardState,
-                "selectedProgramId" | "selectedOrgUnitId" | "orgUnitSelectionMode" | "dateFrom" | "dateTo"
+                | "selectedProgramId"
+                | "selectedOrgUnitId"
+                | "orgUnitSelectionMode"
+                | "dateFrom"
+                | "dateTo"
                 | "selectedOrgUnitName"
             >
         >
@@ -263,19 +267,23 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
         setState(previous => {
             const normalizedIds = Array.from(new Set(selectedFileDataValueIds));
             const normalizedIdSet = new Set(normalizedIds);
-            const mappingByFileKey = normalizedIds.reduce<Record<string, string>>((acc, fileKey) => {
-                acc[fileKey] = previous.mappingByFileKey[fileKey] ?? "";
-                return acc;
-            }, {});
+            const mappingByFileKey = normalizedIds.reduce<Record<string, string>>(
+                (acc, fileKey) => {
+                    acc[fileKey] = previous.mappingByFileKey[fileKey] ?? "";
+                    return acc;
+                },
+                {}
+            );
 
             return {
                 ...previous,
                 selectedFileDataValueIds: normalizedIds,
                 mappingByFileKey,
-                execution: normalizedIdSet.size === previous.selectedFileDataValueIds.length &&
+                execution:
+                    normalizedIdSet.size === previous.selectedFileDataValueIds.length &&
                     previous.selectedFileDataValueIds.every(fileKey => normalizedIdSet.has(fileKey))
-                    ? previous.execution
-                    : initialExecutionState,
+                        ? previous.execution
+                        : initialExecutionState,
             };
         });
     }, []);
@@ -319,13 +327,10 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({
         }));
     }, []);
 
-    const setExecution = React.useCallback<
-        WizardContextValue["setExecution"]
-    >(execution => {
+    const setExecution = React.useCallback<WizardContextValue["setExecution"]>(execution => {
         setState(previous => ({
             ...previous,
-            execution:
-                typeof execution === "function" ? execution(previous.execution) : execution,
+            execution: typeof execution === "function" ? execution(previous.execution) : execution,
         }));
     }, []);
 

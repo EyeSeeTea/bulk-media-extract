@@ -6,11 +6,20 @@ type UseWizardDefaultScopeParams = {
     selectedProgram?: ProgramOption;
     selectedOrgUnitId: string;
     setScope: (
-        values: Partial<
-            Pick<WizardState, "selectedOrgUnitId" | "orgUnitSelectionMode">
-        >
+        values: Partial<Pick<WizardState, "selectedOrgUnitId" | "orgUnitSelectionMode">>
     ) => void;
 };
+
+function findRootOrgUnitId(orgUnits: ProgramOption["organisationUnits"]): string | undefined {
+    const withPaths = orgUnits.filter(ou => ou.path);
+    if (withPaths.length === 0) return orgUnits[0]?.id;
+
+    const shortest = withPaths.reduce((a, b) =>
+        (a.path?.length ?? Infinity) <= (b.path?.length ?? Infinity) ? a : b
+    );
+
+    return shortest.path ? shortest.path.split("/").filter(Boolean)[0] : orgUnits[0]?.id;
+}
 
 export function useWizardDefaultScope({
     selectedProgram,
@@ -22,7 +31,7 @@ export function useWizardDefaultScope({
             return;
         }
 
-        const firstRootOrgUnitId = selectedProgram.organisationUnits[0]?.id;
+        const firstRootOrgUnitId = findRootOrgUnitId(selectedProgram.organisationUnits);
         if (firstRootOrgUnitId) {
             setScope({
                 selectedOrgUnitId: firstRootOrgUnitId,
