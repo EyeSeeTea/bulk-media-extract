@@ -1,7 +1,7 @@
 {
     "name": "bulk-media-extract",
     "description": "Bulk extract and export DHIS2 media files to external storage with metadata-driven paths.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "license": "GPL-3.0",
     "author": "EyeSeeTea team",
     "homepage": ".",
