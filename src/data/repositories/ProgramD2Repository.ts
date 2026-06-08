@@ -618,6 +618,12 @@ function buildMetadataProperties(programOrgUnits: D2ProgramOrgUnit[]): {
         buildOrganisationUnitAttributeProperties(programOrgUnits);
     const eventProperties = [
         new ProgramFileProperty({
+            id: "eventId",
+            name: "Event ID",
+            valueType: "TEXT",
+            sourceType: "event",
+        }),
+        new ProgramFileProperty({
             id: "enrollmentDate",
             name: "Enrollment/event date",
             valueType: "DATE",

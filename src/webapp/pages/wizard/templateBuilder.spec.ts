@@ -119,7 +119,6 @@ describe("templateBuilder", () => {
         expect(group?.properties.map(property => property.id)).toEqual(
             expect.arrayContaining([
                 "fileName",
-                "eventId",
                 "fileExtension",
                 "fileDataElementId",
                 "fileDataElementName",

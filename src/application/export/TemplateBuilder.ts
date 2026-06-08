@@ -135,12 +135,6 @@ export function buildFileMetadataPropertyGroup(
             valueType: "TEXT",
             sourceType: "metadata",
         }),
-        ProgramFileProperty.create({
-            id: "eventId",
-            name: "Event ID",
-            valueType: "TEXT",
-            sourceType: "metadata",
-        }),
     ];
 
     if (
