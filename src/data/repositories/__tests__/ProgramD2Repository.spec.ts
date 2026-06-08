@@ -212,6 +212,7 @@ describe("ProgramD2Repository", () => {
             "eventDataElements",
         ]);
         expect(details.propertyGroups[1]?.properties.map(property => property.id)).toEqual([
+            "eventId",
             "enrollmentDate",
         ]);
         expect(details.propertyGroups[2]?.properties.map(property => property.id)).toEqual([

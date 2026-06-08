@@ -71,6 +71,12 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceType: "organisationUnitAttribute",
             }),
             new ProgramFileProperty({
+                id: "eventId",
+                name: "Event ID",
+                valueType: "TEXT",
+                sourceType: "event",
+            }),
+            new ProgramFileProperty({
                 id: "enrollmentDate",
                 name: "Enrollment/event date",
                 valueType: "DATE",
@@ -163,6 +169,12 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceType: "event",
                 properties: [
                     new ProgramFileProperty({
+                        id: "eventId",
+                        name: "Event ID",
+                        valueType: "TEXT",
+                        sourceType: "event",
+                    }),
+                    new ProgramFileProperty({
                         id: "enrollmentDate",
                         name: "Enrollment/event date",
                         valueType: "DATE",
@@ -245,6 +257,12 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 sourceType: "organisationUnit",
             }),
             new ProgramFileProperty({
+                id: "eventId",
+                name: "Event ID",
+                valueType: "TEXT",
+                sourceType: "event",
+            }),
+            new ProgramFileProperty({
                 id: "enrollmentDate",
                 name: "Enrollment/event date",
                 valueType: "DATE",
@@ -290,6 +308,12 @@ const PROGRAM_PROPERTIES: Record<string, ProgramFileProperties> = {
                 name: "Event",
                 sourceType: "event",
                 properties: [
+                    new ProgramFileProperty({
+                        id: "eventId",
+                        name: "Event ID",
+                        valueType: "TEXT",
+                        sourceType: "event",
+                    }),
                     new ProgramFileProperty({
                         id: "enrollmentDate",
                         name: "Enrollment/event date",
