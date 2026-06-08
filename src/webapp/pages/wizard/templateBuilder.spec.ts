@@ -94,12 +94,12 @@ describe("templateBuilder", () => {
         });
 
         const value = resolveTemplateForEvent(
-            "/{orgUnitName}/{orgUnitId}/{orgUnitCode}/{orgUnitShortName}/{orgUnitPath}/{orgUnitLevel}/{orgUnitAttribute:org-unit-attr-zone}/{enrollmentDate}/{dataElement:de-file}/{attribute:attr-photo}/{fileName}/{fileExtension}/{fileDataElementId}/{fileDataElementName}/{fileProgramStageId}/{fileProgramStageName}/{fileValueType}.pdf",
+            "/{orgUnitName}/{orgUnitId}/{orgUnitCode}/{orgUnitShortName}/{orgUnitPath}/{orgUnitLevel}/{orgUnitAttribute:org-unit-attr-zone}/{enrollmentDate}/{eventId}/{dataElement:de-file}/{attribute:attr-photo}/{fileName}/{fileExtension}/{fileDataElementId}/{fileDataElementName}/{fileProgramStageId}/{fileProgramStageName}/{fileValueType}.pdf",
             event,
             selectedFileProperty
         );
         expect(value).toBe(
-            "/Central Clinic/ou-a/CC/Central//root/ou-a/2/Urban/2026-01-10/file-123/photo-001.jpg/visit-form.pdf/pdf/de-file/Visit Form/stage-1/Main Stage/FILE_RESOURCE.pdf"
+            "/Central Clinic/ou-a/CC/Central//root/ou-a/2/Urban/2026-01-10/evt-1/file-123/photo-001.jpg/visit-form.pdf/pdf/de-file/Visit Form/stage-1/Main Stage/FILE_RESOURCE.pdf"
         );
     });
 
@@ -119,6 +119,7 @@ describe("templateBuilder", () => {
         expect(group?.properties.map(property => property.id)).toEqual(
             expect.arrayContaining([
                 "fileName",
+                "eventId",
                 "fileExtension",
                 "fileDataElementId",
                 "fileDataElementName",

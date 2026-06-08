@@ -62,6 +62,10 @@ export function resolveTemplateForEvent(
             return event.eventDate ?? "";
         }
 
+        if (token === "eventId") {
+            return event.id;
+        }
+
         if (token === "fileName") {
             return firstFileName;
         }
@@ -128,6 +132,12 @@ export function buildFileMetadataPropertyGroup(
         ProgramFileProperty.create({
             id: "fileName",
             name: "Filename",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+        ProgramFileProperty.create({
+            id: "eventId",
+            name: "Event ID",
             valueType: "TEXT",
             sourceType: "metadata",
         }),
