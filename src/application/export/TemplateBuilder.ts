@@ -33,6 +33,14 @@ export function resolveTemplateForEvent(
         ? event.fileNames[firstFileDataElementId] ?? ""
         : "";
 
+    let randomValue: string | undefined;
+    const getRandomValue = () => {
+        if (randomValue === undefined) {
+            randomValue = generateRandomToken();
+        }
+        return randomValue;
+    };
+
     return template.replace(/\{([^}]+)\}/g, (_value, token: string) => {
         if (token === "orgUnitName") {
             return event.orgUnitName ?? event.orgUnitId;
@@ -64,6 +72,10 @@ export function resolveTemplateForEvent(
 
         if (token === "eventId") {
             return event.id;
+        }
+
+        if (token === "random") {
+            return getRandomValue();
         }
 
         if (token === "fileName") {
@@ -138,6 +150,12 @@ export function buildFileMetadataPropertyGroup(
         ProgramFileProperty.create({
             id: "eventId",
             name: "Event ID",
+            valueType: "TEXT",
+            sourceType: "metadata",
+        }),
+        ProgramFileProperty.create({
+            id: "random",
+            name: "Random value",
             valueType: "TEXT",
             sourceType: "metadata",
         }),
@@ -257,6 +275,22 @@ export function buildCurrentDataElementPropertyGroup(
 
 function sanitizeToken(value: string): string {
     return value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+function generateRandomToken(length = 8): string {
+    const charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const cryptoObj = typeof globalThis !== "undefined" ? globalThis.crypto : undefined;
+
+    if (cryptoObj?.getRandomValues) {
+        const values = cryptoObj.getRandomValues(new Uint32Array(length));
+        return Array.from(values, value => charset[value % charset.length]).join("");
+    }
+
+    let result = "";
+    for (let index = 0; index < length; index++) {
+        result += charset[Math.floor(Math.random() * charset.length)];
+    }
+    return result;
 }
 
 function getFileExtension(fileName: string): string {

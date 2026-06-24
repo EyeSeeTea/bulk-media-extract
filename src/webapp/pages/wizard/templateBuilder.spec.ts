@@ -120,6 +120,7 @@ describe("templateBuilder", () => {
             expect.arrayContaining([
                 "fileName",
                 "eventId",
+                "random",
                 "fileExtension",
                 "fileDataElementId",
                 "fileDataElementName",
@@ -128,5 +129,45 @@ describe("templateBuilder", () => {
                 "fileValueType",
             ])
         );
+    });
+
+    it("resolves {random} to an 8-character lowercase alphanumeric value reused within a path", () => {
+        const event = ProgramEventPreview.create({
+            id: "evt-1",
+            eventDate: "2026-01-10",
+            orgUnitId: "ou-a",
+            orgUnitName: "Central Clinic",
+            orgUnitAttributeValues: {},
+            dataValues: {},
+            attributeValues: {},
+            fileValues: {},
+            fileNames: {},
+        });
+
+        const value = resolveTemplateForEvent("/{random}/{random}.pdf", event);
+        const match = value.match(/^\/([a-z0-9]{8})\/([a-z0-9]{8})\.pdf$/);
+
+        expect(match).not.toBeNull();
+        // The same random value is reused for every {random} token in a single resolution.
+        expect(match?.[1]).toBe(match?.[2]);
+    });
+
+    it("generates a different {random} value across separate resolutions", () => {
+        const event = ProgramEventPreview.create({
+            id: "evt-1",
+            eventDate: "2026-01-10",
+            orgUnitId: "ou-a",
+            orgUnitName: "Central Clinic",
+            orgUnitAttributeValues: {},
+            dataValues: {},
+            attributeValues: {},
+            fileValues: {},
+            fileNames: {},
+        });
+
+        const first = resolveTemplateForEvent("{random}", event);
+        const second = resolveTemplateForEvent("{random}", event);
+
+        expect(first).not.toBe(second);
     });
 });

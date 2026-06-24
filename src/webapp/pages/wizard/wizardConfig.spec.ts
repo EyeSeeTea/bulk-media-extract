@@ -56,6 +56,7 @@ describe("wizardConfig", () => {
         expect(
             validateTemplate("/{orgUnitCode}/{orgUnitAttribute:zone}/{fileExtension}")
         ).toBeUndefined();
+        expect(validateTemplate("/{fileName}-{random}.pdf")).toBeUndefined();
         expect(validateTemplate("/{unsupported}")).toBe(
             "Template contains unsupported token syntax."
         );
