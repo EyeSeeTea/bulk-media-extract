@@ -92,7 +92,12 @@ export function useWizardTemplatePreviewData({
                         return true;
                     }
 
-                    return Boolean(event.fileNames[selectedFileProperty.id]);
+                    const belongsToEventStage =
+                        !selectedFileProperty.sourceContainerId ||
+                        !event.programStageId ||
+                        event.programStageId === selectedFileProperty.sourceContainerId;
+
+                    return belongsToEventStage && Boolean(event.fileNames[selectedFileProperty.id]);
                 })
                 .slice(0, 10)
                 .map(event => resolveTemplateForEvent(template, event, selectedFileProperty))

@@ -100,7 +100,7 @@ export function useWizardPreviewData({
         return selectedFileDataElements.map(fileProperty => ({
             id: fileProperty.id,
             name: fileProperty.name,
-            template: mappingByFileKey[fileProperty.id] ?? "",
+            template: mappingByFileKey[fileProperty.key] ?? "",
             programStageId: fileProperty.sourceContainerId,
             programStageName: fileProperty.sourceContainerName,
         }));

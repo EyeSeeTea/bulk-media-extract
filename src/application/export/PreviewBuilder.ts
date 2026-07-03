@@ -19,6 +19,14 @@ export function buildExportPreviewRows(
 ): ExportPreviewRow[] {
     const rows = events.flatMap(event => {
         return selectedFileDataElements.flatMap(fileProperty => {
+            const belongsToEventStage =
+                !fileProperty.sourceContainerId ||
+                !event.programStageId ||
+                event.programStageId === fileProperty.sourceContainerId;
+            if (!belongsToEventStage) {
+                return [];
+            }
+
             const hasSelectedFileValue =
                 Object.prototype.hasOwnProperty.call(event.dataValues, fileProperty.id) ||
                 Object.prototype.hasOwnProperty.call(event.fileValues, fileProperty.id);
@@ -28,7 +36,7 @@ export function buildExportPreviewRows(
 
             const fileResourceId = event.fileValues[fileProperty.id];
             const resolvedTargetPath = resolveTemplateForEvent(
-                mappingByFileKey[fileProperty.id] ?? "",
+                mappingByFileKey[fileProperty.key] ?? "",
                 event,
                 fileProperty
             );

@@ -26,7 +26,7 @@ describe("useWizardProgramData", () => {
             () =>
                 useWizardProgramData({
                     selectedProgramId: "prog-a",
-                    selectedFileDataValueIds: ["de-file", "missing-file"],
+                    selectedFileDataValueIds: ["stage-1:de-file", "missing-file"],
                     onNormalizeSelectedFileDataValueIds,
                 }),
             {
@@ -46,6 +46,9 @@ describe("useWizardProgramData", () => {
 
         expect(result.current.selectedProgram?.id).toBe("prog-a");
         expect(result.current.selectedFileDataElements.map(file => file.id)).toEqual(["de-file"]);
-        expect(onNormalizeSelectedFileDataValueIds).toHaveBeenCalledWith(["de-file"]);
+        expect(result.current.selectedFileDataElements.map(file => file.key)).toEqual([
+            "stage-1:de-file",
+        ]);
+        expect(onNormalizeSelectedFileDataValueIds).toHaveBeenCalledWith(["stage-1:de-file"]);
     });
 });

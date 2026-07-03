@@ -113,12 +113,12 @@ export const WizardContent: React.FC = () => {
         onNext,
         canNavigateToStep,
     } = useWizardStepController({
-            state,
-            currentStepId,
-            exportPreviewState,
-            duplicateTargetPathCount: exportPreviewSummary.duplicateTargetPathDetails.length,
-            setStep,
-        });
+        state,
+        currentStepId,
+        exportPreviewState,
+        duplicateTargetPathCount: exportPreviewSummary.duplicateTargetPathDetails.length,
+        setStep,
+    });
 
     const renderStep = () => {
         switch (currentStepId) {
@@ -172,9 +172,9 @@ export const WizardContent: React.FC = () => {
                         selectedOrgUnitId={state.selectedOrgUnitId}
                         orgUnitSelectionMode={state.orgUnitSelectionMode}
                         selectedFileMappings={selectedFileDataElements.map(fileProperty => ({
-                            id: fileProperty.id,
+                            id: fileProperty.key,
                             name: fileProperty.name,
-                            template: state.mappingByFileKey[fileProperty.id] ?? "",
+                            template: state.mappingByFileKey[fileProperty.key] ?? "",
                         }))}
                         exportConfigurationFileMappings={exportConfigurationFileMappings}
                         dateFrom={state.dateFrom}

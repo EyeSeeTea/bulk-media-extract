@@ -324,6 +324,7 @@ export class ProgramD2Repository implements ProgramRepository {
 
                 return new ProgramEventPreview({
                     id: event.event,
+                    programStageId,
                     eventDate: event.occurredAt ?? event.eventDate ?? event.scheduledAt ?? null,
                     orgUnitId: event.orgUnit,
                     orgUnitName: event.orgUnitName ?? orgUnitById[event.orgUnit]?.name,
