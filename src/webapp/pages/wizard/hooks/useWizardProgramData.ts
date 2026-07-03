@@ -39,12 +39,12 @@ export function useWizardProgramData({
 
     const selectedFileDataElements = React.useMemo(() => {
         const selectedIdSet = new Set(selectedFileDataValueIds);
-        return selectableFileDataElements.filter(property => selectedIdSet.has(property.id));
+        return selectableFileDataElements.filter(property => selectedIdSet.has(property.key));
     }, [selectableFileDataElements, selectedFileDataValueIds]);
 
     const selectedFilePropertyById = React.useMemo(() => {
         return Object.fromEntries(
-            selectedFileDataElements.map(fileProperty => [fileProperty.id, fileProperty])
+            selectedFileDataElements.map(fileProperty => [fileProperty.key, fileProperty])
         );
     }, [selectedFileDataElements]);
 
@@ -53,7 +53,7 @@ export function useWizardProgramData({
             return;
         }
 
-        const selectableIdSet = new Set(selectableFileDataElements.map(property => property.id));
+        const selectableIdSet = new Set(selectableFileDataElements.map(property => property.key));
         const normalizedSelection = selectedFileDataValueIds.filter(fileKey =>
             selectableIdSet.has(fileKey)
         );

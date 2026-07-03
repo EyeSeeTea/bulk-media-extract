@@ -60,4 +60,65 @@ describe("ProgramStep", () => {
         expect(onSelectProgram).toHaveBeenCalledWith("prog-a");
         expect(onSelectFileDataValueIds).toHaveBeenCalledWith(["de-file"]);
     });
+
+    it("selects only the clicked stage when the same data element is on multiple stages", () => {
+        const onSelectProgram = vi.fn();
+        const onSelectFileDataValueIds = vi.fn();
+        const programs = [
+            {
+                id: "prog-a",
+                name: "Antenatal Visit",
+                organisationUnits: [{ id: "ou-a", name: "Central Clinic" }],
+            },
+        ];
+        const sharedDataElement = {
+            id: "de-photo",
+            name: "Photo",
+            sourceType: "dataElement" as const,
+            valueType: "IMAGE",
+        };
+        const programDetails = ProgramFileProperties.create({
+            program: FileCapableProgram.create({
+                id: "prog-a",
+                name: "Antenatal Visit",
+                programType: "WITH_REGISTRATION",
+                organisationUnits: [],
+            }),
+            properties: [
+                ProgramFileProperty.create({
+                    ...sharedDataElement,
+                    sourceContainerId: "stage-1",
+                    sourceContainerName: "Stage One",
+                }),
+                ProgramFileProperty.create({
+                    ...sharedDataElement,
+                    sourceContainerId: "stage-2",
+                    sourceContainerName: "Stage Two",
+                }),
+            ],
+            propertyGroups: [],
+        });
+
+        const view = render(
+            <ProgramStep
+                programsState={{ status: "success", data: programs }}
+                selectedProgramId="prog-a"
+                programDetailsState={{ status: "success", data: programDetails }}
+                selectedFileDataValueIds={[]}
+                onSelectProgram={onSelectProgram}
+                onSelectFileDataValueIds={onSelectFileDataValueIds}
+            />
+        );
+
+        // Both stages render a card sharing the same data element id.
+        const [firstCard, secondCard] = view.getAllByTestId("wizard-file-select-de-photo");
+        expect(secondCard).toBeInTheDocument();
+        if (!firstCard) {
+            throw new Error("Expected a file card for the shared data element");
+        }
+
+        // Clicking the first stage's card must select that stage only, not both.
+        fireEvent.click(firstCard);
+        expect(onSelectFileDataValueIds).toHaveBeenCalledWith(["stage-1:de-photo"]);
+    });
 });

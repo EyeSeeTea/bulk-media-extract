@@ -3,6 +3,7 @@ import { Struct } from "$/domain/entities/generic/Struct";
 
 export type ProgramEventPreviewAttrs = {
     id: Id;
+    programStageId?: Id;
     eventDate: string | null;
     orgUnitId: Id;
     orgUnitName?: string;

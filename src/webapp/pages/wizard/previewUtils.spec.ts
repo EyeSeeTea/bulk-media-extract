@@ -228,6 +228,71 @@ describe("previewUtils", () => {
         ]);
     });
 
+    it("scopes each event to its own program stage when a data element is shared across stages", () => {
+        const sharedDataElement = {
+            id: "de-photo",
+            name: "Photo",
+            valueType: "IMAGE",
+            sourceType: "dataElement" as const,
+        };
+        const rows = buildExportPreviewRows(
+            [
+                ProgramEventPreview.create({
+                    id: "evt-stage-1",
+                    programStageId: "stage-1",
+                    eventDate: "2026-01-10",
+                    orgUnitId: "ou-a",
+                    orgUnitName: "Central Clinic",
+                    orgUnitAttributeValues: {},
+                    dataValues: { "de-photo": "file-1" },
+                    attributeValues: {},
+                    fileValues: { "de-photo": "file-1" },
+                    fileNames: { "de-photo": "photo.jpg" },
+                    fileSizes: { "de-photo": 100 },
+                }),
+                ProgramEventPreview.create({
+                    id: "evt-stage-2",
+                    programStageId: "stage-2",
+                    eventDate: "2026-01-11",
+                    orgUnitId: "ou-a",
+                    orgUnitName: "Central Clinic",
+                    orgUnitAttributeValues: {},
+                    dataValues: { "de-photo": "file-2" },
+                    attributeValues: {},
+                    fileValues: { "de-photo": "file-2" },
+                    fileNames: { "de-photo": "photo.jpg" },
+                    fileSizes: { "de-photo": 200 },
+                }),
+            ],
+            [
+                ProgramFileProperty.create({
+                    ...sharedDataElement,
+                    sourceContainerId: "stage-1",
+                    sourceContainerName: "Stage One",
+                }),
+                ProgramFileProperty.create({
+                    ...sharedDataElement,
+                    sourceContainerId: "stage-2",
+                    sourceContainerName: "Stage Two",
+                }),
+            ],
+            {
+                "stage-1:de-photo": "/stage-one/{fileName}",
+                "stage-2:de-photo": "/stage-two/{fileName}",
+            },
+            "http://localhost:8081/dhis2"
+        );
+
+        // Each event yields exactly one row, resolved with its own stage's template.
+        expect(rows).toHaveLength(2);
+        const stage1Row = rows.find(row => row.eventId === "evt-stage-1");
+        const stage2Row = rows.find(row => row.eventId === "evt-stage-2");
+        expect(stage1Row?.programStageId).toBe("stage-1");
+        expect(stage1Row?.resolvedTargetPath).toBe("/stage-one/photo.jpg");
+        expect(stage2Row?.programStageId).toBe("stage-2");
+        expect(stage2Row?.resolvedTargetPath).toBe("/stage-two/photo.jpg");
+    });
+
     it("builds Capture event links", () => {
         expect(buildCaptureEventUrl("evt-1", "ou-b", "/dhis2")).toBe(
             "/dhis2/dhis-web-capture/index.html#/enrollmentEventEdit?eventId=evt-1&orgUnitId=ou-b"

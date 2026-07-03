@@ -63,10 +63,10 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
     const showProgramSummary = Boolean(selectedProgramId);
 
     const onToggleFileSelection = React.useCallback(
-        (fileDataElementId: string) => {
-            const nextSelection = selectedIdSet.has(fileDataElementId)
-                ? selectedFileDataValueIds.filter(selectedId => selectedId !== fileDataElementId)
-                : [...selectedFileDataValueIds, fileDataElementId];
+        (fileKey: string) => {
+            const nextSelection = selectedIdSet.has(fileKey)
+                ? selectedFileDataValueIds.filter(selectedId => selectedId !== fileKey)
+                : [...selectedFileDataValueIds, fileKey];
             onSelectFileDataValueIds(nextSelection);
         },
         [onSelectFileDataValueIds, selectedFileDataValueIds, selectedIdSet]
@@ -173,11 +173,11 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                     data-testid="wizard-file-data-elements"
                                 >
                                     {fileDataElements.map(item => {
-                                        const isSelected = selectedIdSet.has(item.id);
+                                        const isSelected = selectedIdSet.has(item.key);
 
                                         return (
                                             <div
-                                                key={item.id}
+                                                key={item.key}
                                                 className={`wizard-program-file-card${
                                                     isSelected ? " selected" : ""
                                                 }`}
@@ -185,14 +185,14 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                                 role="checkbox"
                                                 aria-checked={isSelected}
                                                 tabIndex={0}
-                                                onClick={() => onToggleFileSelection(item.id)}
+                                                onClick={() => onToggleFileSelection(item.key)}
                                                 onKeyDown={event => {
                                                     if (
                                                         event.key === " " ||
                                                         event.key === "Enter"
                                                     ) {
                                                         event.preventDefault();
-                                                        onToggleFileSelection(item.id);
+                                                        onToggleFileSelection(item.key);
                                                     }
                                                 }}
                                             >
@@ -204,7 +204,7 @@ export const ProgramStep: React.FC<ProgramStepProps> = ({
                                                         checked={isSelected}
                                                         label={item.name}
                                                         onChange={() =>
-                                                            onToggleFileSelection(item.id)
+                                                            onToggleFileSelection(item.key)
                                                         }
                                                     />
                                                 </div>

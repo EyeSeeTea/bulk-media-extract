@@ -55,8 +55,8 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
     onRetryPreview,
 }) => {
     const hasPreviewScope = Boolean(selectedProgram && selectedOrgUnitId);
-    const selectedFileIdSet = React.useMemo(() => {
-        return new Set(selectedFileDataElements.map(property => property.id));
+    const selectedFileKeySet = React.useMemo(() => {
+        return new Set(selectedFileDataElements.map(property => property.key));
     }, [selectedFileDataElements]);
 
     const templateInputRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>({});
@@ -164,10 +164,10 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                 </section>
             ) : (
                 selectedFileDataElements.map((fileProperty, fileIndex) => {
-                    const templateValue = mappingByFileKey[fileProperty.id] ?? "";
+                    const templateValue = mappingByFileKey[fileProperty.key] ?? "";
                     const templateError = validateTemplate(templateValue);
                     const isTemplateMissing = !templateValue.trim();
-                    const resolvedTemplates = quickPreviewByFileKey[fileProperty.id] ?? [];
+                    const resolvedTemplates = quickPreviewByFileKey[fileProperty.key] ?? [];
                     const visiblePropertyGroups =
                         programDetailsState.status === "success"
                             ? getVisiblePropertyGroupsForFile(
@@ -178,7 +178,7 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                             : [];
 
                     return (
-                        <section className="wizard-section" key={fileProperty.id}>
+                        <section className="wizard-section" key={fileProperty.key}>
                             <h4>
                                 {i18n.t("Path and filename template - {{name}}", {
                                     name: fileProperty.name,
@@ -188,7 +188,7 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                 <div className="template-editor-panel">
                                     <textarea
                                         ref={input => {
-                                            templateInputRefs.current[fileProperty.id] = input;
+                                            templateInputRefs.current[fileProperty.key] = input;
                                         }}
                                         className={
                                             templateError ? "wizard-input-invalid" : undefined
@@ -201,7 +201,7 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                         rows={5}
                                         value={templateValue}
                                         onChange={event =>
-                                            onMappingChange(fileProperty.id, event.target.value)
+                                            onMappingChange(fileProperty.key, event.target.value)
                                         }
                                     />
                                     <p className="wizard-helper-text template-editor-hint">
@@ -316,7 +316,9 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                                                 FILE_VALUE_TYPES.has(
                                                                     property.valueType
                                                                 ) &&
-                                                                !selectedFileIdSet.has(property.id)
+                                                                !selectedFileKeySet.has(
+                                                                    property.key
+                                                                )
                                                             ) {
                                                                 return null;
                                                             }
@@ -336,7 +338,7 @@ export const TemplateStep: React.FC<TemplateStepProps> = ({
                                                                         }
                                                                         onClick={() =>
                                                                             onInsertTemplateToken(
-                                                                                fileProperty.id,
+                                                                                fileProperty.key,
                                                                                 token
                                                                             )
                                                                         }
